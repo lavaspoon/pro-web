@@ -1,0 +1,261 @@
+/* ══════════════════════════════════════════════════════════════
+   구성원 레이아웃 — 사이드바 없음, 상단 바만
+   ══════════════════════════════════════════════════════════════ */
+.member-shell {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f0f9ff 0%, #dbeafe 30%, #e0f2fe 60%, #f0f9ff 100%);
+}
+
+/* Top bar — iOS 내비게이션 바 스타일 */
+.member-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid var(--border);
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.topbar-back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: var(--accent);
+  transition: background var(--duration-fast);
+  margin-left: -6px;
+}
+.topbar-back:hover { background: var(--accent-light); }
+
+.topbar-title {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.025em;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.topbar-user {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  letter-spacing: -0.01em;
+}
+
+.topbar-logout {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  color: var(--text-secondary);
+  transition: background var(--duration-fast), color var(--duration-fast);
+}
+.topbar-logout:hover { background: var(--danger-light); color: var(--danger); }
+
+/* Member main content */
+.member-main {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 32px 48px 64px;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   관리자 레이아웃 — 구성원 홈과 맞춘 파스텔·로즈 톤
+   ══════════════════════════════════════════════════════════════ */
+.admin-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  /* HomePage.home-cute와 동일 계열 토큰 */
+  --cute-rose: #be185d;
+  --cute-ink: #831843;
+  --cute-border: rgba(244, 114, 182, 0.28);
+  --cute-shadow: 0 4px 18px rgba(15, 23, 42, 0.06);
+  --bg: #fdf8f0;
+  --surface: #ffffff;
+  --surface-inset: #fff7fb;
+  --border: rgba(244, 114, 182, 0.22);
+  --border-strong: rgba(244, 114, 182, 0.38);
+  --divider: rgba(236, 72, 153, 0.1);
+  --accent: #db2777;
+  --accent-hover: #be185d;
+  --accent-light: rgba(219, 39, 119, 0.12);
+  --accent-lighter: rgba(219, 39, 119, 0.08);
+  --text-primary: #831843;
+  --text-secondary: #9d174d;
+  --text-tertiary: #a8557c;
+  --text-accent: #db2777;
+}
+
+/* 관리자 상단 바 (구성원 topbar와 동일 계열) */
+.admin-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  height: 52px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid var(--border);
+}
+
+.admin-topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.admin-brand {
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.03em;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.admin-brand:hover {
+  color: var(--accent);
+}
+
+.admin-topbar-kicker {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  letter-spacing: 0.02em;
+}
+
+.admin-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-topbar-nav {
+  border: none;
+  background: transparent;
+  padding: 6px 12px;
+  border-radius: var(--r-sm);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background var(--duration-fast), color var(--duration-fast);
+}
+
+.admin-topbar-nav:hover {
+  background: var(--accent-lighter);
+  color: var(--text-primary);
+}
+
+.admin-topbar-nav.active {
+  background: var(--accent-light);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.admin-topbar-user {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-left: 4px;
+}
+
+.admin-topbar-logout {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background var(--duration-fast), color var(--duration-fast);
+}
+
+.admin-topbar-logout:hover {
+  background: var(--danger-light);
+  color: var(--danger);
+}
+
+/* Admin main — 풀폭, 소프트 그라데이션 */
+.admin-main {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  background: linear-gradient(135deg, #fffdfb 0%, #fdf4ff 28%, #f0fdf4 62%, #f0f9ff 100%);
+  padding: 28px 40px 48px;
+  max-width: 1680px;
+  margin: 0 auto;
+}
+
+/* Shared page container (used by page components) */
+.page-container {
+  width: 100%;
+}
+
+/* Admin page header */
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  gap: 16px;
+}
+
+.page-title-group {}
+.page-title-group h1 {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+}
+.page-title-group p {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  letter-spacing: -0.01em;
+}
+
+@media (max-width: 1200px) {
+  .member-main { padding: 28px 32px 56px; }
+}
+
+@media (max-width: 768px) {
+  .admin-main { padding: 20px 16px 40px; }
+  .admin-topbar-right .admin-topbar-nav { padding: 6px 8px; font-size: 12px; }
+  .member-main { padding: 20px 20px 48px; }
+}

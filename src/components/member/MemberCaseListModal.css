@@ -1,0 +1,176 @@
+/* ── 사례 목록 모달 (넓은 패널) ─────────────────────────────── */
+.member-case-list-root .member-modal-panel {
+  display: flex;
+  flex-direction: column;
+  max-width: min(96vw, 920px);
+  width: 100%;
+  min-height: min(88vh, 820px);
+  max-height: min(94vh, 900px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.member-case-list-modal {
+  padding-bottom: 8px;
+}
+
+.member-modal-blob--list1 {
+  width: 160px;
+  height: 160px;
+  top: -50px;
+  left: -40px;
+  background: #fecdd3;
+}
+
+.member-modal-blob--list2 {
+  width: 120px;
+  height: 120px;
+  bottom: -20px;
+  right: -20px;
+  background: #bfdbfe;
+}
+
+.member-modal-sticker--heart {
+  background: linear-gradient(135deg, #fce7f3, #fbcfe8);
+  color: #db2777;
+  left: auto;
+  right: 18px;
+  transform: rotate(6deg);
+}
+
+.member-case-list-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 22px 20px 10px 20px;
+  padding-right: 12px;
+  flex-shrink: 0;
+}
+
+.member-case-list-head .member-cute-title {
+  font-size: 32px;
+}
+
+.member-case-list-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.member-cute-mini-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #9d174d;
+  background: linear-gradient(180deg, #fff 0%, #fce7f3 100%);
+  border: 1px solid rgba(244, 114, 182, 0.45);
+  border-radius: 999px;
+  cursor: pointer;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+  box-shadow: 0 2px 8px rgba(236, 72, 153, 0.12);
+}
+.member-cute-mini-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(236, 72, 153, 0.2);
+}
+
+.member-case-list-meta {
+  padding: 0 20px 12px;
+  font-size: 13px;
+  color: #9d174d;
+  flex-shrink: 0;
+}
+.member-case-list-meta strong {
+  color: #be185d;
+  font-weight: 700;
+}
+
+.member-case-filter-tabs {
+  margin: 0 14px 12px;
+  flex-shrink: 0;
+}
+
+/* 필터 아래 목록 영역: 높이 고정(필터 변경 시에도 축소되지 않음) */
+.member-case-list-body {
+  --member-list-slot-h: min(58vh, 520px);
+  flex: 1;
+  min-height: var(--member-list-slot-h);
+  height: var(--member-list-slot-h);
+  max-height: var(--member-list-slot-h);
+  margin: 0 14px 16px;
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.member-case-list-body--loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.member-case-list-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  margin: 0;
+  border-radius: 0;
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  -webkit-overflow-scrolling: touch;
+}
+
+.member-case-list-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 40px 20px;
+  color: #9d174d;
+  font-size: 14px;
+}
+
+.member-case-empty--fixed-slot {
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+}
+
+.member-case-empty {
+  margin: 8px 20px 24px;
+  border-radius: var(--r-lg);
+  background: rgba(255, 255, 255, 0.65);
+  border: 1px dashed rgba(244, 114, 182, 0.4);
+}
+
+@media (max-width: 480px) {
+  .member-case-list-head {
+    flex-wrap: wrap;
+  }
+  .member-case-list-head-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  .member-modal-sticker--heart {
+    right: 14px;
+    top: 12px;
+  }
+}

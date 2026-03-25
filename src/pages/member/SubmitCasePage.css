@@ -1,0 +1,228 @@
+/* ── SubmitCasePage ────────────────────────────────────────── */
+.submit-header {
+  margin-bottom: 20px;
+}
+
+.submit-header h1 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.03em;
+}
+
+.submit-header .page-sub {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+/* Layout: form + guide side by side on desktop, stack on mobile */
+.submit-layout {
+  display: grid;
+  grid-template-columns: 1fr 240px;
+  gap: 16px;
+  align-items: start;
+}
+
+@media (max-width: 640px) {
+  .submit-layout {
+    grid-template-columns: 1fr;
+  }
+  .submit-guide { order: -1; }
+}
+
+/* 모달 안: 단일 열 폼 */
+.submit-layout-modal {
+  display: block;
+}
+.submit-layout-modal .submit-guide {
+  display: none;
+}
+
+/* Form card */
+.submit-form {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: var(--shadow-xs);
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.required {
+  color: var(--danger);
+  margin-left: 2px;
+}
+
+.input-hint {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  text-align: right;
+  margin-top: -2px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 480px) {
+  .form-row { grid-template-columns: 1fr; }
+}
+
+.form-field-hint {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.45;
+  margin: 0 0 8px;
+}
+
+.form-row-call-datetime {
+  margin-top: 4px;
+}
+
+.form-group-inline {
+  margin-bottom: 0;
+}
+
+.form-sublabel {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  margin-bottom: 4px;
+  letter-spacing: -0.01em;
+}
+
+/* Submit button */
+.submit-btn {
+  width: 100%;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+/* Error banner */
+.error-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--danger-light);
+  border: 1px solid rgba(255, 59, 48, 0.2);
+  border-radius: var(--r-sm);
+  font-size: 13px;
+  color: var(--danger);
+  font-weight: 500;
+}
+
+/* Guide cards */
+.submit-guide {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.guide-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 14px 16px;
+  box-shadow: var(--shadow-xs);
+}
+
+.guide-header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 10px;
+}
+.guide-header svg { color: var(--accent); }
+
+.guide-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.guide-list li {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  padding-left: 14px;
+  position: relative;
+  letter-spacing: -0.01em;
+}
+.guide-list li::before {
+  content: '·';
+  position: absolute;
+  left: 4px;
+  color: var(--text-tertiary);
+}
+.guide-list li strong { color: var(--text-primary); font-weight: 600; }
+
+.tips-card {
+  background: rgba(255, 149, 0, 0.04);
+  border-color: rgba(255, 149, 0, 0.2);
+}
+.tips-card .guide-header svg { color: var(--warning); }
+
+/* Success state */
+.submit-success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 48px 24px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-sm);
+  animation: fadeUp var(--duration-slow) var(--ease);
+}
+
+.success-icon {
+  width: 80px;
+  height: 80px;
+  background: var(--success-light);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--success);
+  margin-bottom: 16px;
+}
+
+.submit-success h2 {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.03em;
+  margin-bottom: 8px;
+}
+
+.submit-success p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+
+.success-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}

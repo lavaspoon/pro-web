@@ -1,0 +1,683 @@
+/* ── PendingCasesPage — 좌 트리 / 우 대기 목록 ───────────────── */
+
+.pending-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+  max-width: 100%;
+}
+
+.pending-topbar {
+  margin-bottom: 10px;
+  flex-shrink: 0;
+}
+
+.pending-topbar .page-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.03em;
+}
+
+.pending-topbar .page-sub {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+.pending-topbar .page-sub strong {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/* 2열: 좌 트리 | 우 테이블 (우측은 내용 폭 제한 가능) */
+.pending-split {
+  display: grid;
+  grid-template-columns: minmax(200px, 300px) minmax(0, 1fr);
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  background: var(--surface);
+  min-height: min(520px, calc(100vh - 200px));
+  flex: 1;
+  box-shadow: var(--shadow-xs);
+}
+
+/* ── 좌측 트리 ─────────────────────────────────────────────── */
+.pending-tree {
+  border-right: 1px solid var(--border);
+  background: var(--surface-inset);
+  overflow-y: auto;
+  padding: 10px 8px 12px;
+}
+
+.tree-root-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-tertiary);
+  padding: 4px 8px 8px;
+}
+
+.tree-root-meta {
+  margin-left: auto;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.tree-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 12px;
+  border-left: 2px solid rgba(244, 114, 182, 0.4);
+}
+
+.tree-item {
+  margin: 0 0 4px;
+}
+
+.tree-item--last {
+  margin-bottom: 0;
+}
+
+.tree-leaf {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  width: 100%;
+  padding: 6px 6px 6px 0;
+  margin-bottom: 2px;
+  border: none;
+  border-radius: var(--r-sm);
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  color: inherit;
+  transition: background 0.12s ease;
+}
+
+.tree-leaf:hover {
+  background: rgba(244, 114, 182, 0.08);
+}
+
+.tree-leaf.is-active {
+  background: rgba(244, 114, 182, 0.16);
+  box-shadow: inset 0 0 0 1px rgba(244, 114, 182, 0.35);
+}
+
+.tree-leaf-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tree-leaf-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.tree-leaf-stats {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.tree-stat {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.tree-stat--wait {
+  color: #b45309;
+  background: rgba(245, 158, 11, 0.14);
+  border: 1px solid rgba(245, 158, 11, 0.22);
+}
+
+.tree-stat--done {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--text-secondary);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-weight: 600;
+}
+
+.tree-leaf-chevron {
+  flex-shrink: 0;
+  color: var(--text-tertiary);
+  opacity: 0.7;
+}
+
+.tree-leaf.is-active .tree-leaf-chevron {
+  color: var(--accent);
+  opacity: 1;
+}
+
+/* 좌측: 전체 보기 (팀별과 동일한 선택 강조) */
+.tree-view-all {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  width: 100%;
+  padding: 8px 6px 6px 0;
+  margin: 0 0 8px;
+  border: none;
+  border-radius: var(--r-sm);
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  color: inherit;
+  transition: background 0.12s ease;
+}
+
+.tree-view-all:hover {
+  background: rgba(244, 114, 182, 0.08);
+}
+
+.tree-view-all.is-active {
+  background: rgba(244, 114, 182, 0.16);
+  box-shadow: inset 0 0 0 1px rgba(244, 114, 182, 0.35);
+}
+
+.tree-view-all.is-active .tree-leaf-chevron {
+  color: var(--accent);
+  opacity: 1;
+}
+
+.tree-view-all-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-left: 4px;
+}
+
+.tree-view-all-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.tree-view-all-meta {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── 우측 패널 ─────────────────────────────────────────────── */
+.pending-panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.99) 0%, rgba(255, 251, 253, 0.98) 100%);
+  overflow: hidden;
+}
+
+.pending-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px 12px;
+  flex-shrink: 0;
+}
+
+.pending-panel-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pending-panel-badge {
+  font-size: 12px;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.pending-panel-badge strong {
+  color: var(--accent);
+  font-weight: 800;
+}
+
+.pending-panel-empty {
+  padding: 32px 16px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-tertiary);
+}
+
+.pending-table-wrap {
+  overflow: auto;
+  flex: 1;
+  min-height: 0;
+  padding: 0 12px 12px;
+  /* 넓은 화면에서 테이블이 가로로 과하게 늘어나지 않도록 */
+  max-width: min(52rem, 100%);
+  margin-inline: auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.pending-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 13px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  overflow: hidden;
+  background: var(--surface);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+
+/* 컴팩트 테이블 (검토 대기 목록) */
+.pending-panel:has(.pending-table--compact) .pending-panel-head {
+  padding: 6px 10px 8px;
+  gap: 8px;
+}
+
+.pending-panel:has(.pending-table--compact) .pending-panel-title {
+  font-size: 13px;
+}
+
+.pending-panel:has(.pending-table--compact) .pending-panel-badge {
+  font-size: 11px;
+}
+
+.pending-table-wrap:has(.pending-table--compact) {
+  padding: 0 10px 10px;
+  max-width: min(48rem, 100%);
+}
+
+.pending-table--compact {
+  table-layout: fixed;
+  width: 100%;
+  font-size: 12px;
+  line-height: 1.4;
+  border-radius: var(--r-sm);
+  -webkit-font-smoothing: antialiased;
+}
+
+.pending-table--compact .pending-th--action {
+  padding: 5px 10px;
+  font-size: 11px;
+  width: 72px;
+  box-sizing: border-box;
+}
+
+.pending-table--compact .pending-th-btn {
+  padding: 6px 8px;
+  gap: 4px;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+}
+
+.pending-table--compact td {
+  padding: 7px 10px;
+  vertical-align: middle;
+}
+
+/* 전체 보기(팀 열 있음) / 팀만 보기 — 열 비율 (table-layout: fixed) */
+.pending-table--compact.pending-table--with-team .pending-th--team {
+  width: 15%;
+}
+
+.pending-table--compact.pending-table--with-team .pending-th--member {
+  width: 18%;
+}
+
+.pending-table--compact.pending-table--with-team .pending-th--title {
+  width: 35%;
+}
+
+.pending-table--compact.pending-table--with-team .pending-th--date {
+  width: 18%;
+}
+
+.pending-table--compact:not(.pending-table--with-team) .pending-th--member {
+  width: 24%;
+}
+
+.pending-table--compact:not(.pending-table--with-team) .pending-th--title {
+  width: 42%;
+}
+
+.pending-table--compact:not(.pending-table--with-team) .pending-th--date {
+  width: 20%;
+}
+
+.pending-table--compact .pending-td-team {
+  vertical-align: middle;
+  min-width: 0;
+}
+
+.pending-table--compact .pending-td-team-text {
+  display: block;
+  font-weight: 600;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.pending-table--compact .pending-td-member {
+  gap: 8px;
+  min-width: 0;
+}
+
+.pending-table--compact .pending-td-avatar {
+  width: 24px;
+  height: 24px;
+  font-size: 11px;
+}
+
+.pending-table--compact .pending-td-name {
+  min-width: 0;
+  max-width: none;
+  flex: 1;
+}
+
+.pending-table--compact .pending-td-title {
+  max-width: none;
+  min-width: 0;
+  width: 100%;
+}
+
+.pending-table--compact .pending-td-title-text {
+  line-height: 1.35;
+  font-weight: 600;
+  min-width: 0;
+}
+
+.pending-table--compact .pending-td-date {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.pending-table--compact .pending-td-action {
+  width: 72px;
+  box-sizing: border-box;
+}
+
+.pending-table--compact .pending-td-btn {
+  min-width: 48px;
+}
+
+/* 행 높이·배경: td 개별 배경 대신 행 단위로 맞춰 줄무늬가 깨지지 않게 */
+.pending-table--compact tbody tr {
+  background: var(--surface);
+}
+
+.pending-table--compact tbody tr:nth-child(even) {
+  background: rgba(255, 247, 251, 0.72);
+}
+
+.pending-table--compact tbody tr:hover {
+  background: rgba(244, 114, 182, 0.09);
+}
+
+.pending-table--compact tbody tr:nth-child(even):hover {
+  background: rgba(244, 114, 182, 0.11);
+}
+
+.pending-table--compact tbody tr td {
+  background: transparent;
+  border-bottom-color: rgba(15, 23, 42, 0.08);
+}
+
+.pending-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: linear-gradient(180deg, #fff9fc 0%, #fff5f8 100%);
+}
+
+.pending-table thead tr {
+  border-bottom: 1px solid var(--border-strong);
+}
+
+.pending-th {
+  padding: 0;
+  vertical-align: middle;
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.pending-th--action {
+  text-align: right;
+  padding: 10px 14px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  width: 88px;
+}
+
+.pending-th-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  width: 100%;
+  padding: 10px 12px;
+  margin: 0;
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  cursor: pointer;
+  text-align: left;
+  transition: color 0.12s ease, background 0.12s ease;
+  border-radius: 0;
+}
+
+.pending-th-btn:hover {
+  color: var(--accent);
+  background: rgba(219, 39, 119, 0.06);
+}
+
+.pending-th-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.pending-sort-ico {
+  flex-shrink: 0;
+  opacity: 0.45;
+}
+
+.pending-sort-ico--idle {
+  opacity: 0.35;
+}
+
+.pending-sort-ico--active {
+  opacity: 1;
+  color: var(--accent);
+}
+
+.pending-th--title .pending-th-btn {
+  justify-content: flex-start;
+}
+
+.pending-th--member {
+  width: 22%;
+  min-width: 140px;
+}
+
+.pending-th--title {
+  min-width: 160px;
+}
+
+.pending-th--date {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.pending-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--divider);
+  vertical-align: middle;
+  background: var(--surface);
+}
+
+.pending-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.pending-table tbody tr:nth-child(even) td {
+  background: rgba(255, 247, 251, 0.65);
+}
+
+.pending-table tbody tr:hover td {
+  background: rgba(244, 114, 182, 0.07);
+}
+
+.pending-table tbody tr:nth-child(even):hover td {
+  background: rgba(244, 114, 182, 0.09);
+}
+
+/* 컴팩트 테이블: 줄무늬·호버는 tr 배경(위 블록)에 맡기고 td는 투명 처리 */
+.pending-table--compact tbody tr:nth-child(even) td,
+.pending-table--compact tbody tr:hover td,
+.pending-table--compact tbody tr:nth-child(even):hover td {
+  background: transparent;
+}
+
+.pending-td-member {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 120px;
+}
+
+.pending-td-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ec4899, #db2777);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.pending-td-name {
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
+}
+
+.pending-td-title {
+  max-width: 1px;
+}
+
+.pending-td-title-text {
+  display: block;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pending-td-date {
+  color: var(--text-secondary);
+  white-space: nowrap;
+  font-size: 11px;
+}
+
+.pending-td-ico {
+  display: inline;
+  vertical-align: -0.15em;
+  margin-right: 4px;
+  opacity: 0.7;
+}
+
+.pending-td-sub {
+  display: none;
+}
+
+@media (min-width: 1100px) {
+  .pending-td-sub {
+    display: inline;
+    color: var(--text-tertiary);
+    font-size: 10px;
+  }
+}
+
+.pending-td-action {
+  text-align: right;
+  width: 88px;
+}
+
+.pending-td-btn {
+  min-width: 52px;
+}
+
+@media (max-width: 900px) {
+  .pending-split {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+
+  .pending-tree {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    max-height: 220px;
+  }
+}
+
+/* legacy empty */
+.empty-state {
+  text-align: center;
+  padding: 48px 20px;
+  color: var(--text-secondary);
+}
+
+.empty-icon {
+  opacity: 0.35;
+  margin-bottom: 12px;
+}

@@ -1,0 +1,225 @@
+/* ── AiInsight ─────────────────────────────────────────────── */
+.ai-insight {
+  padding: 16px;
+}
+
+.ai-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ai-title-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.ai-icon { color: var(--accent); }
+
+.ai-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+}
+
+.ai-badge {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-lighter);
+  border: 1px solid rgba(0, 122, 255, 0.2);
+  padding: 2px 6px;
+  border-radius: var(--r-full);
+  letter-spacing: 0.02em;
+}
+
+.ai-recommendation {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: var(--r-full);
+}
+.rec-selected { background: var(--success-light);  color: #1e7a36; }
+.rec-rejected { background: var(--danger-light);   color: var(--danger); }
+.rec-neutral  { background: var(--warning-light);  color: #a05000; }
+
+/* Score */
+.ai-score-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.ai-score-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.ai-score-label svg { color: var(--accent); }
+
+.ai-score-bar-wrap {
+  flex: 1;
+  height: 5px;
+  background: var(--border-strong);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.ai-score-bar {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.8s var(--ease);
+}
+
+.ai-score-value {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.ai-confidence {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Summary */
+.ai-summary {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  letter-spacing: -0.01em;
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  background: var(--surface-inset);
+  border-radius: var(--r-sm);
+}
+
+/* Highlights */
+.ai-highlights {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ai-highlight-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.ai-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+  margin-top: 6px;
+}
+
+.ai-rationale {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.55;
+  margin: 0 0 10px;
+}
+
+.ai-key-chat {
+  margin-top: 12px;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+
+.ai-key-chat-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 8px;
+  letter-spacing: -0.02em;
+}
+
+.ai-key-chat-scroll {
+  max-height: 220px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  background: var(--surface-inset);
+  border-radius: var(--r-md);
+  border: 1px solid var(--border);
+}
+
+.ai-key-msg {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  max-width: 94%;
+}
+.ai-key-msg--customer {
+  align-self: flex-start;
+}
+.ai-key-msg--agent {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+.ai-key-msg--system {
+  align-self: center;
+  max-width: 100%;
+  align-items: center;
+}
+
+.ai-key-msg-role {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-tertiary);
+}
+
+.ai-key-msg-bubble {
+  font-size: 12px;
+  line-height: 1.45;
+  padding: 7px 10px;
+  border-radius: 12px;
+  word-break: break-word;
+}
+
+.ai-key-msg--customer .ai-key-msg-bubble {
+  background: #fff;
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+}
+
+.ai-key-msg--agent .ai-key-msg-bubble {
+  background: var(--accent-lighter);
+  border: 1px solid rgba(244, 114, 182, 0.3);
+  color: var(--text-primary);
+}
+
+.ai-key-msg--system .ai-key-msg-bubble {
+  background: var(--surface);
+  border: 1px dashed var(--border-strong);
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-align: center;
+}

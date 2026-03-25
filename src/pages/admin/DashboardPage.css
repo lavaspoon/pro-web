@@ -1,0 +1,696 @@
+/* ═══════════════════════════════════════════════════════════
+   Admin Dashboard — Manager_example 유사: KPI · 랭킹 · 실별 테이블
+   (토큰은 .admin-shell 상속)
+   ═══════════════════════════════════════════════════════════ */
+
+.adm-dashboard {
+  max-width: 100%;
+}
+
+.adm-header {
+  margin-bottom: 2rem;
+}
+
+.adm-title {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.04em;
+  line-height: 1.2;
+  margin: 0 0 0.35rem;
+}
+
+.adm-title::after {
+  content: '';
+  display: block;
+  width: 3rem;
+  height: 0.22rem;
+  margin-top: 0.5rem;
+  background: linear-gradient(90deg, #ec4899, #a855f7);
+  border-radius: 999px;
+}
+
+.adm-sub {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.adm-section {
+  margin-bottom: 2.25rem;
+}
+
+.adm-section-title {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.adm-title-bar {
+  width: 4px;
+  height: 1.35rem;
+  margin-top: 0.2rem;
+  background: linear-gradient(180deg, #ec4899, #a855f7);
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.adm-section-heading {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.03em;
+  margin: 0;
+}
+
+.adm-section-hint {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  margin: 0.25rem 0 0;
+  font-weight: 400;
+}
+
+.adm-section-title-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+/* ── KPI 그리드 ───────────────────────────────────────── */
+.adm-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.adm-overview-grid--four {
+  width: 100%;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+@media (max-width: 960px) {
+  .adm-overview-grid--four {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  .adm-overview-grid--four {
+    grid-template-columns: 1fr;
+  }
+}
+
+.adm-kpi-card {
+  text-align: left;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 251, 253, 0.96) 100%);
+  border: 1.5px solid var(--cute-border);
+  border-radius: 1rem;
+  padding: 1.15rem 1.25rem;
+  box-shadow: var(--cute-shadow);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.adm-kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
+.adm-kpi-card--action {
+  cursor: pointer;
+  font-family: inherit;
+  width: 100%;
+}
+
+.adm-kpi-card--action:hover {
+  border-color: rgba(244, 114, 182, 0.45);
+}
+
+.adm-kpi-head {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 0.75rem;
+}
+
+.adm-kpi-ico {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.adm-kpi-val {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.adm-kpi-unit {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  margin-top: 0.35rem;
+}
+
+/* ── 랭킹 ─────────────────────────────────────────────── */
+.adm-rankings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.25rem;
+}
+
+/* 랭킹 + 월별 차트 가로 배치 — 3열 동일 높이 (전체 센터 현황 KPI와 동일 폭) */
+.adm-ranking-chart-row {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.25rem;
+  align-items: stretch;
+}
+
+.adm-monthly-chart-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 251, 253, 0.96) 100%);
+  border: 1.5px solid var(--cute-border);
+  border-radius: 1rem;
+  padding: 0.65rem 0.5rem 0.45rem;
+  box-shadow: var(--cute-shadow);
+}
+
+.adm-monthly-chart-head {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  padding: 0.15rem 0.4rem 0.45rem;
+}
+
+.adm-monthly-chart-head-ico {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.adm-monthly-chart-year {
+  margin-left: auto;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-tertiary);
+}
+
+.adm-monthly-chart-body {
+  flex: 1;
+  min-height: 160px;
+  width: 100%;
+}
+
+.adm-monthly-chart-note {
+  font-size: 0.65rem;
+  color: var(--text-tertiary);
+  text-align: center;
+  margin: 0;
+  padding-top: 0.2rem;
+  line-height: 1.35;
+}
+
+@media (max-width: 1024px) {
+  .adm-ranking-chart-row {
+    grid-template-columns: 1fr;
+  }
+
+  .adm-monthly-chart-card {
+    min-height: 260px;
+    width: 100%;
+    max-width: none;
+  }
+
+  .adm-monthly-chart-body {
+    min-height: 220px;
+    height: 220px;
+    flex: none;
+  }
+}
+
+.adm-ranking-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  padding: 1.35rem 1rem 1rem;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 251, 253, 0.96) 100%);
+  border: 1.5px solid var(--cute-border);
+  border-radius: 1rem;
+  box-shadow: var(--cute-shadow);
+}
+
+.adm-ranking-badge {
+  position: absolute;
+  top: -0.65rem;
+  left: 1rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid rgba(244, 114, 182, 0.2);
+}
+
+.adm-badge--rose {
+  background: rgba(251, 207, 232, 0.55);
+  color: #9d174d;
+}
+
+.adm-badge--lavender {
+  background: rgba(221, 214, 254, 0.65);
+  color: #5b21b6;
+}
+
+.adm-ranking-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  flex: 1;
+  min-height: 0;
+  justify-content: flex-start;
+}
+
+.adm-ranking-empty {
+  font-size: 0.8125rem;
+  color: var(--text-tertiary);
+  text-align: center;
+  padding: 2rem 0.5rem;
+  margin: 0;
+}
+
+.adm-ranking-row {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.5rem 0.75rem;
+  background: rgba(255, 255, 255, 0.65);
+  border: 1px solid rgba(244, 114, 182, 0.2);
+  border-radius: 0.65rem;
+  transition: background 0.15s ease;
+}
+
+.adm-ranking-row:hover {
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.adm-rank-num {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.adm-rank-num--1 {
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+}
+.adm-rank-num--2 {
+  background: linear-gradient(135deg, #9ca3af, #6b7280);
+}
+.adm-rank-num--3 {
+  background: linear-gradient(135deg, #d97706, #b45309);
+}
+
+.adm-rank-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.adm-rank-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.adm-rank-dept {
+  font-size: 0.6875rem;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.adm-rank-val {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+/* ── 실별 테이블 ───────────────────────────────────────── */
+.adm-table-wrap {
+  overflow-x: auto;
+  border-radius: 1rem;
+  border: 1.5px solid var(--cute-border);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 251, 253, 0.96) 100%);
+  box-shadow: var(--cute-shadow);
+}
+
+.adm-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.adm-table thead th {
+  background: rgba(251, 207, 232, 0.35);
+  color: var(--text-primary);
+  font-weight: 700;
+  padding: 0;
+  border-bottom: 1px solid rgba(244, 114, 182, 0.25);
+  white-space: nowrap;
+}
+
+.adm-th-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  width: 100%;
+  padding: 0.75rem 0.8rem;
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-weight: 700;
+  color: inherit;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.adm-th-btn:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.adm-th-btn.is-sorted {
+  color: var(--accent);
+}
+
+.adm-sort-icon {
+  font-size: 0.7rem;
+  opacity: 0.9;
+}
+
+.adm-table tbody td {
+  padding: 0.85rem 1rem;
+  text-align: center;
+  border-bottom: 1px solid rgba(244, 114, 182, 0.12);
+  color: var(--text-primary);
+}
+
+.adm-table tbody td:first-child {
+  text-align: left;
+}
+
+.adm-tr {
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.adm-tr:hover {
+  background: rgba(236, 72, 153, 0.05);
+}
+
+.adm-tr.is-selected {
+  background: rgba(236, 72, 153, 0.09);
+  box-shadow: inset 3px 0 0 #db2777;
+}
+
+.adm-team-name {
+  font-weight: 600;
+  margin-right: 0.5rem;
+}
+
+.adm-member-badge {
+  font-size: 0.6875rem;
+  color: var(--text-tertiary);
+  background: rgba(251, 207, 232, 0.35);
+  border: 1px solid rgba(244, 114, 182, 0.25);
+  padding: 1px 7px;
+  border-radius: 100px;
+}
+
+.adm-pending-badge {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #b45309;
+  background: rgba(245, 158, 11, 0.12);
+  padding: 2px 8px;
+  border-radius: 100px;
+}
+
+.adm-table-empty {
+  text-align: center;
+  color: var(--text-tertiary);
+  padding: 2rem !important;
+}
+
+/* ── 실 미선택 안내 ───────────────────────────────────── */
+.adm-select-prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 2.5rem 1.5rem;
+  border-radius: 1rem;
+  border: 1.5px dashed rgba(244, 114, 182, 0.35);
+  background: rgba(255, 255, 255, 0.5);
+  color: var(--text-secondary);
+}
+
+.adm-select-prompt-ico {
+  color: var(--text-tertiary);
+  margin-bottom: 0.75rem;
+  opacity: 0.7;
+}
+
+.adm-select-prompt h3 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 0.35rem;
+}
+
+.adm-select-prompt p {
+  font-size: 0.875rem;
+  margin: 0;
+  max-width: 360px;
+  line-height: 1.5;
+}
+
+/* ── 구성원 미니 카드 (기존 유지) ─────────────────────── */
+.members-mini-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1rem;
+}
+
+.member-mini-card {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 251, 253, 0.96) 100%);
+  border: 1.5px solid var(--cute-border);
+  border-radius: 0.875rem;
+  padding: 1rem 1.125rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  box-shadow: var(--cute-shadow);
+  animation: dashFadeUp 0.4s ease both;
+  transition: all 0.25s;
+  backdrop-filter: blur(6px);
+}
+
+.member-mini-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+  border-color: rgba(244, 114, 182, 0.45);
+}
+
+button.member-mini-card {
+  font-family: inherit;
+  text-align: left;
+  width: 100%;
+  cursor: pointer;
+  border: none;
+  color: inherit;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+button.member-mini-card:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.member-mini-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ec4899, #db2777);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(219, 39, 119, 0.28);
+}
+
+.member-mini-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex: 1;
+  min-width: 0;
+}
+
+.member-mini-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.member-mini-pos {
+  font-size: 0.6875rem;
+  color: var(--text-tertiary);
+  font-weight: 500;
+}
+
+.member-mini-stats {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.member-mini-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+}
+
+.member-mini-stat span:first-child {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+}
+
+.member-mini-monthly {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+}
+
+.member-mini-monthly span:first-child {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.member-mini-bar {
+  width: 52px;
+  height: 4px;
+  background: rgba(244, 114, 182, 0.2);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.member-mini-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #ec4899, #a855f7);
+  border-radius: 3px;
+  transition: width 0.8s ease;
+}
+
+.member-mini-label {
+  font-size: 0.625rem;
+  color: var(--text-tertiary);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.pending-pill {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: #d97706;
+  background: rgba(245, 158, 11, 0.12);
+  padding: 2px 7px;
+  border-radius: 100px;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.fade-in {
+  animation: admFadeIn 0.35s ease both;
+}
+
+@keyframes admFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes dashFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 640px) {
+  .adm-overview-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .adm-kpi-val {
+    font-size: 1.65rem;
+  }
+}

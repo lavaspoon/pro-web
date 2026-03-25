@@ -1,0 +1,32 @@
+/* ── StatusBadge ───────────────────────────────────────────── */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: var(--r-full);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+/* sizes */
+.size-sm { font-size: 11px; padding: 2px 7px; }
+.size-md { font-size: 12px; padding: 3px 9px; }
+.size-lg { font-size: 13px; padding: 4px 11px; }
+
+/* variants */
+.badge-selected {
+  background: var(--success-light);
+  color: #1e7a36;
+}
+
+.badge-pending {
+  background: var(--warning-light);
+  color: #a05000;
+}
+
+.badge-rejected {
+  background: var(--surface-inset);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-strong);
+}
