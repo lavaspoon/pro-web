@@ -28,6 +28,15 @@ export const fetchAllPendingCases = async () => {
 };
 
 /**
+ * 검토 대기 화면 — 대시보드 + 대기 사례 단일 요청
+ * GET /api/admin/review-queue
+ */
+export const fetchAdminReviewQueue = async () => {
+  const { data } = await axiosInstance.get('/api/admin/review-queue');
+  return data;
+};
+
+/**
  * 사례 상세 조회 (STT 포함)
  * GET /api/admin/cases/{caseId}
  */

@@ -9,8 +9,8 @@ import { formatCaseCallDateTime } from '../../utils/caseDisplay';
 import '../../pages/member/CaseListPage.css';
 import '../../components/member/MemberCaseListModal.css';
 
-const STATUS_FILTER = ['전체', '검토 중', '선정', '비선정'];
-const STATUS_MAP = { '검토 중': 'pending', 선정: 'selected', 비선정: 'rejected' };
+const STATUS_FILTER = ['전체', '대기중', '선정', '비선정'];
+const STATUS_MAP = { 대기중: 'pending', 선정: 'selected', 비선정: 'rejected' };
 
 function formatDate(dateStr) {
   if (!dateStr) return '-';
@@ -221,6 +221,10 @@ export default function AdminMemberCasesModal({ open, member, onClose }) {
           memberName={member.name}
           overlayClassName="modal-overlay--on-top"
           onClose={() => setReviewCase(null)}
+          onRefreshCase={async () => {
+            const full = await fetchCaseForReview(reviewCase.id);
+            setReviewCase(full);
+          }}
         />
       )}
     </>

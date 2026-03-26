@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { X, Sparkles } from 'lucide-react';
+import { X } from 'lucide-react';
 import { useMemberModalStore } from '../../store/memberModalStore';
 import SubmitCaseForm from './SubmitCaseForm';
 import './MemberSubmitModal.css';
@@ -50,26 +50,21 @@ export default function MemberSubmitModal() {
       <div className="member-modal-panel member-submit-modal">
         <span className="member-modal-blob member-modal-blob--1" aria-hidden />
         <span className="member-modal-blob member-modal-blob--2" aria-hidden />
-        <span className="member-modal-sticker" aria-hidden>
-          <Sparkles size={18} />
-        </span>
 
         <div className="member-submit-modal-head">
           <div className="member-submit-modal-head-text">
-            <p className="member-cute-kicker">오늘도 수고했어요</p>
+            <p className="member-cute-kicker">YOU PRO</p>
             <h2 id="member-submit-title" className="member-cute-title">
-              우수사례 접수
+              사례 접수
             </h2>
-            <p className="member-cute-sub">멋진 응대를 살짝 적어 두면 나중에 더 반짝여요</p>
+            <p className="member-cute-sub">
+              아래에서 <strong>사례 내용</strong>과 <strong>통화 일시</strong>만 입력하면 접수가 완료됩니다.
+            </p>
           </div>
           <button type="button" className="member-modal-close" onClick={closeSubmit} aria-label="닫기">
             <X size={20} strokeWidth={2.25} />
           </button>
         </div>
-
-        <p className="member-submit-hint">
-          월 3건 · 연 36건까지 선정 가능 · 담당자가 녹취로 확인해요
-        </p>
 
         <div className="member-submit-modal-body">
           <SubmitCaseForm compact onGoToCaseList={handleGoList} />

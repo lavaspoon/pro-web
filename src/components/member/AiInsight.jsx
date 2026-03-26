@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles, TrendingUp, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { Sparkles, MessageSquareQuote, ClipboardPenLine, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import './AiInsight.css';
 
 export default function AiInsight({ insight }) {
@@ -8,78 +8,85 @@ export default function AiInsight({ insight }) {
   const isSelected = insight.recommendation === 'selected';
   const isRejected = insight.recommendation === 'rejected';
 
-  const RecommendIcon = isSelected ? CheckCircle : isRejected ? XCircle : AlertCircle;
-  const recommendLabel = isSelected ? '선정 추천' : isRejected ? '비선정 추천' : '검토 필요';
-  const recommendClass = isSelected ? 'rec-selected' : isRejected ? 'rec-rejected' : 'rec-neutral';
+  const VerdictIcon = isSelected ? CheckCircle : isRejected ? XCircle : AlertCircle;
+  const verdictMain = isSelected ? '선정' : isRejected ? '비선정' : '검토 필요';
+  const verdictSub = isSelected ? 'AI가 우수 사례로 판단했습니다' : isRejected ? 'AI가 보완이 필요하다고 보았습니다' : '추가 확인이 필요합니다';
 
-  const highlights = Array.isArray(insight.highlights) ? insight.highlights : [];
-  const chatTurns = Array.isArray(insight.chatTurns) ? insight.chatTurns : [];
+  const highlights = Array.isArray(insight.highlights) ? insight.highlights.filter(Boolean) : [];
+  const hasFeedback = Boolean(
+    (insight.summary && String(insight.summary).trim()) || (insight.rationale && String(insight.rationale).trim()),
+  );
 
   return (
-    <div className="ai-insight">
-      <div className="ai-header">
-        <div className="ai-title-row">
-          <Sparkles size={18} className="ai-icon" />
-          <span className="ai-title">AI 인사이트</span>
-          <span className="ai-badge">Beta</span>
-        </div>
-        <div className={`ai-recommendation ${recommendClass}`}>
-          <RecommendIcon size={14} />
-          {recommendLabel}
-        </div>
+    <div className="ai-result">
+      <div className="ai-result__ribbon">
+        <Sparkles size={16} strokeWidth={2.2} aria-hidden />
+        <span>AI 분석</span>
       </div>
 
-      <div className="ai-score-row">
-        <div className="ai-score-label">
-          <TrendingUp size={14} />
-          <span>응대 품질 점수</span>
-        </div>
-        <div className="ai-score-bar-wrap">
-          <div
-            className="ai-score-bar"
-            style={{
-              width: `${insight.score}%`,
-              background:
-                insight.score >= 80
-                  ? 'linear-gradient(90deg, #10b981, #059669)'
-                  : insight.score >= 60
-                    ? 'linear-gradient(90deg, #f59e0b, #d97706)'
-                    : 'linear-gradient(90deg, #ef4444, #dc2626)',
-            }}
-          />
-        </div>
-        <span className="ai-score-value">{insight.score}점</span>
-        <span className="ai-confidence">신뢰도 {insight.confidence}%</span>
-      </div>
-
-      {insight.summary && <p className="ai-summary">{insight.summary}</p>}
-      {insight.rationale && <p className="ai-rationale">{insight.rationale}</p>}
-
-      {highlights.length > 0 && (
-        <div className="ai-highlights">
-          {highlights.map((h, i) => (
-            <div key={i} className="ai-highlight-item">
-              <span className="ai-dot" />
-              {h}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {chatTurns.length > 0 && (
-        <div className="ai-key-chat">
-          <h4 className="ai-key-chat-title">핵심 대화</h4>
-          <div className="ai-key-chat-scroll">
-            {chatTurns.map((turn, i) => (
-              <div key={i} className={`ai-key-msg ai-key-msg--${turn.role}`}>
-                <span className="ai-key-msg-role">
-                  {turn.role === 'customer' ? '고객' : turn.role === 'agent' ? '상담사' : '안내'}
-                </span>
-                <div className="ai-key-msg-bubble">{turn.text}</div>
+      {/* 1. AI 선정 여부 */}
+      <section className="ai-result__block ai-result__block--verdict" aria-labelledby="ai-verdict-heading">
+        <h3 id="ai-verdict-heading" className="ai-result__heading">
+          <span className="ai-result__heading-mark" aria-hidden />
+          AI 선정 여부
+        </h3>
+        <div
+          className={`ai-verdict-card ai-verdict-card--${isSelected ? 'yes' : isRejected ? 'no' : 'neutral'}`}
+        >
+          <div className="ai-verdict-card__icon" aria-hidden>
+            <VerdictIcon size={28} strokeWidth={2} />
+          </div>
+          <div className="ai-verdict-card__body">
+            <p className="ai-verdict-card__label">AI 판단</p>
+            <p className="ai-verdict-card__value">{verdictMain}</p>
+            <p className="ai-verdict-card__hint">{verdictSub}</p>
+            {typeof insight.score === 'number' && (
+              <div className="ai-verdict-card__scores">
+                <span className="ai-verdict-chip">응대 점수 {insight.score}점</span>
+                {typeof insight.confidence === 'number' && (
+                  <span className="ai-verdict-chip">신뢰도 {insight.confidence}%</span>
+                )}
               </div>
-            ))}
+            )}
           </div>
         </div>
+      </section>
+
+      {/* 2. 핵심 멘트 */}
+      {highlights.length > 0 && (
+        <section className="ai-result__block" aria-labelledby="ai-ments-heading">
+          <h3 id="ai-ments-heading" className="ai-result__heading">
+            <MessageSquareQuote size={17} strokeWidth={2.1} aria-hidden />
+            핵심 멘트
+          </h3>
+          <p className="ai-result__lede">AI가 뽑은 응대·안내 문장의 핵심입니다.</p>
+          <ol className="ai-ment-list">
+            {highlights.map((h, i) => (
+              <li key={i} className="ai-ment-item">
+                <span className="ai-ment-item__idx">{i + 1}</span>
+                <span className="ai-ment-item__text">{h}</span>
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
+
+      {/* 3. 피드백 */}
+      {hasFeedback && (
+        <section className="ai-result__block ai-result__block--feedback" aria-labelledby="ai-feedback-heading">
+          <h3 id="ai-feedback-heading" className="ai-result__heading">
+            <ClipboardPenLine size={17} strokeWidth={2.1} aria-hidden />
+            피드백
+          </h3>
+          <div className="ai-feedback-panel">
+            {insight.summary && String(insight.summary).trim() && (
+              <p className="ai-feedback-panel__lead">{insight.summary.trim()}</p>
+            )}
+            {insight.rationale && String(insight.rationale).trim() && (
+              <p className="ai-feedback-panel__detail">{insight.rationale.trim()}</p>
+            )}
+          </div>
+        </section>
       )}
     </div>
   );

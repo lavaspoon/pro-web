@@ -1,6 +1,15 @@
 import React, { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { X, Calendar, CalendarClock, Clock, FileText, CheckCircle, XCircle } from 'lucide-react';
+import {
+  X,
+  ChevronLeft,
+  Calendar,
+  CalendarClock,
+  Clock,
+  FileText,
+  CheckCircle,
+  XCircle,
+} from 'lucide-react';
 import { fetchCaseDetail } from '../../api/memberApi';
 import StatusBadge from '../common/StatusBadge';
 import AiInsight from './AiInsight';
@@ -19,6 +28,7 @@ function formatDateTime(dateStr) {
 
 export default function MemberCaseDetailModal() {
   const caseDetailId = useMemberModalStore((s) => s.caseDetailId);
+  const caseListOpen = useMemberModalStore((s) => s.caseListOpen);
   const closeCaseDetail = useMemberModalStore((s) => s.closeCaseDetail);
 
   const { data: caseData, isLoading, isError, error } = useQuery({
@@ -70,6 +80,15 @@ export default function MemberCaseDetailModal() {
       />
       <div className="member-modal-panel member-case-detail-panel">
         <div className="member-case-detail-head">
+          <button
+            type="button"
+            className="member-case-detail-back"
+            onClick={closeCaseDetail}
+            aria-label={caseListOpen ? '내 사례 목록으로 돌아가기' : '이전 화면으로'}
+          >
+            <ChevronLeft size={22} strokeWidth={2.25} aria-hidden />
+            <span>{caseListOpen ? '목록' : '이전'}</span>
+          </button>
           <h2 id="member-case-detail-title" className="member-case-detail-heading">
             사례 상세
           </h2>
@@ -120,6 +139,22 @@ export default function MemberCaseDetailModal() {
                 </div>
               </div>
 
+              {caseData.status === 'pending' && (
+                <div className="pending-notice">
+                  <Clock size={16} />
+                  <div>
+                    <strong>대기중</strong>
+                    <p>담당자가 녹취콜을 청취하고 있습니다. 결과가 나오면 알려드립니다.</p>
+                  </div>
+                </div>
+              )}
+
+              {displayAiInsight && caseData.status !== 'pending' && (
+                <div className="member-case-ai-wrap">
+                  <AiInsight insight={displayAiInsight} />
+                </div>
+              )}
+
               {caseData.status !== 'pending' && caseData.judgmentReason && (
                 <div
                   className={`judgment-card ${caseData.status === 'selected' ? 'judgment-selected' : 'judgment-rejected'}`}
@@ -140,22 +175,6 @@ export default function MemberCaseDetailModal() {
                   </div>
                   <p className="judgment-reason">{caseData.judgmentReason}</p>
                 </div>
-              )}
-
-              {caseData.status === 'pending' && (
-                <div className="pending-notice">
-                  <Clock size={16} />
-                  <div>
-                    <strong>검토 중</strong>
-                    <p>담당자가 녹취콜을 청취하고 있습니다. 결과가 나오면 알려드립니다.</p>
-                  </div>
-                </div>
-              )}
-
-              {displayAiInsight && caseData.status !== 'pending' && (
-                <section className="detail-section detail-section--ai">
-                  <AiInsight insight={displayAiInsight} />
-                </section>
               )}
 
               {hasTranscript && (

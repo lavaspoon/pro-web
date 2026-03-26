@@ -39,6 +39,18 @@
   display: none;
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* Form card */
 .submit-form {
   background: var(--surface);
@@ -47,8 +59,117 @@
   padding: 20px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 0;
   box-shadow: var(--shadow-xs);
+}
+
+.submit-form-overview {
+  margin: 0 0 18px;
+  padding: 12px 14px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+  background: var(--surface-inset);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  letter-spacing: -0.02em;
+}
+
+.submit-form-overview strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.submit-section {
+  padding: 16px 0 20px;
+  border-top: 1px solid var(--border);
+}
+
+.submit-section:first-of-type {
+  border-top: none;
+  padding-top: 0;
+}
+
+.submit-section-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.submit-step-badge {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent);
+  background: var(--accent-lighter);
+  border: 1px solid rgba(0, 122, 255, 0.15);
+}
+
+.submit-section-head-text {
+  min-width: 0;
+  flex: 1;
+}
+
+.submit-section-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.03em;
+  line-height: 1.3;
+}
+
+.submit-section-lead {
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+  letter-spacing: -0.02em;
+}
+
+.submit-section-body {
+  padding-left: 0;
+}
+
+@media (min-width: 480px) {
+  .submit-section-head {
+    padding-left: 2px;
+  }
+
+  .submit-section-body {
+    padding-left: 40px;
+  }
+}
+
+.submit-field-meta {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 6px;
+}
+
+.submit-form-actions {
+  margin-top: 8px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.submit-form-footnote {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-tertiary);
+  text-align: center;
+  letter-spacing: -0.02em;
 }
 
 .form-group {
@@ -66,7 +187,6 @@
   font-size: 11px;
   color: var(--text-tertiary);
   text-align: right;
-  margin-top: -2px;
 }
 
 .form-row {
@@ -79,15 +199,8 @@
   .form-row { grid-template-columns: 1fr; }
 }
 
-.form-field-hint {
-  font-size: 12px;
-  color: var(--text-secondary);
-  line-height: 1.45;
-  margin: 0 0 8px;
-}
-
 .form-row-call-datetime {
-  margin-top: 4px;
+  margin-top: 0;
 }
 
 .form-group-inline {
@@ -103,11 +216,20 @@
   letter-spacing: -0.01em;
 }
 
-/* Submit button */
+/* Submit button — 비활성처럼 보여도 클릭 가능(검증 메시지 표시). disabled 미사용 */
 .submit-btn {
   width: 100%;
   justify-content: center;
-  margin-top: 4px;
+  margin-top: 0;
+}
+
+.submit-btn--soft {
+  opacity: 0.72;
+  cursor: pointer;
+}
+
+.submit-btn--soft:hover {
+  opacity: 0.88;
 }
 
 /* Error banner */

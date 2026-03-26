@@ -4,44 +4,54 @@
 
 :root {
   /* ── Palette ───────────────────────────────────────────────────── */
-  --bg:               #f5f5f7;
-  --surface:          #ffffff;
-  --surface-raised:   #ffffff;
-  --surface-inset:    #f5f5f7;
+  --bg: #f3f5f8;
+  --surface: #ffffff;
+  --surface-raised: #ffffff;
+  --surface-inset: #eef1f6;
 
-  --border:           rgba(0, 0, 0, 0.06);
-  --border-strong:    rgba(0, 0, 0, 0.12);
-  --divider:          rgba(0, 0, 0, 0.05);
+  --border: rgba(15, 23, 42, 0.08);
+  --border-strong: rgba(15, 23, 42, 0.14);
+  --divider: rgba(15, 23, 42, 0.06);
 
-  --accent:           #007AFF;
-  --accent-hover:     #0066d6;
-  --accent-light:     rgba(0, 122, 255, 0.1);
-  --accent-lighter:   rgba(0, 122, 255, 0.06);
+  /* YOU PRO — 차분한 네이비 액센트 + 인센티브용 앰버 */
+  --yp-ink: #0f172a;
+  --yp-ink-soft: #334155;
+  --yp-accent: #0d4f6c;
+  --yp-accent-bright: #0a7ea4;
+  --yp-gold: #b45309;
+  --yp-gold-soft: rgba(180, 83, 9, 0.12);
 
-  --success:          #34c759;
-  --success-light:    rgba(52, 199, 89, 0.1);
-  --warning:          #ff9500;
-  --warning-light:    rgba(255, 149, 0, 0.1);
-  --danger:           #ff3b30;
-  --danger-light:     rgba(255, 59, 48, 0.1);
+  --accent: #0a7ea4;
+  --accent-hover: #086888;
+  --accent-light: rgba(10, 126, 164, 0.12);
+  --accent-lighter: rgba(10, 126, 164, 0.07);
+
+  --success: #34c759;
+  --success-light: rgba(52, 199, 89, 0.1);
+  --warning: #ff9500;
+  --warning-light: rgba(255, 149, 0, 0.1);
+  --danger: #ff3b30;
+  --danger-light: rgba(255, 59, 48, 0.1);
 
   /* ── Text ─────────────────────────────────────────────────────── */
-  --text-primary:     #1d1d1f;
-  --text-secondary:   #6e6e73;
-  --text-tertiary:    #98989d;
-  --text-accent:      #007AFF;
-  --text-on-accent:   #ffffff;
+  --text-primary: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --text-tertiary: #98989d;
+  --text-accent: var(--accent);
+  --text-on-accent: #ffffff;
 
   /* ── Typography ───────────────────────────────────────────────── */
-  --font:  -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', 'Segoe UI', sans-serif;
+  --font:
+    -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Apple SD Gothic Neo',
+    'Malgun Gothic', 'Noto Sans KR', 'Segoe UI', sans-serif;
   --font-mono: 'SF Mono', 'Menlo', monospace;
 
   /* ── Radius ───────────────────────────────────────────────────── */
-  --r-xs:   6px;
-  --r-sm:   8px;
-  --r-md:   12px;
-  --r-lg:   16px;
-  --r-xl:   20px;
+  --r-xs: 6px;
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-xl: 20px;
   --r-full: 9999px;
 
   /* ── Shadows ──────────────────────────────────────────────────── */
@@ -52,9 +62,15 @@
   --shadow-xl: 0 20px 60px rgba(0, 0, 0, 0.16);
 
   /* ── Spacing ──────────────────────────────────────────────────── */
-  --sp-1: 4px;   --sp-2: 8px;   --sp-3: 12px;
-  --sp-4: 16px;  --sp-5: 20px;  --sp-6: 24px;
-  --sp-8: 32px;  --sp-10: 40px; --sp-12: 48px;
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-10: 40px;
+  --sp-12: 48px;
 
   /* ── Transitions ──────────────────────────────────────────────── */
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
@@ -65,7 +81,13 @@
 }
 
 /* ── Reset ─────────────────────────────────────────────────────── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 
 html {
   font-size: 16px;
@@ -82,9 +104,23 @@ body {
   letter-spacing: -0.015em;
 }
 
-button { font-family: var(--font); cursor: pointer; border: none; background: none; }
-input, textarea, select { font-family: var(--font); }
-a { color: var(--accent); text-decoration: none; }
+button {
+  font-family: var(--font);
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+input,
+textarea,
+select {
+  font-family: var(--font);
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
 
 /* ── Loading / Spinner ─────────────────────────────────────────── */
 .loading-screen {
@@ -107,7 +143,11 @@ a { color: var(--accent); text-decoration: none; }
   animation: spin 0.7s linear infinite;
 }
 
-@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 
 /* ── Common Buttons ────────────────────────────────────────────── */
 .btn {
@@ -127,26 +167,50 @@ a { color: var(--accent); text-decoration: none; }
   background: var(--accent);
   color: #fff;
 }
-.btn-primary:hover { background: var(--accent-hover); }
-.btn-primary:active { transform: scale(0.97); }
+
+.btn-primary:hover {
+  background: var(--accent-hover);
+}
+
+.btn-primary:active {
+  transform: scale(0.97);
+}
 
 .btn-secondary {
   background: var(--surface);
   color: var(--text-primary);
   border: 1px solid var(--border-strong);
 }
-.btn-secondary:hover { background: var(--bg); }
+
+.btn-secondary:hover {
+  background: var(--bg);
+}
 
 .btn-ghost {
   color: var(--accent);
   padding: 6px 12px;
 }
-.btn-ghost:hover { background: var(--accent-light); border-radius: var(--r-sm); }
 
-.btn-sm { padding: 6px 12px; font-size: 13px; }
-.btn-lg { padding: 13px 24px; font-size: 15px; border-radius: var(--r-md); }
+.btn-ghost:hover {
+  background: var(--accent-light);
+  border-radius: var(--r-sm);
+}
 
-.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+.btn-lg {
+  padding: 13px 24px;
+  font-size: 15px;
+  border-radius: var(--r-md);
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
 
 /* ── Card ──────────────────────────────────────────────────────── */
 .card {
@@ -191,7 +255,9 @@ a { color: var(--accent); text-decoration: none; }
   letter-spacing: -0.01em;
 }
 
-.form-input, .form-textarea, .form-select {
+.form-input,
+.form-textarea,
+.form-select {
   width: 100%;
   padding: 10px 14px;
   background: var(--surface);
@@ -200,32 +266,54 @@ a { color: var(--accent); text-decoration: none; }
   font-size: 15px;
   color: var(--text-primary);
   transition: border-color var(--duration-fast) var(--ease-out),
-              box-shadow var(--duration-fast) var(--ease-out);
+    box-shadow var(--duration-fast) var(--ease-out);
   -webkit-appearance: none;
   appearance: none;
 }
 
-.form-input:focus, .form-textarea:focus, .form-select:focus {
+.form-input:focus,
+.form-textarea:focus,
+.form-select:focus {
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.12);
 }
 
-.form-textarea { resize: vertical; line-height: 1.6; }
+.form-textarea {
+  resize: vertical;
+  line-height: 1.6;
+}
 
 /* ── Animations ────────────────────────────────────────────────── */
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
-.fade-up   { animation: fadeUp  var(--duration-slow) var(--ease) both; }
-.fade-in   { animation: fadeIn  var(--duration-base) var(--ease-out) both; }
+.fade-up {
+  animation: fadeUp var(--duration-slow) var(--ease) both;
+}
+
+.fade-in {
+  animation: fadeIn var(--duration-base) var(--ease-out) both;
+}
 
 /* ── Empty state ───────────────────────────────────────────────── */
 .empty-state {
@@ -238,12 +326,37 @@ a { color: var(--accent); text-decoration: none; }
   text-align: center;
 }
 
-.empty-state svg { color: var(--text-tertiary); opacity: 0.6; }
-.empty-state h3 { font-size: 16px; font-weight: 600; color: var(--text-primary); }
-.empty-state p  { font-size: 14px; color: var(--text-secondary); }
+.empty-state svg {
+  color: var(--text-tertiary);
+  opacity: 0.6;
+}
+
+.empty-state h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.empty-state p {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
 
 /* ── Scrollbar ─────────────────────────────────────────────────── */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.25); }
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.25);
+}

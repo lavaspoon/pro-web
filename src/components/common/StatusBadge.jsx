@@ -9,7 +9,7 @@ const STATUS_CONFIG = {
     className: 'badge-selected',
   },
   pending: {
-    label: '검토 중',
+    label: '대기중',
     icon: Clock,
     className: 'badge-pending',
   },

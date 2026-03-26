@@ -6,6 +6,10 @@ import {
   MOCK_AI_HIGHLIGHTS,
   MOCK_AI_RATIONALE,
   MOCK_AI_SUMMARY,
+  MOCK_AI_KEY_MESSAGE_SELECTED,
+  MOCK_AI_KEY_MESSAGE_REJECTED,
+  MOCK_AI_FEEDBACK_SELECTED,
+  MOCK_AI_FEEDBACK_REJECTED,
 } from './mockCaseReviewDemo';
 
 function simpleHash(str) {
@@ -23,6 +27,8 @@ function simpleHash(str) {
  *   recommendation: 'selected'|'rejected',
  *   confidence: number,
  *   score: number,
+ *   keyMessage: string,
+ *   feedback: string,
  *   summary: string,
  *   rationale: string,
  *   highlights: string[],
@@ -30,7 +36,7 @@ function simpleHash(str) {
  * }>}
  */
 export async function mockRunAiAnalysis({ fullTranscript, title, callDate }) {
-  await new Promise((r) => setTimeout(r, 700));
+  await new Promise((r) => setTimeout(r, 900));
 
   const seed = simpleHash(`${fullTranscript || ''}|${title || ''}|${callDate || ''}`);
   const recommendation = seed % 2 === 0 ? 'selected' : 'rejected';
@@ -39,6 +45,12 @@ export async function mockRunAiAnalysis({ fullTranscript, title, callDate }) {
     recommendation === 'selected' ? 68 + (seed % 27) : 38 + (seed % 22);
 
   const chatTurns = MOCK_AI_CHAT_TURNS.map((t) => ({ ...t }));
+
+  const keyMessage =
+    recommendation === 'selected' ? MOCK_AI_KEY_MESSAGE_SELECTED : MOCK_AI_KEY_MESSAGE_REJECTED;
+
+  const feedback =
+    recommendation === 'selected' ? MOCK_AI_FEEDBACK_SELECTED : MOCK_AI_FEEDBACK_REJECTED;
 
   const rationale =
     recommendation === 'selected'
@@ -58,6 +70,8 @@ export async function mockRunAiAnalysis({ fullTranscript, title, callDate }) {
     recommendation,
     confidence,
     score,
+    keyMessage,
+    feedback,
     summary,
     rationale,
     highlights,

@@ -5,13 +5,24 @@ import useAuthStore from '../../store/authStore';
 import { submitCase } from '../../api/memberApi';
 import '../../pages/member/SubmitCasePage.css';
 
-/**
- * STT TB_STT_RESULT.call_time 과 동일하게 맞추기 위해
- * "YYYY-MM-DD HH:mm:00" 형태로 전송한다.
- */
+/** STT TB_STT_RESULT.call_time 과 맞추기: "YYYY-MM-DD HH:mm:00" */
 function buildCallDateTimeForApi(datePart, timePart) {
   if (!datePart || !timePart) return '';
   return `${datePart} ${timePart}:00`;
+}
+
+/** API 호환용 제목: 우수 상담내용 앞부분에서 자동 생성 */
+function deriveTitleFromExcellentContent(text) {
+  const t = String(text || '')
+    .trim()
+    .replace(/\s+/g, ' ');
+  if (!t) return 'YOU PRO 우수사례';
+  const firstSentence = t.split(/[.!?。\n]/)[0].trim() || t;
+  const maxLen = 58;
+  if (firstSentence.length > maxLen) {
+    return `${firstSentence.slice(0, maxLen)}…`;
+  }
+  return firstSentence.slice(0, 60);
 }
 
 /**
@@ -22,15 +33,21 @@ export default function SubmitCaseForm({ className = '', onGoToCaseList, compact
   const queryClient = useQueryClient();
 
   const [form, setForm] = useState({
-    title: '',
-    description: '',
+    excellentContent: '',
     callDatePart: '',
     callTimePart: '',
   });
   const [submitted, setSubmitted] = useState(false);
+  const [clientError, setClientError] = useState('');
 
   const mutation = useMutation({
-    mutationFn: (data) => submitCase({ ...data, skid: user.skid }),
+    mutationFn: (data) => {
+      const skid = user?.skid;
+      if (!skid) {
+        return Promise.reject(new Error('로그인 정보가 없습니다. 다시 로그인해 주세요.'));
+      }
+      return submitCase({ ...data, skid });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['my-cases'] });
       queryClient.invalidateQueries({ queryKey: ['member-home'] });
@@ -40,31 +57,51 @@ export default function SubmitCaseForm({ className = '', onGoToCaseList, compact
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    setClientError('');
+    if (mutation.isError) {
+      mutation.reset();
+    }
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!form.title.trim() || !form.description.trim()) return;
+    setClientError('');
+    if (mutation.isPending) return;
+    const body = form.excellentContent.trim();
+    if (body.length < 30) {
+      setClientError('우수 상담내용을 최소 30자 이상 입력해 주세요.');
+      return;
+    }
+    if (!form.callDatePart || !form.callTimePart) {
+      setClientError('상담일과 상담시간을 모두 선택해 주세요.');
+      return;
+    }
+    if (!user?.skid) {
+      setClientError('로그인 정보가 없습니다. 다시 로그인해 주세요.');
+      return;
+    }
     const callDate = buildCallDateTimeForApi(form.callDatePart, form.callTimePart);
-    if (!callDate) return;
+    if (!callDate) {
+      setClientError('상담 일시 형식을 확인해 주세요.');
+      return;
+    }
+    const title = deriveTitleFromExcellentContent(body);
     mutation.mutate({
-      title: form.title,
-      description: form.description,
+      title,
+      description: body,
       callDate,
     });
   };
 
   const resetForm = () => {
-    setForm({ title: '', description: '', callDatePart: '', callTimePart: '' });
+    setForm({ excellentContent: '', callDatePart: '', callTimePart: '' });
     setSubmitted(false);
+    setClientError('');
   };
 
   const canSubmit =
-    form.title.trim() &&
-    form.description.trim() &&
-    form.callDatePart &&
-    form.callTimePart;
+    form.excellentContent.trim().length >= 30 && form.callDatePart && form.callTimePart;
 
   if (submitted) {
     return (
@@ -72,18 +109,18 @@ export default function SubmitCaseForm({ className = '', onGoToCaseList, compact
         <div className="success-icon">
           <CheckCircle size={48} />
         </div>
-        <h2>접수 완료!</h2>
+        <h2>접수 완료</h2>
         <p>
-          우수사례가 성공적으로 접수되었습니다.
+          YOU PRO 사례가 접수되었습니다.
           <br />
-          담당자 검토 후 결과를 알려드립니다.
+          녹취(STT) 매칭 후 AI·관리자 검토가 진행됩니다.
         </p>
         <div className="success-actions">
           <button type="button" className="btn btn-primary" onClick={onGoToCaseList}>
-            내 사례 목록 보기
+            내 사례 목록
           </button>
           <button type="button" className="btn btn-secondary" onClick={resetForm}>
-            추가 접수하기
+            추가 접수
           </button>
         </div>
       </div>
@@ -93,104 +130,123 @@ export default function SubmitCaseForm({ className = '', onGoToCaseList, compact
   return (
     <div className={className}>
       <div className={compact ? 'submit-layout submit-layout-modal' : 'submit-layout'}>
-        <form className="submit-form" onSubmit={handleSubmit}>
-          {mutation.isError && (
+        <form className="submit-form" onSubmit={handleSubmit} noValidate>
+          {(mutation.isError || clientError) && (
             <div className="error-banner">
               <AlertCircle size={16} />
-              {mutation.error?.message}
+              {clientError || mutation.error?.message}
             </div>
           )}
 
-          <div className="form-group">
-            <label className="form-label">
-              사례 제목 <span className="required">*</span>
-            </label>
-            <input
-              type="text"
-              name="title"
-              className="form-input"
-              placeholder="예: 고객 불만 신속 해결 및 감동 응대"
-              value={form.title}
-              onChange={handleChange}
-              maxLength={60}
-              required
-            />
-            <span className="input-hint">{form.title.length}/60자</span>
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">
-              응대 내용 요약 <span className="required">*</span>
-            </label>
-            <textarea
-              name="description"
-              className="form-textarea"
-              placeholder="어떤 상황에서 어떻게 고객을 응대했는지 구체적으로 작성해주세요. (최소 50자 이상 권장)"
-              value={form.description}
-              onChange={handleChange}
-              rows={compact ? 4 : 5}
-              required
-            />
-            <span className="input-hint">{form.description.length}자</span>
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">
-              통화 일시 <span className="required">*</span>
-            </label>
-            <p className="form-field-hint">
-              녹취(STT)와 맞추려면 실제 통화가 시작된 날짜·시각(24시간, 분 단위)을 입력해 주세요.
+          {!compact && (
+            <p className="submit-form-overview">
+              <strong>① 사례 내용</strong>을 작성한 뒤, <strong>② 통화 일시</strong>를 입력하고 접수합니다.
             </p>
-            <div className="form-row form-row-call-datetime">
-              <div className="form-group form-group-inline">
-                <label className="form-sublabel" htmlFor="submit-call-date">
-                  날짜
-                </label>
-                <input
-                  id="submit-call-date"
-                  type="date"
-                  name="callDatePart"
-                  className="form-input"
-                  value={form.callDatePart}
-                  onChange={handleChange}
-                  required
-                />
+          )}
+
+          <section className="submit-section" aria-labelledby="submit-section-story-title">
+            <header className="submit-section-head">
+              <span className="submit-step-badge" aria-hidden>
+                1
+              </span>
+              <div className="submit-section-head-text">
+                <h3 id="submit-section-story-title" className="submit-section-title">
+                  사례 내용 <span className="required">*</span>
+                </h3>
+                <p className="submit-section-lead">
+                  우수 상담으로 제출할 내용입니다. 상황·응대·결과를 구체적으로 적어 주세요. STT와 비교·AI 분석에
+                  쓰입니다.
+                </p>
               </div>
-              <div className="form-group form-group-inline">
-                <label className="form-sublabel" htmlFor="submit-call-time">
-                  시각 (HH:mm)
-                </label>
-                <input
-                  id="submit-call-time"
-                  type="time"
-                  name="callTimePart"
-                  className="form-input"
-                  step={60}
-                  value={form.callTimePart}
-                  onChange={handleChange}
-                  required
-                />
+            </header>
+            <div className="submit-section-body">
+              <label className="sr-only" htmlFor="submit-excellent-content">
+                우수 상담내용
+              </label>
+              <textarea
+                id="submit-excellent-content"
+                name="excellentContent"
+                className="form-textarea"
+                placeholder="예: 불만 고객에게 먼저 공감을 표한 뒤, 원인·해결 절차를 단계별로 안내하고, 후속 확인까지 약속한 사례 등"
+                value={form.excellentContent}
+                onChange={handleChange}
+                rows={compact ? 5 : 6}
+              />
+              <div className="submit-field-meta">
+                <span className="input-hint">최소 30자 · {form.excellentContent.trim().length}자</span>
               </div>
             </div>
-          </div>
+          </section>
 
-          <button
-            type="submit"
-            className="btn btn-primary btn-lg submit-btn"
-            disabled={mutation.isPending || !canSubmit}
-          >
-            {mutation.isPending ? (
-              <>
-                <div className="spinner" style={{ width: 18, height: 18, borderWidth: 2 }} />
-                접수 중...
-              </>
-            ) : (
-              <>
-                <Send size={18} />
-                우수사례 접수하기
-              </>
+          <section className="submit-section" aria-labelledby="submit-section-when-title">
+            <header className="submit-section-head">
+              <span className="submit-step-badge" aria-hidden>
+                2
+              </span>
+              <div className="submit-section-head-text">
+                <h3 id="submit-section-when-title" className="submit-section-title">
+                  통화 일시 <span className="required">*</span>
+                </h3>
+                <p className="submit-section-lead">
+                  녹취(STT)에 기록된 통화 <strong>시작</strong> 시각과 같게 맞춰 주세요. (날짜 + 24시간제 시·분)
+                </p>
+              </div>
+            </header>
+            <div className="submit-section-body">
+              <div className="form-row form-row-call-datetime">
+                <div className="form-group form-group-inline">
+                  <label className="form-sublabel" htmlFor="submit-call-date">
+                    날짜
+                  </label>
+                  <input
+                    id="submit-call-date"
+                    type="date"
+                    name="callDatePart"
+                    className="form-input"
+                    value={form.callDatePart}
+                    onChange={handleChange}
+                  />
+                </div>
+                <div className="form-group form-group-inline">
+                  <label className="form-sublabel" htmlFor="submit-call-time">
+                    시각
+                  </label>
+                  <input
+                    id="submit-call-time"
+                    type="time"
+                    name="callTimePart"
+                    className="form-input"
+                    step={60}
+                    value={form.callTimePart}
+                    onChange={handleChange}
+                  />
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <div className="submit-form-actions">
+            <button
+              type="submit"
+              className={`btn btn-primary btn-lg submit-btn${!canSubmit ? ' submit-btn--soft' : ''}`}
+              aria-busy={mutation.isPending}
+            >
+              {mutation.isPending ? (
+                <>
+                  <div className="spinner" style={{ width: 18, height: 18, borderWidth: 2 }} />
+                  접수 중...
+                </>
+              ) : (
+                <>
+                  <Send size={18} />
+                  접수하기
+                </>
+              )}
+            </button>
+            {compact && (
+              <p className="submit-form-footnote">선정 한도: 월 3회 · 연 36회 · 상담 일시는 STT와 동일해야 매칭됩니다.</p>
             )}
-          </button>
+          </div>
         </form>
 
         {!compact && (
@@ -202,31 +258,25 @@ export default function SubmitCaseForm({ className = '', onGoToCaseList, compact
               </div>
               <ul className="guide-list">
                 <li>
-                  월 최대 <strong>3회</strong> 선정 가능 (신청 횟수 제한 없음)
+                  선정 한도: 월 <strong>{3}</strong>회 · 연 <strong>{36}</strong>회
                 </li>
                 <li>
-                  연간 최대 <strong>36회</strong> 선정 가능
+                  <strong>통화 일시</strong>는 STT에 찍힌 통화 시작 시각과 같아야 녹취가 연결됩니다.
                 </li>
-                <li>
-                  <strong>통화 일시</strong>는 STT 녹취 시각과 같게 적어야 매칭됩니다
-                </li>
-                <li>담당자가 녹취콜을 청취 후 선정 여부 판정</li>
-                <li>AI 분석 결과가 참고 자료로 제공됨</li>
-                <li>선정 결과는 마이페이지에서 확인 가능</li>
-                <li>연말 포상은 선정 건수 기준으로 적금식 지급</li>
+                <li>관리자 측 녹취·STT 적재 후 매칭·AI 검토가 이어집니다.</li>
+                <li>판정·피드백은 내 사례 상세에서 확인할 수 있습니다.</li>
               </ul>
             </div>
 
             <div className="guide-card tips-card">
               <div className="guide-header">
                 <Lightbulb size={16} />
-                <strong>우수 사례 작성 팁</strong>
+                <strong>작성 팁</strong>
               </div>
               <ul className="guide-list">
-                <li>고객의 문제 상황을 구체적으로 기술</li>
-                <li>해결 과정과 고객 반응 포함</li>
-                <li>고객이 표현한 만족/감사 내용 기재</li>
-                <li>추가 서비스 안내나 가치 제공 내용 포함</li>
+                <li>고객 감정·문제 상황을 먼저 짚어 주세요.</li>
+                <li>실제로 한 안내·조치를 순서대로 적으면 STT 대조에 유리합니다.</li>
+                <li>고객 반응·만족 표현이 있다면 함께 적어 주세요.</li>
               </ul>
             </div>
           </div>

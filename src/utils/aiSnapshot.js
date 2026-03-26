@@ -8,6 +8,8 @@ export function serializeAiSnapshotForJudge(aiResult) {
       recommendation: aiResult.recommendation,
       confidence: aiResult.confidence,
       score: aiResult.score,
+      keyMessage: aiResult.keyMessage,
+      feedback: aiResult.feedback,
       summary: aiResult.summary,
       rationale: aiResult.rationale,
       highlights: aiResult.highlights || [],

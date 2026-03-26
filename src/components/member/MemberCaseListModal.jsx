@@ -1,16 +1,25 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { X, FileText, ChevronRight, PlusCircle, Filter, Heart } from 'lucide-react';
+import {
+  X,
+  FileText,
+  ChevronRight,
+  ChevronLeft,
+  PlusCircle,
+  Filter,
+  Heart,
+} from 'lucide-react';
 import useAuthStore from '../../store/authStore';
 import { fetchMyCases } from '../../api/memberApi';
 import StatusBadge from '../common/StatusBadge';
 import { useMemberModalStore } from '../../store/memberModalStore';
 import { formatCaseCallDateTime } from '../../utils/caseDisplay';
 import '../../pages/member/CaseListPage.css';
+import './MemberSubmitModal.css';
 import './MemberCaseListModal.css';
 
-const STATUS_FILTER = ['전체', '검토 중', '선정', '비선정'];
-const STATUS_MAP = { '검토 중': 'pending', 선정: 'selected', 비선정: 'rejected' };
+const STATUS_FILTER = ['전체', '대기중', '선정', '비선정'];
+const STATUS_MAP = { 대기중: 'pending', 선정: 'selected', 비선정: 'rejected' };
 
 function formatDate(dateStr) {
   if (!dateStr) return '-';
@@ -25,13 +34,39 @@ function monthChip(month) {
   return month;
 }
 
+function currentMonthKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function addMonths(ym, delta) {
+  const [y, m] = ym.split('-').map(Number);
+  if (!y || !m) return ym;
+  const d = new Date(y, m - 1 + delta, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function caseMonthKey(c) {
+  const raw = c.month || c.submittedAt || '';
+  if (typeof raw === 'string' && raw.length >= 7) return raw.slice(0, 7);
+  return '';
+}
+
+function formatMonthBarLabel(ym) {
+  const [y, m] = ym.split('-').map(Number);
+  if (!y || !m) return ym;
+  return `${y}년 ${m}월`;
+}
+
 export default function MemberCaseListModal() {
   const { user } = useAuthStore();
   const open = useMemberModalStore((s) => s.caseListOpen);
+  const caseDetailId = useMemberModalStore((s) => s.caseDetailId);
   const closeCaseList = useMemberModalStore((s) => s.closeCaseList);
   const openSubmit = useMemberModalStore((s) => s.openSubmit);
   const openCaseDetail = useMemberModalStore((s) => s.openCaseDetail);
   const [activeFilter, setActiveFilter] = useState('전체');
+  const [monthKey, setMonthKey] = useState(currentMonthKey);
 
   const { data: cases = [], isLoading } = useQuery({
     queryKey: ['my-cases', user?.skid],
@@ -51,19 +86,39 @@ export default function MemberCaseListModal() {
   useEffect(() => {
     if (!open) return undefined;
     const onKey = (e) => {
-      if (e.key === 'Escape') closeCaseList();
+      if (e.key === 'Escape' && !caseDetailId) closeCaseList();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [open, closeCaseList]);
+  }, [open, closeCaseList, caseDetailId]);
+
+  useEffect(() => {
+    if (open) setMonthKey(currentMonthKey());
+  }, [open]);
+
+  const { minMonthKey, maxMonthKey } = useMemo(() => {
+    const max = currentMonthKey();
+    const keys = cases.map(caseMonthKey).filter(Boolean);
+    const earliest = keys.length ? [...keys].sort()[0] : max;
+    const minWindow = addMonths(max, -36);
+    const min = earliest < minWindow ? earliest : minWindow;
+    return { minMonthKey: min, maxMonthKey: max };
+  }, [cases]);
+
+  const canPrevMonth = monthKey > minMonthKey;
+  const canNextMonth = monthKey < maxMonthKey;
+
+  const casesInMonth = useMemo(
+    () => cases.filter((c) => caseMonthKey(c) === monthKey),
+    [cases, monthKey],
+  );
 
   const filtered =
     activeFilter === '전체'
-      ? cases
-      : cases.filter((c) => c.status === STATUS_MAP[activeFilter]);
+      ? casesInMonth
+      : casesInMonth.filter((c) => c.status === STATUS_MAP[activeFilter]);
 
   const goDetail = (id) => {
-    closeCaseList();
     openCaseDetail(id);
   };
 
@@ -113,8 +168,30 @@ export default function MemberCaseListModal() {
           </div>
         </div>
 
+        <div className="member-case-month-bar">
+          <button
+            type="button"
+            className="member-case-month-btn"
+            disabled={!canPrevMonth}
+            onClick={() => setMonthKey((k) => addMonths(k, -1))}
+            aria-label="이전 달"
+          >
+            <ChevronLeft size={20} strokeWidth={2.25} />
+          </button>
+          <span className="member-case-month-label">{formatMonthBarLabel(monthKey)}</span>
+          <button
+            type="button"
+            className="member-case-month-btn"
+            disabled={!canNextMonth}
+            onClick={() => setMonthKey((k) => addMonths(k, 1))}
+            aria-label="다음 달"
+          >
+            <ChevronRight size={20} strokeWidth={2.25} />
+          </button>
+        </div>
+
         <div className="member-case-list-meta">
-          총 <strong>{cases.length}</strong>건 접수
+          해당 월 접수 <strong>{casesInMonth.length}</strong>건 · 전체 누적 <strong>{cases.length}</strong>건
         </div>
 
         {isLoading ? (
@@ -138,8 +215,8 @@ export default function MemberCaseListModal() {
                   {f}
                   <span className="filter-count">
                     {f === '전체'
-                      ? cases.length
-                      : cases.filter((c) => c.status === STATUS_MAP[f]).length}
+                      ? casesInMonth.length
+                      : casesInMonth.filter((c) => c.status === STATUS_MAP[f]).length}
                   </span>
                 </button>
               ))}
@@ -149,8 +226,12 @@ export default function MemberCaseListModal() {
               {filtered.length === 0 ? (
                 <div className="empty-state member-case-empty member-case-empty--fixed-slot">
                   <FileText size={40} className="empty-icon" />
-                  <h3>접수된 사례가 없습니다</h3>
-                  <p>우수 응대 사례를 접수해 보세요</p>
+                  <h3>{cases.length === 0 ? '접수된 사례가 없습니다' : `${formatMonthBarLabel(monthKey)} 접수 건이 없습니다`}</h3>
+                  <p>
+                    {cases.length === 0
+                      ? '우수 응대 사례를 접수해 보세요'
+                      : '다른 월을 선택하거나 새로 접수해 보세요'}
+                  </p>
                   <button type="button" className="btn btn-primary" onClick={goSubmit}>
                     <PlusCircle size={16} />
                     우수사례 접수

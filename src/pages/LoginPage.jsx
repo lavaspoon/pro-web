@@ -42,7 +42,7 @@ export default function LoginPage() {
         <div className="login-logo">
           <div className="login-logo-icon">S</div>
           <div>
-            <h1 className="login-logo-title">YouPro</h1>
+            <h1 className="login-logo-title">YOU PRO</h1>
             <p className="login-logo-sub">SKT 우수사례 관리 시스템</p>
           </div>
         </div>

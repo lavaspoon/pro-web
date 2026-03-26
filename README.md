@@ -1,70 +1,39 @@
-# Getting Started with Create React App
+### 개발환경
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+- 백엔드: 스프링부트(JPA)
+- 프론트엔드: 리액트(React-Query, zustand)
 
-## Available Scripts
+### 배경
 
-In the project directory, you can run:
+**SKT 상담 고객 센터**
 
-### `npm start`
+상담사가 고객응대를 친절하게 진행하거나 문제를 해결한 사례를 등록합니다.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+담당자가 녹취콜을 청취하여 우수사례 여부를 판정하고, 상담사는 결과를 기다립니다.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+### 주요 요구사항
 
-### `npm test`
+- 전체적인 UI 개선
+- 사용자 화면, 관리자 화면 분리
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## 구성원 화면
 
-### `npm run build`
+- 선정 / 비선정의 진행사항 표기
+- 선정/비선정 시 실제 대화 내용을 채팅 형식으로 표기, 관리자의 판정 사유 표기, AI 인사이트 제공
+- 월 최대 3회 선정 가능 (신청은 제한 없음)
+- 해당 연도 기준 최대 36회 가능 → 적금식으로 연말에 포상
+- 홈화면: 우리실 평균 건수, 내 건수 표기
+- 깔끔한 UI의 우수 사례 접수 화면
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## 관리자 화면
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+- 전체 센터, 전체 실의 평균 건수 조회 (해당연도 기준)
+- 실 선택 시 해당 실의 각 구성원별 총 건수 표기 (해당연도 기준)
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+  AI가 선정/비선정 정보 제공
 
-### `npm run eject`
+  핵심 대화 내용을 대화 형식 UI로 표시
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+  정확도 확보를 위해 수동 입력 옵션 제공
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- 각 구성원의 월 최대 3회 선정 제한 사항을 시스템에서 관리
