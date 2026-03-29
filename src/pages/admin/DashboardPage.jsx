@@ -9,39 +9,27 @@ import {
   ChevronRight,
   Trophy,
 } from 'lucide-react';
-import { fetchAdminDashboard, fetchTeamDetail } from '../../api/adminApi';
+import {
+  fetchAdminDashboard,
+  fetchAdminLeafTeams,
+  fetchAdminRanking,
+  fetchTeamDetail,
+} from '../../api/adminApi';
+import { mergeSecondDepthOptions } from '../../utils/adminSecondDepth';
 import AdminMemberDetailCard from './AdminMemberDetailCard';
 import './DashboardPage.css';
 
 const RANK_TOP_N = 3;
 
-/** 실(부서)별 성과 테이블 — 집계 범위(상위 부서 5·7) */
-const PERFORMANCE_DEPT_IDS = [5, 7];
-
-/** 대시보드 팀 목록에서 지정 deptId(들)에 속한 구성원만 모음 */
-function membersFromDeptIds(teams, deptIds) {
-  const idSet = new Set(deptIds.map((d) => Number(d)));
-  return teams
-    .filter((t) => t.id != null && idSet.has(Number(t.id)))
-    .flatMap((t) =>
-      (t.members || []).map((m) => ({
-        ...m,
-        teamName: t.name,
-      }))
-    );
-}
-
-/** 연간 누적 선정 기준 상위 N명 랭킹 행 */
-function topMemberRankRows(members, limit = RANK_TOP_N) {
-  return [...members]
-    .sort((a, b) => Number(b.totalSelected) - Number(a.totalSelected))
-    .slice(0, limit)
-    .map((m) => ({
-      id: m.id,
-      name: m.name,
-      teamName: m.teamName,
-      value: `${m.totalSelected}건`,
-    }));
+/** API 랭킹 항목 → 카드 행 (TB_YOU_PRO_CASE 접수 건수) */
+function rankRowsFromApi(entries) {
+  if (!entries?.length) return [];
+  return entries.map((e) => ({
+    id: e.skid,
+    name: e.memberName,
+    teamName: e.teamName,
+    value: `${e.submittedCount}건`,
+  }));
 }
 
 function enrichTeam(team) {
@@ -101,8 +89,8 @@ function RankingCard({ title, badgeClass, icon: Icon, rows, emptyHint }) {
 
 export default function DashboardPage() {
   const [selectedTeamId, setSelectedTeamId] = useState(null);
-  /** 실(부서)별 성과 테이블 — 센터(부서) 필터: 전체 | dept 5 | dept 7 */
-  const [deptPerformanceFilter, setDeptPerformanceFilter] = useState('all');
+  /** 2depth 부서 필터: 전체 | 백엔드 설정 dept_id */
+  const [secondDepthKey, setSecondDepthKey] = useState('all');
   const [sortConfig, setSortConfig] = useState({
     key: 'totalSubmitted',
     direction: 'desc',
@@ -112,6 +100,55 @@ export default function DashboardPage() {
     queryKey: ['admin-dashboard'],
     queryFn: fetchAdminDashboard,
   });
+
+  const filterMeta = data?.filterMeta;
+  const secondDepthOptions = useMemo(
+    () => mergeSecondDepthOptions(filterMeta?.secondDepthDepts),
+    [filterMeta?.secondDepthDepts]
+  );
+
+  const { year: dashYear } = data ?? {};
+
+  const { data: rankingData } = useQuery({
+    queryKey: ['admin-ranking', dashYear, RANK_TOP_N],
+    queryFn: () => fetchAdminRanking(dashYear, RANK_TOP_N),
+    enabled: dashYear != null,
+  });
+
+  const { data: leafPayload } = useQuery({
+    queryKey: ['admin-leaf-teams', secondDepthKey],
+    queryFn: () =>
+      fetchAdminLeafTeams(secondDepthKey === 'all' ? null : Number(secondDepthKey)),
+    enabled: data != null,
+  });
+
+  const teamsEnriched = useMemo(() => {
+    const teams = leafPayload?.teams ?? [];
+    return teams.map(enrichTeam);
+  }, [leafPayload?.teams]);
+
+  const sortedTeams = useMemo(() => {
+    const list = [...teamsEnriched];
+    const { key, direction } = sortConfig;
+    const dir = direction === 'asc' ? 1 : -1;
+    const compare = (a, b) => {
+      if (key === 'name') {
+        return a.name.localeCompare(b.name, 'ko') * dir;
+      }
+      const va = Number(a[key] ?? 0);
+      const vb = Number(b[key] ?? 0);
+      return (va - vb) * dir;
+    };
+    return list.sort(compare);
+  }, [teamsEnriched, sortConfig]);
+
+  useEffect(() => {
+    setSelectedTeamId((id) => {
+      if (id == null) return null;
+      const still = teamsEnriched.some((t) => Number(t.id) === Number(id));
+      return still ? id : null;
+    });
+  }, [teamsEnriched]);
 
   const {
     data: teamDetailData,
@@ -124,64 +161,9 @@ export default function DashboardPage() {
     enabled: selectedTeamId != null,
   });
 
-  const teamsEnriched = useMemo(() => {
-    if (!data?.teams) return [];
-    return data.teams.map(enrichTeam);
-  }, [data?.teams]);
-
-  const teamsFilteredForPerformance = useMemo(() => {
-    const inScope = teamsEnriched.filter((t) =>
-      PERFORMANCE_DEPT_IDS.includes(Number(t.id))
-    );
-    if (deptPerformanceFilter === 'all') return inScope;
-    const want = Number(deptPerformanceFilter);
-    return inScope.filter((t) => Number(t.id) === want);
-  }, [teamsEnriched, deptPerformanceFilter]);
-
-  const sortedTeams = useMemo(() => {
-    const list = [...teamsFilteredForPerformance];
-    const { key, direction } = sortConfig;
-    const dir = direction === 'asc' ? 1 : -1;
-    const compare = (a, b) => {
-      if (key === 'name') {
-        return a.name.localeCompare(b.name, 'ko') * dir;
-      }
-      const va = Number(a[key] ?? 0);
-      const vb = Number(b[key] ?? 0);
-      return (va - vb) * dir;
-    };
-    return list.sort(compare);
-  }, [teamsFilteredForPerformance, sortConfig]);
-
-  useEffect(() => {
-    setSelectedTeamId((id) => {
-      if (id == null) return null;
-      const still = teamsFilteredForPerformance.some((t) => Number(t.id) === Number(id));
-      return still ? id : null;
-    });
-  }, [teamsFilteredForPerformance]);
-
-  /** 센터 전체 검토 대기 건수 (실별 pending 합) */
+  /** 센터 전체 검토 대기 건수 — 대시보드 집계 팀 합산 */
   const totalPendingReview = useMemo(
     () => teamsEnriched.reduce((sum, t) => sum + Number(t.pendingSum ?? 0), 0),
-    [teamsEnriched]
-  );
-
-  /** deptId 5 부서 누적 개인 랭킹 */
-  const rankDept5Members = useMemo(
-    () => topMemberRankRows(membersFromDeptIds(teamsEnriched, [5])),
-    [teamsEnriched]
-  );
-
-  /** deptId 7 부서 누적 개인 랭킹 */
-  const rankDept7Members = useMemo(
-    () => topMemberRankRows(membersFromDeptIds(teamsEnriched, [7])),
-    [teamsEnriched]
-  );
-
-  /** deptId 5·7 부서 종합 개인 랭킹 */
-  const rankCombined57Members = useMemo(
-    () => topMemberRankRows(membersFromDeptIds(teamsEnriched, [5, 7])),
     [teamsEnriched]
   );
 
@@ -226,6 +208,12 @@ export default function DashboardPage() {
   } = data;
   const selectedTeam = teamsEnriched.find((t) => Number(t.id) === Number(selectedTeamId));
 
+  const secondDepthLabelHint =
+    secondDepthOptions.length > 0
+      ? secondDepthOptions.map((o) => o.id).join('·')
+      : '—';
+  const leafDepthHint = filterMeta?.leafTeamDepth ?? 4;
+
   return (
     <div className="page-container adm-dashboard adm-dashboard--yp fade-in">
       <header className="adm-header adm-header--yp">
@@ -261,7 +249,7 @@ export default function DashboardPage() {
           <div>
             <h2 className="adm-section-heading">전체 센터 현황</h2>
             <p className="adm-section-hint">
-              부서 ID <strong>5</strong>·<strong>7</strong>에 속한 팀들 합산 · {year}년 기준
+              2depth 부서 ID <strong>{secondDepthLabelHint}</strong> 하위 합산 · {year}년 기준
             </p>
           </div>
         </div>
@@ -338,38 +326,34 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      {/* 누적 개인 랭킹 (dept 5 / 7 / 종합) */}
+      {/* 누적 개인 랭킹 — TB_YOU_PRO_CASE 접수 건수 (2depth 센터별 통계) */}
       <section className="adm-section">
         <div className="adm-section-title">
           <span className="adm-title-bar" />
           <div>
             <h2 className="adm-section-heading">랭킹</h2>
             <p className="adm-section-hint">
-              연간 누적 선정 기준 · 부서(deptId)별·종합 상위 {RANK_TOP_N}명
+              {year}년 사례 접수 건수(TB_YOU_PRO_CASE) 기준 · 2depth 센터별 접수 합계 및 상위 {RANK_TOP_N}명
             </p>
           </div>
         </div>
         <div className="adm-ranking-row-three">
+          {(rankingData?.bySecondDepth ?? []).map((block, i) => (
+            <RankingCard
+              key={block.secondDepthDeptId}
+              title={`${block.secondDepthName} (ID ${block.secondDepthDeptId}) · 센터 접수 ${block.centerTotalSubmitted}건`}
+              badgeClass={i % 3 === 0 ? 'adm-badge--lavender' : i % 3 === 1 ? 'adm-badge--rose' : 'adm-badge--combined'}
+              icon={Trophy}
+              rows={rankRowsFromApi(block.topMembers)}
+              emptyHint={`${block.secondDepthName} 소속 구성원이 없거나 접수가 없습니다.`}
+            />
+          ))}
           <RankingCard
-            title="deptId 5 부서의 누적 개인 랭킹"
-            badgeClass="adm-badge--lavender"
-            icon={Trophy}
-            rows={rankDept5Members}
-            emptyHint="deptId 5 소속 구성원이 없습니다."
-          />
-          <RankingCard
-            title="deptId 7 부서의 누적 개인 랭킹"
-            badgeClass="adm-badge--rose"
-            icon={Trophy}
-            rows={rankDept7Members}
-            emptyHint="deptId 7 소속 구성원이 없습니다."
-          />
-          <RankingCard
-            title="deptId 5, 7 부서의 종합 개인 랭킹"
+            title={`2depth 전체 합집합 · 센터 접수 ${rankingData?.combined?.totalSubmitted ?? 0}건`}
             badgeClass="adm-badge--combined"
             icon={Trophy}
-            rows={rankCombined57Members}
-            emptyHint="deptId 5·7 소속 구성원이 없습니다."
+            rows={rankRowsFromApi(rankingData?.combined?.topMembers)}
+            emptyHint="해당 범위 구성원이 없거나 접수가 없습니다."
           />
         </div>
       </section>
@@ -380,22 +364,27 @@ export default function DashboardPage() {
           <span className="adm-title-bar" />
           <div className="adm-section-title-text">
             <h2 className="adm-section-heading">실(부서)별 성과</h2>
-            <p className="adm-section-hint">헤더를 눌러 정렬 · 행을 클릭하면 해당 실 구성원을 아래에 표시</p>
+            <p className="adm-section-hint">
+              2depth 부서를 고르면 그 하위 depth {leafDepthHint} 팀만 표시 · 행을 클릭하면 해당 팀 구성원을 아래에 표시
+            </p>
           </div>
           <div className="adm-dept-filter">
             <label className="adm-dept-filter-label" htmlFor="adm-dept-performance-filter">
-              센터
+              2depth 부서
             </label>
             <select
               id="adm-dept-performance-filter"
               className="adm-dept-filter-select"
-              value={deptPerformanceFilter}
-              onChange={(e) => setDeptPerformanceFilter(e.target.value)}
-              aria-label="부서(센터) 필터"
+              value={secondDepthKey}
+              onChange={(e) => setSecondDepthKey(e.target.value)}
+              aria-label="2depth 부서 필터"
             >
-              <option value="all">전체</option>
-              <option value="5">부서 ID 5</option>
-              <option value="7">부서 ID 7</option>
+              <option value="all">전체 (설정 루트 합집합)</option>
+              {secondDepthOptions.map((o) => (
+                <option key={o.id} value={String(o.id)}>
+                  {o.name} (ID {o.id})
+                </option>
+              ))}
             </select>
           </div>
         </div>
@@ -445,9 +434,9 @@ export default function DashboardPage() {
               {sortedTeams.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="adm-table-empty">
-                    {deptPerformanceFilter === 'all'
-                      ? '부서 ID 5·7에 해당하는 실이 없습니다.'
-                      : `부서 ID ${deptPerformanceFilter}에 해당하는 실이 없습니다.`}
+                    {secondDepthKey === 'all'
+                      ? 'leaf 팀이 없습니다. (부서 트리·depth 설정을 확인하세요)'
+                      : `선택한 2depth 하위 depth ${leafDepthHint} 팀이 없습니다.`}
                   </td>
                 </tr>
               ) : (
@@ -500,8 +489,8 @@ export default function DashboardPage() {
         {selectedTeamId == null ? (
           <div className="adm-select-prompt">
             <Users className="adm-select-prompt-ico" size={40} strokeWidth={1.25} />
-            <h3>실을 선택해 주세요</h3>
-            <p>위 표에서 실(부서) 행을 클릭하면 해당 실 구성원·사례를 아래에서 바로 확인할 수 있습니다.</p>
+            <h3>팀을 선택해 주세요</h3>
+            <p>위 표에서 leaf 팀 행을 클릭하면 해당 팀 구성원·사례를 아래에서 바로 확인할 수 있습니다.</p>
           </div>
         ) : teamDetailLoading ? (
           <div className="adm-team-detail-loading">

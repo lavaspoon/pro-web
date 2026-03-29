@@ -81,7 +81,7 @@ function buildSelectedKeyMents(cases, maxItems = 8) {
   const seen = new Set();
 
   for (const c of selected) {
-    const highs = c.aiInsight?.highlights;
+    const highs = c.aiKeyPoint?.highlights;
     if (Array.isArray(highs) && highs.length) {
       for (const line of highs) {
         const t = String(line || '').trim();
@@ -91,7 +91,7 @@ function buildSelectedKeyMents(cases, maxItems = 8) {
         if (out.length >= maxItems) return out;
       }
     } else {
-      const sum = c.aiInsight?.summary && String(c.aiInsight.summary).trim();
+      const sum = c.aiKeyPoint?.summary && String(c.aiKeyPoint.summary).trim();
       if (sum && !seen.has(sum)) {
         seen.add(sum);
         const text = sum.length > 96 ? `${sum.slice(0, 94)}…` : sum;

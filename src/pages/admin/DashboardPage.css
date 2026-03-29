@@ -880,11 +880,11 @@
   gap: 1.25rem;
 }
 
-/* 랭킹 3열 — dept 5 / dept 7 / 종합 */
+/* 랭킹 — 2depth별 + 종합 (개수 가변) */
 .adm-ranking-row-three {
   display: grid;
   width: 100%;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 1.25rem;
   align-items: stretch;
 }

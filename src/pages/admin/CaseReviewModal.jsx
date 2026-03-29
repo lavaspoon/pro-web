@@ -54,10 +54,10 @@ export default function CaseReviewModal({
   const isPending = caseData.status === 'pending';
   const isDetailMode = variant === 'detail';
   const aiSnap =
-    caseData.aiInsight &&
-    typeof caseData.aiInsight === 'object' &&
-    !Array.isArray(caseData.aiInsight)
-      ? caseData.aiInsight
+    caseData.aiKeyPoint &&
+    typeof caseData.aiKeyPoint === 'object' &&
+    !Array.isArray(caseData.aiKeyPoint)
+      ? caseData.aiKeyPoint
       : null;
 
   const sttBody = caseData.fullTranscript && String(caseData.fullTranscript).trim();
@@ -79,13 +79,13 @@ export default function CaseReviewModal({
   }, [isDetailMode, isPending, step, sttBody]);
 
   const mutation = useMutation({
-    mutationFn: ({ decision: d, reason: r, aiSnapshotJson }) =>
+    mutationFn: ({ decision: d, reason: r, aiKeyPoint }) =>
       judgeCase({
         caseId: caseData.id,
         decision: d,
         reason: r,
         adminSkid: user?.skid,
-        aiSnapshotJson,
+        aiKeyPoint,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['team-detail'] });
@@ -153,7 +153,7 @@ export default function CaseReviewModal({
     mutation.mutate({
       decision,
       reason: reason.trim(),
-      aiSnapshotJson: aiMockResult ? serializeAiSnapshotForJudge(aiMockResult) : undefined,
+      aiKeyPoint: aiMockResult ? serializeAiSnapshotForJudge(aiMockResult) : undefined,
     });
   };
 
@@ -251,10 +251,10 @@ export default function CaseReviewModal({
                 ) : (
                   <p className="review-detail-empty">연동된 STT 전사가 없습니다.</p>
                 )}
-                {caseData.adminEditedTranscript && String(caseData.adminEditedTranscript).trim() && (
+                {caseData.aiKeyPhrase && String(caseData.aiKeyPhrase).trim() && (
                   <div className="review-detail-subblock">
-                    <span className="review-detail-label">관리자 정리 전사</span>
-                    <pre className="review-detail-stt review-detail-stt--muted">{caseData.adminEditedTranscript}</pre>
+                    <span className="review-detail-label">핵심 멘트 (AI 추출)</span>
+                    <pre className="review-detail-stt review-detail-stt--muted">{caseData.aiKeyPhrase}</pre>
                   </div>
                 )}
               </div>
@@ -370,7 +370,7 @@ export default function CaseReviewModal({
                     <span className="review-ai-panel__kicker">1단계 · 녹취 확인</span>
                     <h3 className="review-stt-step-intro__title">STT 전사</h3>
                     <p className="review-stt-step-intro__desc">
-                      유선_유프로_STT에서 불러온 녹취입니다. 전사가 없거나 건너뛰면 AI 참고 단계 없이 바로 최종
+                      TB_YOU_PRO_STT에서 불러온 녹취입니다. 전사가 없거나 건너뛰면 AI 참고 단계 없이 바로 최종
                       판정(3단계)으로 이동합니다.
                     </p>
                   </div>

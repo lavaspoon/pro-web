@@ -1,5 +1,5 @@
 /**
- * TB_YOUPRO_CASE.call_date / 접수 시 저장한 통화 일시 표시용
+ * TB_YOU_PRO_CASE.call_date / 접수 시 저장한 통화 일시 표시용
  * (예: "2026-03-05 09:30:00")
  */
 export function formatCaseCallDateTime(value) {

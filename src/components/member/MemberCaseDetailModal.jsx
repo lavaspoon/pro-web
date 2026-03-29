@@ -62,7 +62,7 @@ export default function MemberCaseDetailModal() {
 
   const displayAiInsight =
     caseData &&
-    (caseData.aiInsight ||
+    (caseData.aiKeyPoint ||
       (caseData.status !== 'pending' ? getMemberAiFallback(caseData.id) : null));
 
   return (

@@ -10,6 +10,30 @@ export const fetchAdminDashboard = async () => {
 };
 
 /**
+ * 2depth 부서 기준 하위 leaf 팀 목록·집계
+ * GET /api/admin/filter/leaf-teams?secondDepthDeptId=5 (생략 시 전체 2depth 하위 leaf 합집합)
+ */
+export const fetchAdminLeafTeams = async (secondDepthDeptId) => {
+  const params = {};
+  if (secondDepthDeptId != null && secondDepthDeptId !== '') {
+    params.secondDepthDeptId = secondDepthDeptId;
+  }
+  const { data } = await axiosInstance.get('/api/admin/filter/leaf-teams', { params });
+  return data;
+};
+
+/**
+ * 랭킹 — 사례(TB_YOU_PRO_CASE) 접수 건수 기준, 2depth 센터별 통계
+ * GET /api/admin/ranking?year=&topN=
+ */
+export const fetchAdminRanking = async (year, topN = 3) => {
+  const { data } = await axiosInstance.get('/api/admin/ranking', {
+    params: { year, topN },
+  });
+  return data;
+};
+
+/**
  * 팀(실) 상세 구성원 현황 조회
  * GET /api/admin/teams/{deptIdx}
  */
@@ -54,19 +78,19 @@ export const judgeCase = async ({
   decision,
   reason,
   adminSkid,
-  editedTranscript,
-  aiSnapshotJson,
+  aiKeyPhrase,
+  aiKeyPoint,
 }) => {
   const body = {
     adminSkid,
     decision,
     reason,
   };
-  if (editedTranscript != null && String(editedTranscript).trim() !== '') {
-    body.editedTranscript = String(editedTranscript).trim();
+  if (aiKeyPhrase != null && String(aiKeyPhrase).trim() !== '') {
+    body.aiKeyPhrase = String(aiKeyPhrase).trim();
   }
-  if (aiSnapshotJson != null && String(aiSnapshotJson).trim() !== '') {
-    body.aiSnapshotJson = String(aiSnapshotJson).trim();
+  if (aiKeyPoint != null && String(aiKeyPoint).trim() !== '') {
+    body.aiKeyPoint = String(aiKeyPoint).trim();
   }
   const { data } = await axiosInstance.post(`/api/admin/cases/${caseId}/judge`, body);
   return data;

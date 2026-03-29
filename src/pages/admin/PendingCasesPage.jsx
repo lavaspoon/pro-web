@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueries } from '@tanstack/react-query';
 import {
   Clock,
   FileText,
@@ -15,9 +15,10 @@ import {
   ArrowLeft,
   ExternalLink,
 } from 'lucide-react';
-import { fetchAdminReviewQueue, fetchCaseForReview } from '../../api/adminApi';
+import { fetchAdminLeafTeams, fetchAdminReviewQueue, fetchCaseForReview } from '../../api/adminApi';
 import CaseReviewModal from './CaseReviewModal';
 import { formatCaseCallDateTime } from '../../utils/caseDisplay';
+import { mergeSecondDepthOptions } from '../../utils/adminSecondDepth';
 import './DashboardPage.css';
 import './PendingCasesPage.css';
 
@@ -74,13 +75,24 @@ function formatMonthBarLabel(ym) {
   return `${y}년 ${m}월`;
 }
 
+/** leaf 팀 목록에서 구성원 skid 집합 */
+function collectSkidsFromLeafTeams(teams) {
+  const s = new Set();
+  for (const t of teams ?? []) {
+    for (const m of t.members ?? []) {
+      if (m.id) s.add(m.id);
+    }
+  }
+  return s;
+}
+
 export default function PendingCasesPage() {
   const navigate = useNavigate();
   const [reviewCase, setReviewCase] = useState(null);
   const [selectedTeamKey, setSelectedTeamKey] = useState(null);
   const [loadingCaseId, setLoadingCaseId] = useState(null);
-  /** 'all' — 전체 | 'dept5'·'dept7' — 해당 부서만 */
-  const [deptFilter, setDeptFilter] = useState('all');
+  /** 'all' | 2depth dept_id 문자열 (대시보드와 동일) */
+  const [secondDepthKey, setSecondDepthKey] = useState('all');
   /** 테이블 상태 필터: 기본 대기만, 클릭 시 전체(선정·비선정 포함) */
   const [statusFilter, setStatusFilter] = useState('pending');
   /** 접수월 yyyy-MM */
@@ -95,44 +107,51 @@ export default function PendingCasesPage() {
   const dashboard = queue?.dashboard;
   const allCasesRaw = useMemo(() => queue?.allCases ?? queue?.pendingCases ?? [], [queue?.allCases, queue?.pendingCases]);
 
-  /** 상단 카드용 — 스코프 내 전체 대기 및 부서 ID 5·7(센터)별 대기 건수 */
+  const filterMeta = dashboard?.filterMeta;
+  const secondDepthOptions = useMemo(
+    () => mergeSecondDepthOptions(filterMeta?.secondDepthDepts),
+    [filterMeta?.secondDepthDepts]
+  );
+
+  /** 2depth별 leaf(4depth) 팀 — 상단 센터 통계용 (캐시 키가 사이드바와 동일하면 재사용) */
+  const leafStatsQueries = useQueries({
+    queries: secondDepthOptions.map((opt) => ({
+      queryKey: ['admin-leaf-teams', String(opt.id)],
+      queryFn: () => fetchAdminLeafTeams(opt.id),
+      enabled: secondDepthOptions.length > 0,
+    })),
+  });
+
+  /** 선택한 2depth에 맞는 leaf 팀 목록 (사이드바) */
+  const { data: leafPayload, isLoading: leafTeamsLoading } = useQuery({
+    queryKey: ['admin-leaf-teams', secondDepthKey],
+    queryFn: () =>
+      fetchAdminLeafTeams(secondDepthKey === 'all' ? null : Number(secondDepthKey)),
+    enabled: !!queue,
+  });
+
+  /** 상단 카드 — TB_YOU_PRO_CASE 스코프 내 대기 + 2depth 센터별(하위 leaf 구성원 skid 기준) */
   const pendingByCenter = useMemo(() => {
-    const teams = dashboard?.teams ?? [];
     const pendingOnly = allCasesRaw.filter((c) => String(c.status || '').toLowerCase() === 'pending');
-    const teamNameForDept = (deptId) => {
-      const t = teams.find((x) => Number(x.id) === deptId);
-      return t?.name ? String(t.name).trim() : null;
-    };
-    const countForTeamName = (teamName) => {
-      if (!teamName) return 0;
-      return pendingOnly.filter((c) => (c.teamName && String(c.teamName).trim()) === teamName).length;
-    };
+    const centers = secondDepthOptions.map((opt, i) => {
+      const teams = leafStatsQueries[i]?.data?.teams ?? [];
+      const skidSet = collectSkidsFromLeafTeams(teams);
+      const count = pendingOnly.filter((c) => skidSet.has(c.skid)).length;
+      return { id: opt.id, name: opt.name, count };
+    });
     return {
       totalAll: pendingOnly.length,
-      dept5: countForTeamName(teamNameForDept(5)),
-      dept7: countForTeamName(teamNameForDept(7)),
+      centers,
     };
-  }, [allCasesRaw, dashboard?.teams]);
+  }, [allCasesRaw, secondDepthOptions, leafStatsQueries]);
 
-  const teamsInScope = useMemo(() => {
-    const all = dashboard?.teams ?? [];
-    if (deptFilter === 'all') return all;
-    if (deptFilter === 'dept5') {
-      const t = all.find((x) => Number(x.id) === 5);
-      return t ? [t] : [];
-    }
-    if (deptFilter === 'dept7') {
-      const t = all.find((x) => Number(x.id) === 7);
-      return t ? [t] : [];
-    }
-    return [];
-  }, [dashboard?.teams, deptFilter]);
+  const teamsInScope = useMemo(() => leafPayload?.teams ?? [], [leafPayload?.teams]);
 
   const casesScopedByDept = useMemo(() => {
-    if (deptFilter === 'all') return allCasesRaw;
-    const allowed = new Set(teamsInScope.map((t) => t.name));
-    return allCasesRaw.filter((c) => allowed.has((c.teamName && String(c.teamName).trim()) || ''));
-  }, [allCasesRaw, deptFilter, teamsInScope]);
+    if (secondDepthKey === 'all') return allCasesRaw;
+    const skidSet = collectSkidsFromLeafTeams(teamsInScope);
+    return allCasesRaw.filter((c) => skidSet.has(c.skid));
+  }, [allCasesRaw, secondDepthKey, teamsInScope]);
 
   const { minMonthKey, maxMonthKey } = useMemo(() => {
     const max = currentMonthKey();
@@ -158,46 +177,22 @@ export default function PendingCasesPage() {
 
   const teamRows = useMemo(() => {
     const teams = teamsInScope;
-    const pendingMap = new Map();
-    for (const c of casesForTable) {
-      const key = (c.teamName && String(c.teamName).trim()) || '미지정';
-      if (!pendingMap.has(key)) pendingMap.set(key, []);
-      pendingMap.get(key).push(c);
-    }
-    const dashboardNames = new Set(teams.map((t) => t.name));
-
-    const rows = teams.map((t) => ({
-      key: `dept-${t.id}`,
-      teamName: t.name,
-      deptId: t.id,
-      pendingCount: Number(t.pendingCount ?? 0),
-      judgedCount: Number(t.judgedCount ?? 0),
-      cases: pendingMap.get(t.name) || [],
-    }));
-
-    if (deptFilter === 'all') {
-      for (const [name, list] of pendingMap) {
-        if (!dashboardNames.has(name)) {
-          const pendingOnly = casesScopedByDept.filter(
-            (c) =>
-              String(c.status || '').toLowerCase() === 'pending' &&
-              (c.teamName && String(c.teamName).trim()) === name
-          ).length;
-          rows.push({
-            key: `orphan-${name}`,
-            teamName: name,
-            deptId: null,
-            pendingCount: pendingOnly,
-            judgedCount: 0,
-            cases: list,
-          });
-        }
-      }
-    }
-
+    const rows = teams.map((t) => {
+      const skids = new Set((t.members ?? []).map((m) => m.id));
+      const list = casesForTable.filter((c) => skids.has(c.skid));
+      const pendingCount = list.filter((c) => String(c.status || '').toLowerCase() === 'pending').length;
+      return {
+        key: `leaf-${t.id}`,
+        teamName: t.name,
+        deptId: t.id,
+        pendingCount,
+        judgedCount: Number(t.judgedCount ?? 0),
+        cases: list,
+      };
+    });
     rows.sort((a, b) => a.teamName.localeCompare(b.teamName, 'ko'));
     return rows;
-  }, [teamsInScope, casesForTable, deptFilter, casesScopedByDept]);
+  }, [teamsInScope, casesForTable]);
 
   /** 데이터가 바뀌면 선택 팀 유지, 없으면 대기 있는 팀 → 첫 팀 (전체보기는 유지) */
   useEffect(() => {
@@ -316,8 +311,8 @@ export default function PendingCasesPage() {
               <p className="adm-identity-kicker">YOU PRO · 심사</p>
               <h1 className="adm-title">검토 대기</h1>
               <p className="adm-sub">
-                기본은 <strong>부서 5·7</strong> 실만 표시합니다. 행에서 선정·비선정을 바로 처리하거나 상세로
-                이동하세요.
+                <strong>2depth 센터</strong>를 고르면 그 하위 <strong>depth {filterMeta?.leafTeamDepth ?? 4}</strong>{' '}
+                팀만 나열합니다. 행에서 선정·비선정을 바로 처리하거나 상세로 이동하세요.
               </p>
             </div>
             <div className="pending-header-actions">
@@ -333,44 +328,43 @@ export default function PendingCasesPage() {
                     <span className="pending-header-stat-unit">건</span>
                   </div>
                 </div>
-                <div
-                  className="pending-header-stat pending-header-stat--card pending-header-stat--d5"
-                  role="status"
-                  aria-label={`5번 센터 대기 ${pendingByCenter.dept5}건`}
-                >
-                  <span className="pending-header-stat-label">5번 센터 대기</span>
-                  <div className="pending-header-stat-figure">
-                    <span className="pending-header-stat-value">{pendingByCenter.dept5}</span>
-                    <span className="pending-header-stat-unit">건</span>
+                {pendingByCenter.centers.map((c, idx) => (
+                  <div
+                    key={c.id}
+                    className={`pending-header-stat pending-header-stat--card pending-header-stat--${
+                      idx % 2 === 0 ? 'd5' : 'd7'
+                    }`}
+                    role="status"
+                    aria-label={`${c.name} 대기 ${c.count}건`}
+                  >
+                    <span className="pending-header-stat-label" title={`ID ${c.id}`}>
+                      {c.name} 대기
+                    </span>
+                    <div className="pending-header-stat-figure">
+                      <span className="pending-header-stat-value">{c.count}</span>
+                      <span className="pending-header-stat-unit">건</span>
+                    </div>
                   </div>
-                </div>
-                <div
-                  className="pending-header-stat pending-header-stat--card pending-header-stat--d7"
-                  role="status"
-                  aria-label={`7번 센터 대기 ${pendingByCenter.dept7}건`}
-                >
-                  <span className="pending-header-stat-label">7번 센터 대기</span>
-                  <div className="pending-header-stat-figure">
-                    <span className="pending-header-stat-value">{pendingByCenter.dept7}</span>
-                    <span className="pending-header-stat-unit">건</span>
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
             </div>
           </div>
       </header>
 
-      {teamsInScope.length === 0 && (deptFilter === 'dept5' || deptFilter === 'dept7') ? (
+      {leafTeamsLoading && filterMeta ? (
+        <div className="loading-screen" style={{ minHeight: '40vh' }}>
+          <div className="spinner" />
+          <p>leaf 팀 목록을 불러오는 중…</p>
+        </div>
+      ) : teamsInScope.length === 0 && secondDepthKey !== 'all' ? (
         <div className="empty-state pending-empty-scope">
           <FileText size={40} className="empty-icon" />
-          <h3>
-            {deptFilter === 'dept5' ? '5번' : '7번'} 부서가 대시보드 팀 목록에 없습니다
-          </h3>
+          <h3>선택한 2depth 하위에 leaf 팀이 없습니다</h3>
           <p className="pending-empty-scope-hint">
-            범위를 <strong>전체</strong>로 바꾸면 다른 실의 대기 건도 볼 수 있어요.
+            범위를 <strong>전체</strong>로 바꾸면 다른 팀의 대기 건도 볼 수 있어요.
           </p>
-          <button type="button" className="btn btn-secondary btn-sm" onClick={() => setDeptFilter('all')}>
+          <button type="button" className="btn btn-secondary btn-sm" onClick={() => setSecondDepthKey('all')}>
             전체로 보기
           </button>
         </div>
@@ -391,13 +385,16 @@ export default function PendingCasesPage() {
                   <select
                     id="pending-scope-select"
                     className="pending-scope-select"
-                    value={deptFilter}
-                    onChange={(e) => setDeptFilter(e.target.value)}
-                    aria-label="검토 대기 부서 범위"
+                    value={secondDepthKey}
+                    onChange={(e) => setSecondDepthKey(e.target.value)}
+                    aria-label="2depth 센터 범위"
                   >
-                    <option value="all">전체</option>
-                    <option value="dept5">5번 부서</option>
-                    <option value="dept7">7번 부서</option>
+                    <option value="all">전체 (설정 루트 합집합)</option>
+                    {secondDepthOptions.map((o) => (
+                      <option key={o.id} value={String(o.id)}>
+                        {o.name} (ID {o.id})
+                      </option>
+                    ))}
                   </select>
                   <ChevronDown size={16} className="pending-scope-chevron" aria-hidden />
                 </div>

@@ -1,5 +1,5 @@
 /**
- * 판정 완료 건인데 서버에 ai_snapshot 이 없을 때(구 데이터) 구성원 화면용 mock
+ * 판정 완료 건인데 서버에 ai_key_point 가 없을 때(구 데이터) 구성원 화면용 mock
  */
 import { MOCK_AI_CHAT_TURNS, MOCK_AI_HIGHLIGHTS } from './mockCaseReviewDemo';
 

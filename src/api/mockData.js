@@ -29,7 +29,7 @@ export const CASES = [
     judgmentReason:
       '고객의 불만을 경청하고 즉각적인 해결책을 제시하였으며, 서비스 오류에 대한 선제적 보상으로 고객 이탈을 방지한 우수한 응대 사례입니다.',
     judgedAt: '2026-03-10T14:00:00',
-    aiInsight: {
+    aiKeyPoint: {
       recommendation: 'selected',
       confidence: 94,
       summary:
@@ -65,7 +65,7 @@ export const CASES = [
     customerType: '고령 고객 (72세, 10년)',
     judgmentReason: null,
     judgedAt: null,
-    aiInsight: {
+    aiKeyPoint: {
       recommendation: 'selected',
       confidence: 88,
       summary:
@@ -100,7 +100,7 @@ export const CASES = [
     judgmentReason:
       '해결 과정은 적절하였으나, 고객 공감 표현과 추가 가치 제공이 부족하여 우수사례 기준에 미달합니다.',
     judgedAt: '2026-02-25T10:00:00',
-    aiInsight: {
+    aiKeyPoint: {
       recommendation: 'rejected',
       confidence: 71,
       summary:
@@ -128,7 +128,7 @@ export const CASES = [
     judgmentReason:
       '긴박한 상황에서도 침착하게 고객의 요구를 파악하고, 신속하게 해결책을 제시하여 고객 신뢰를 확보한 우수사례입니다.',
     judgedAt: '2026-03-14T09:30:00',
-    aiInsight: {
+    aiKeyPoint: {
       recommendation: 'selected',
       confidence: 91,
       summary: '긴박한 상황에서 평균 처리 시간(8분) 내 해결 완료, 고객 만족 최상위 응대.',
@@ -155,7 +155,7 @@ export const CASES = [
     judgmentReason:
       '고객 이익을 최우선으로 생각하여 중복 서비스를 선제적으로 발견하고, 불필요한 지출을 줄여드린 신뢰 기반 응대 사례입니다.',
     judgedAt: '2026-03-18T11:00:00',
-    aiInsight: {
+    aiKeyPoint: {
       recommendation: 'selected',
       confidence: 93,
       summary: '고객 이익 중심 응대로 장기 신뢰 구축. 월 8,800원 × 3개월 환불 실현.',
@@ -183,7 +183,7 @@ export const CASES = [
     customerType: '일반 고객 (4년)',
     judgmentReason: '논리적인 데이터 제시와 고객 맞춤 설명으로 신뢰를 형성한 우수사례입니다.',
     judgedAt: '2026-03-13T10:00:00',
-    aiInsight: {
+    aiKeyPoint: {
       recommendation: 'selected',
       confidence: 89,
       summary: '데이터 기반 설득력 높은 응대. 고객 맞춤 시나리오 제시가 효과적.',
@@ -208,7 +208,7 @@ export const CASES = [
     judgmentReason:
       '사회적 배려가 필요한 고객에 대한 적극적 지원과 채널 전환으로 서비스 접근성을 높인 모범 사례입니다.',
     judgedAt: '2026-03-08T09:00:00',
-    aiInsight: {
+    aiKeyPoint: {
       recommendation: 'selected',
       confidence: 97,
       summary: '포용적 서비스 제공의 모범. 고객 편의에 맞춘 채널 전환 및 완전 해결.',
