@@ -210,9 +210,9 @@ export default function DashboardPage() {
 
   const secondDepthLabelHint =
     secondDepthOptions.length > 0
-      ? secondDepthOptions.map((o) => o.id).join('·')
+      ? secondDepthOptions.map((o) => o.name).join(' · ')
       : '—';
-  const leafDepthHint = filterMeta?.leafTeamDepth ?? 4;
+  const leafDepthHint = filterMeta?.leafTeamDepth ?? 5;
 
   return (
     <div className="page-container adm-dashboard adm-dashboard--yp fade-in">
@@ -249,7 +249,7 @@ export default function DashboardPage() {
           <div>
             <h2 className="adm-section-heading">전체 센터 현황</h2>
             <p className="adm-section-hint">
-              2depth 부서 ID <strong>{secondDepthLabelHint}</strong> 하위 합산 · {year}년 기준
+              2depth 부서 <strong>{secondDepthLabelHint}</strong> 하위 합산 · {year}년 기준
             </p>
           </div>
         </div>
@@ -341,11 +341,11 @@ export default function DashboardPage() {
           {(rankingData?.bySecondDepth ?? []).map((block, i) => (
             <RankingCard
               key={block.secondDepthDeptId}
-              title={`${block.secondDepthName} (ID ${block.secondDepthDeptId}) · 센터 접수 ${block.centerTotalSubmitted}건`}
+              title={`${block.secondDepthName?.trim() || `부서 ${block.secondDepthDeptId}`} · 센터 접수 ${block.centerTotalSubmitted}건`}
               badgeClass={i % 3 === 0 ? 'adm-badge--lavender' : i % 3 === 1 ? 'adm-badge--rose' : 'adm-badge--combined'}
               icon={Trophy}
               rows={rankRowsFromApi(block.topMembers)}
-              emptyHint={`${block.secondDepthName} 소속 구성원이 없거나 접수가 없습니다.`}
+              emptyHint={`${block.secondDepthName?.trim() || `부서 ${block.secondDepthDeptId}`} 소속 구성원이 없거나 접수가 없습니다.`}
             />
           ))}
           <RankingCard
@@ -382,7 +382,7 @@ export default function DashboardPage() {
               <option value="all">전체 (설정 루트 합집합)</option>
               {secondDepthOptions.map((o) => (
                 <option key={o.id} value={String(o.id)}>
-                  {o.name} (ID {o.id})
+                  {o.name}
                 </option>
               ))}
             </select>

@@ -311,7 +311,7 @@ export default function PendingCasesPage() {
               <p className="adm-identity-kicker">YOU PRO · 심사</p>
               <h1 className="adm-title">검토 대기</h1>
               <p className="adm-sub">
-                <strong>2depth 센터</strong>를 고르면 그 하위 <strong>depth {filterMeta?.leafTeamDepth ?? 4}</strong>{' '}
+                <strong>2depth 센터</strong>를 고르면 그 하위 <strong>depth {filterMeta?.leafTeamDepth ?? 5}</strong>{' '}
                 팀만 나열합니다. 행에서 선정·비선정을 바로 처리하거나 상세로 이동하세요.
               </p>
             </div>
@@ -337,7 +337,7 @@ export default function PendingCasesPage() {
                     role="status"
                     aria-label={`${c.name} 대기 ${c.count}건`}
                   >
-                    <span className="pending-header-stat-label" title={`ID ${c.id}`}>
+                    <span className="pending-header-stat-label" title={c.name}>
                       {c.name} 대기
                     </span>
                     <div className="pending-header-stat-figure">
@@ -392,7 +392,7 @@ export default function PendingCasesPage() {
                     <option value="all">전체 (설정 루트 합집합)</option>
                     {secondDepthOptions.map((o) => (
                       <option key={o.id} value={String(o.id)}>
-                        {o.name} (ID {o.id})
+                        {o.name}
                       </option>
                     ))}
                   </select>
