@@ -6,11 +6,10 @@ import {
   Sparkles,
   TrendingUp,
   Award,
-  Users,
+  BadgeCheck,
   PiggyBank,
   ClipboardList,
   ListOrdered,
-  BadgeCheck,
   ChevronRight,
 } from 'lucide-react';
 import {
@@ -26,83 +25,18 @@ import {
 } from 'recharts';
 import useAuthStore from '../../store/authStore';
 import { fetchMemberHome, fetchMyCases } from '../../api/memberApi';
+import '../admin/DashboardPage.css';
 import './HomePage.css';
 
 const now = new Date();
 const currentMonth = now.toLocaleDateString('ko-KR', { month: 'long' });
 const currentYear = now.getFullYear();
 
+/** Recharts ResponsiveContainer: 부모 % 높이 미확정 시 width/height -1 오류 방지 */
+const HOME_MONTHLY_CHART_PX = 200;
+
 /** 홈 프로필 인사 옆에 붙는 YOU PRO 시스템 아이덴티티 멘트 */
 const MEMBER_IDENTITY_MENT = '우수 상담을 프로답게 기록하는 YOU PRO';
-
-/**
- * 선정 멘트가 없을 때만 노출하는 목업 (데모·UI 확인용)
- * caseId는 mock의 선정 사례 case1(u1) — 탭 시 상세로 이동
- */
-const MOCK_KEY_MENTS_FALLBACK = [
-  {
-    id: 'mock-km-1',
-    text: '고객님, 많이 불편하셨겠어요. 먼저 상황을 자세히 말씀해 주시겠어요?',
-    caseId: 'case1',
-  },
-  {
-    id: 'mock-km-2',
-    text: '재택근무 중이신데 정말 많이 불편하셨겠습니다. 지역 내 설비 점검 이력을 확인해 볼게요.',
-    caseId: 'case1',
-  },
-  {
-    id: 'mock-km-3',
-    text: '불편을 드린 만큼, 이번 달 요금에서 3일치 기본료를 감면해 드리겠습니다.',
-    caseId: 'case1',
-  },
-  {
-    id: 'mock-km-4',
-    text: '적극적인 경청 표현과 해결책 제시 속도가 평균 대비 우수했습니다.',
-    caseId: 'case1',
-  },
-  {
-    id: 'mock-km-5',
-    text: '고객 감사 표현으로 대화를 마무리하며 서비스 장애 선제 안내까지 진행했습니다.',
-    caseId: 'case1',
-  },
-];
-
-/** 최근 선정 사례에서 AI 하이라이트·요약으로 핵심 멘트 목록 생성 */
-function buildSelectedKeyMents(cases, maxItems = 8) {
-  const selected = cases
-    .filter((c) => c.status === 'selected')
-    .sort((a, b) => {
-      const ta = new Date(a.judgedAt || a.submittedAt || 0).getTime();
-      const tb = new Date(b.judgedAt || b.submittedAt || 0).getTime();
-      return tb - ta;
-    });
-
-  const out = [];
-  const seen = new Set();
-
-  for (const c of selected) {
-    const highs = c.aiKeyPoint?.highlights;
-    if (Array.isArray(highs) && highs.length) {
-      for (const line of highs) {
-        const t = String(line || '').trim();
-        if (!t || seen.has(t)) continue;
-        seen.add(t);
-        out.push({ id: `${c.id}-h-${out.length}`, text: t, caseId: c.id });
-        if (out.length >= maxItems) return out;
-      }
-    } else {
-      const sum = c.aiKeyPoint?.summary && String(c.aiKeyPoint.summary).trim();
-      if (sum && !seen.has(sum)) {
-        seen.add(sum);
-        const text = sum.length > 96 ? `${sum.slice(0, 94)}…` : sum;
-        out.push({ id: `${c.id}-sum`, text, caseId: c.id });
-      }
-    }
-    if (out.length >= maxItems) break;
-  }
-
-  return out.slice(0, maxItems);
-}
 
 function CustomTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
@@ -167,11 +101,21 @@ export default function HomePage() {
     return months;
   }, [cases]);
 
-  const selectedKeyMents = useMemo(() => {
-    const real = buildSelectedKeyMents(cases, 8);
-    if (real.length > 0) return real;
-    return MOCK_KEY_MENTS_FALLBACK;
-  }, [cases]);
+  /** 올해(접수일·month 기준) 접수 건수 대비 선정(인증) 건수 → 인증률 */
+  const myYearCertRate = useMemo(() => {
+    const y = String(currentYear);
+    let submitted = 0;
+    let certified = 0;
+    for (const c of cases) {
+      const raw = c.month || c.submittedAt || '';
+      if (typeof raw !== 'string' || raw.length < 4) continue;
+      if (raw.slice(0, 4) !== y) continue;
+      submitted += 1;
+      if (c.status === 'selected') certified += 1;
+    }
+    const ratePct = submitted === 0 ? 0 : (certified / submitted) * 100;
+    return { submitted, certified, ratePct };
+  }, [cases, currentYear]);
 
   /** 이번 달(접수일·month 기준) 신청·선정·비선정·대기 건수 */
   const monthSubmissionPreview = useMemo(() => {
@@ -205,7 +149,6 @@ export default function HomePage() {
   }
 
   const {
-    teamAvgSelected = 0,
     myTotalSelected = 0,
     monthlySelected = 0,
     monthlyLimit = 3,
@@ -225,36 +168,127 @@ export default function HomePage() {
   const remainingCasesToAnnualCap = Math.max(0, annualLimit - myTotalSelected);
 
   return (
-    <div className="yp-home">
-      {/* 프로필 + 사례 접수 */}
-      <div className="yp-hero-bar yp-hero-bar--divider">
-        <div className="yp-hero-bar-left">
-          <h2 className="yp-hero-identity-line">
-            <span className="yp-hero-identity-name">{user?.name ?? '구성원'}님</span>
-          </h2>
-          <p className="yp-hero-identity-ment">
-            <BadgeCheck className="yp-hero-ment-ico" size={17} strokeWidth={2.25} aria-hidden />
-            <span>{MEMBER_IDENTITY_MENT}</span>
+    <div className="page-container adm-dashboard adm-dashboard--yp fade-in yp-home">
+      <header className="adm-header adm-header--yp">
+        <div className="adm-header-row">
+          <div className="adm-header-text">
+            <h1 className="adm-title">나의 YOU PRO</h1>
+            <p className="adm-sub">
+              {user?.name ?? '구성원'}님 · {MEMBER_IDENTITY_MENT} {currentYear}년 기준 선정·접수 현황과 인센티브를
+              한눈에 확인하세요.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="adm-header-link adm-pending-btn--cute"
+            onClick={openSubmitModal}
+            aria-label="우수사례 사례 접수"
+          >
+            <span className="adm-pending-shine" aria-hidden />
+            <span className="adm-pending-btn__inner">
+              <Sparkles size={18} strokeWidth={2.25} aria-hidden />
+              <span className="adm-pending-btn__label">사례 접수</span>
+            </span>
+            <ChevronRight className="adm-pending-btn__chev" size={18} strokeWidth={2.25} aria-hidden />
+          </button>
+        </div>
+      </header>
+
+      <div className="yp-kpi-row yp-kpi-row--4">
+        <div className="yp-kpi-card yp-kpi-card--data">
+          <div className="yp-kpi-head">
+            <span className="yp-kpi-label">{currentYear}년 누적 선정</span>
+            <div className="yp-kpi-ico yp-kpi-ico--amber">
+              <TrendingUp size={18} />
+            </div>
+          </div>
+          <div className="yp-kpi-values">
+            <span className="yp-kpi-big">{myTotalSelected}</span>
+            <span className="yp-kpi-unit">/ {annualLimit}건</span>
+          </div>
+          <div className="yp-kpi-bar">
+            <div className="yp-kpi-fill yp-kpi-fill--amber" style={{ width: `${annualPct}%` }} />
+          </div>
+        </div>
+
+        <div className="yp-kpi-card yp-kpi-card--monthly">
+          <div className="yp-kpi-head">
+            <span className="yp-kpi-label">{currentMonth} 선정</span>
+            <div className="yp-kpi-ico yp-kpi-ico--blue">
+              <Award size={18} />
+            </div>
+          </div>
+          <div className="yp-kpi-values">
+            <span className="yp-kpi-big">{monthlySelected}</span>
+            <span className="yp-kpi-unit">/ {monthlyLimit}건</span>
+          </div>
+          <div className="yp-kpi-bar">
+            <div className="yp-kpi-fill yp-kpi-fill--blue" style={{ width: `${monthlyPct}%` }} />
+          </div>
+        </div>
+
+        <div className="yp-kpi-card yp-kpi-card--cert">
+          <div className="yp-kpi-head">
+            <span className="yp-kpi-label">{currentYear}년 나의 인증률</span>
+            <div className="yp-kpi-ico yp-kpi-ico--green">
+              <BadgeCheck size={18} />
+            </div>
+          </div>
+          <div className="yp-kpi-values">
+            <span className="yp-kpi-big" aria-label={`인증률 ${myYearCertRate.ratePct.toFixed(1)}퍼센트`}>
+              {myYearCertRate.submitted === 0 ? '—' : `${myYearCertRate.ratePct.toFixed(1)}`}
+            </span>
+            <span className="yp-kpi-unit">{myYearCertRate.submitted === 0 ? '' : '%'}</span>
+          </div>
+          <p className="yp-kpi-compare yp-kpi-compare--cert-rate">
+            {myYearCertRate.submitted === 0 ? (
+              <span className="yp-kpi-cert-hint">올해 접수된 사례가 없습니다</span>
+            ) : (
+              <>
+                <span className="yp-kpi-cert-line">
+                  인증(선정) <strong>{myYearCertRate.certified}</strong>건
+                </span>
+                <span className="yp-kpi-cert-sep" aria-hidden>
+                  ·
+                </span>
+                <span className="yp-kpi-cert-line">
+                  접수 <strong>{myYearCertRate.submitted}</strong>건
+                </span>
+              </>
+            )}
           </p>
         </div>
-        <button
-          type="button"
-          className="yp-btn-primary yp-btn-primary--hero yp-btn-primary--cute"
-          onClick={openSubmitModal}
-        >
-          <span className="yp-btn-cute-shine" aria-hidden />
-          <span className="yp-btn-primary__ico-wrap" aria-hidden>
-            <Sparkles className="yp-btn-cute-spark-ico" size={19} strokeWidth={2.25} />
-          </span>
-          <span className="yp-btn-cute-text">
-            <span className="yp-btn-primary__label">사례 접수</span>
-            <span className="yp-btn-cute-kicker">오늘의 이야기를 남겨요</span>
-          </span>
-          <ChevronRight className="yp-btn-primary__chev" size={18} strokeWidth={2.25} aria-hidden />
-        </button>
+
+        <div className="yp-kpi-card yp-kpi-card--rank">
+          <div className="yp-kpi-head">
+            <span className="yp-kpi-label">팀 순위</span>
+            <div className="yp-kpi-ico yp-kpi-ico--violet">
+              <ListOrdered size={18} />
+            </div>
+          </div>
+          {evalCenterInScope && evalCenterTeamRank != null ? (
+            <>
+              <div className="yp-kpi-values yp-kpi-values--rank">
+                <span className="yp-kpi-big">{evalCenterTeamRank}</span>
+                <span className="yp-kpi-unit">위</span>
+              </div>
+              <p className="yp-kpi-rank-note">
+                전체 {evalCenterTeamTotal}팀 중 · 팀 연간 선정 합{' '}
+                <strong>{Number(evalCenterTeamSelectedYear).toLocaleString('ko-KR')}건</strong>
+              </p>
+              <p className="yp-kpi-rank-scope">설정 부서 범위 내 · {currentYear}년 기준</p>
+            </>
+          ) : evalCenterInScope ? (
+            <p className="yp-kpi-rank-out">순위를 표시할 팀 데이터가 없습니다.</p>
+          ) : (
+            <p className="yp-kpi-rank-out">
+              설정된 부서 범위에 속한 팀이 아니면 순위가 표시되지 않습니다.
+            </p>
+          )}
+        </div>
       </div>
 
-      <div className="yp-quick-row yp-quick-row--two">
+      <div className="yp-quick-row yp-quick-row--two yp-home-section--below-kpi">
         <div className="yp-quick-col-stack yp-quick-col-stack--primary">
           <Link className="yp-quick-tile yp-quick-tile--list yp-feature-tile" to="/member/cases">
             <div className="yp-quick-tile-body">
@@ -313,7 +347,7 @@ export default function HomePage() {
               <p className="yp-mini-chart-sub">{currentYear}년 1~12월 · 나의 사례</p>
             </div>
             <div className="yp-mini-chart-wrap">
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height={HOME_MONTHLY_CHART_PX} minWidth={0}>
                 <ComposedChart
                   data={monthlyChartData}
                   barCategoryGap="14%"
@@ -435,112 +469,6 @@ export default function HomePage() {
               )}
             </dl>
           </div>
-        </div>
-      </div>
-
-      <div className="yp-kpi-row yp-kpi-row--4 yp-kpi-row--divider">
-        <div className="yp-kpi-card">
-          <div className="yp-kpi-head">
-            <span className="yp-kpi-label">{currentMonth} 선정</span>
-            <div className="yp-kpi-ico yp-kpi-ico--blue">
-              <Award size={18} />
-            </div>
-          </div>
-          <div className="yp-kpi-values">
-            <span className="yp-kpi-big">{monthlySelected}</span>
-            <span className="yp-kpi-unit">/ {monthlyLimit}건</span>
-          </div>
-          <div className="yp-kpi-bar">
-            <div className="yp-kpi-fill yp-kpi-fill--blue" style={{ width: `${monthlyPct}%` }} />
-          </div>
-        </div>
-
-        <div className="yp-kpi-card yp-kpi-card--data">
-          <div className="yp-kpi-head">
-            <span className="yp-kpi-label">{currentYear}년 누적 선정</span>
-            <div className="yp-kpi-ico yp-kpi-ico--amber">
-              <TrendingUp size={18} />
-            </div>
-          </div>
-          <div className="yp-kpi-values">
-            <span className="yp-kpi-big">{myTotalSelected}</span>
-            <span className="yp-kpi-unit">/ {annualLimit}건</span>
-          </div>
-          <div className="yp-kpi-bar">
-            <div className="yp-kpi-fill yp-kpi-fill--amber" style={{ width: `${annualPct}%` }} />
-          </div>
-        </div>
-
-        <div className="yp-kpi-card">
-          <div className="yp-kpi-head">
-            <span className="yp-kpi-label">우리 실 평균 선정</span>
-            <div className="yp-kpi-ico yp-kpi-ico--green">
-              <Users size={18} />
-            </div>
-          </div>
-          <div className="yp-kpi-values">
-            <span className="yp-kpi-big">{teamAvgSelected.toFixed(1)}</span>
-            <span className="yp-kpi-unit">건</span>
-          </div>
-          <p className="yp-kpi-compare">
-            {myTotalSelected > teamAvgSelected && (
-              <span className="yp-kpi-above">실 평균 대비 높음</span>
-            )}
-            {myTotalSelected < teamAvgSelected && (
-              <span className="yp-kpi-below">실 평균 대비 낮음</span>
-            )}
-            {myTotalSelected === teamAvgSelected && (
-              <span className="yp-kpi-equal">실 평균과 동일</span>
-            )}
-          </p>
-        </div>
-
-        <div className="yp-kpi-card yp-kpi-card--rank">
-          <div className="yp-kpi-head">
-            <span className="yp-kpi-label">평가 대상 팀 순위</span>
-            <div className="yp-kpi-ico yp-kpi-ico--violet">
-              <ListOrdered size={18} />
-            </div>
-          </div>
-          {evalCenterInScope && evalCenterTeamRank != null ? (
-            <>
-              <div className="yp-kpi-values yp-kpi-values--rank">
-                <span className="yp-kpi-big">{evalCenterTeamRank}</span>
-                <span className="yp-kpi-unit">위</span>
-              </div>
-              <p className="yp-kpi-rank-note">
-                전체 {evalCenterTeamTotal}팀 중 · 팀 누적 선정{' '}
-                <strong>{Number(evalCenterTeamSelectedYear).toLocaleString('ko-KR')}건</strong>
-              </p>
-              <p className="yp-kpi-rank-scope">평가 대상 센터(부서 5·7) 하위 · {currentYear}년</p>
-            </>
-          ) : evalCenterInScope ? (
-            <p className="yp-kpi-rank-out">순위를 표시할 팀 데이터가 없습니다.</p>
-          ) : (
-            <p className="yp-kpi-rank-out">
-              평가 대상 센터(부서 5·7) 하위 팀이 아니면 순위가 표시되지 않습니다.
-            </p>
-          )}
-        </div>
-      </div>
-
-      <div className="yp-ment-section yp-ment-section--divider">
-        <div className="yp-ment-panel">
-          <div className="yp-ment-head">
-            <span className="yp-ment-head-mark" aria-hidden />
-            <h3 className="yp-ment-heading">선정 핵심 멘트</h3>
-          </div>
-          {selectedKeyMents.length > 0 ? (
-            <ul className="yp-ment-lines">
-              {selectedKeyMents.map((m) => (
-                <li key={m.id} className="yp-ment-line">
-                  {m.text}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="yp-ment-empty">표시할 멘트가 없습니다.</p>
-          )}
         </div>
       </div>
     </div>

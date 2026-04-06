@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueries } from '@tanstack/react-query';
 import {
   Clock,
@@ -10,9 +9,7 @@ import {
   ArrowUp,
   ArrowDown,
   ArrowUpDown,
-  LayoutGrid,
   RefreshCw,
-  ArrowLeft,
   ExternalLink,
 } from 'lucide-react';
 import { fetchAdminLeafTeams, fetchAdminReviewQueue, fetchCaseForReview } from '../../api/adminApi';
@@ -21,6 +18,7 @@ import { formatCaseCallDateTime } from '../../utils/caseDisplay';
 import { mergeSecondDepthOptions } from '../../utils/adminSecondDepth';
 import './DashboardPage.css';
 import './PendingCasesPage.css';
+import '../../pages/member/CaseListPage.css';
 
 function formatDate(dateStr) {
   const d = new Date(dateStr);
@@ -48,8 +46,6 @@ function SortGlyph({ active, direction }) {
     <ArrowDown size={11} className="pending-sort-ico pending-sort-ico--active" aria-hidden />
   );
 }
-
-const ALL_TEAMS_KEY = '__all__';
 
 function currentMonthKey() {
   const d = new Date();
@@ -87,14 +83,11 @@ function collectSkidsFromLeafTeams(teams) {
 }
 
 export default function PendingCasesPage() {
-  const navigate = useNavigate();
   const [reviewCase, setReviewCase] = useState(null);
   const [selectedTeamKey, setSelectedTeamKey] = useState(null);
   const [loadingCaseId, setLoadingCaseId] = useState(null);
   /** 'all' | 2depth dept_id 문자열 (대시보드와 동일) */
   const [secondDepthKey, setSecondDepthKey] = useState('all');
-  /** 테이블 상태 필터: 기본 대기만, 클릭 시 전체(선정·비선정 포함) */
-  const [statusFilter, setStatusFilter] = useState('pending');
   /** 접수월 yyyy-MM */
   const [monthKey, setMonthKey] = useState(currentMonthKey);
   const [tableSort, setTableSort] = useState({ key: 'submitted', direction: 'asc' });
@@ -170,10 +163,10 @@ export default function PendingCasesPage() {
     [casesScopedByDept, monthKey],
   );
 
-  const casesForTable = useMemo(() => {
-    if (statusFilter === 'all') return casesInMonth;
-    return casesInMonth.filter((c) => String(c.status || '').toLowerCase() === 'pending');
-  }, [casesInMonth, statusFilter]);
+  const casesForTable = useMemo(
+    () => casesInMonth.filter((c) => String(c.status || '').toLowerCase() === 'pending'),
+    [casesInMonth]
+  );
 
   const teamRows = useMemo(() => {
     const teams = teamsInScope;
@@ -194,33 +187,30 @@ export default function PendingCasesPage() {
     return rows;
   }, [teamsInScope, casesForTable]);
 
-  /** 데이터가 바뀌면 선택 팀 유지, 없으면 대기 있는 팀 → 첫 팀 (전체보기는 유지) */
+  /** 범위·팀 목록이 바뀌면: 전체 보기(null) 유지, 또는 선택 팀이 없어지면 전체로 복귀 */
   useEffect(() => {
     if (teamRows.length === 0) {
       setSelectedTeamKey(null);
       return;
     }
     setSelectedTeamKey((prev) => {
-      if (prev === ALL_TEAMS_KEY) return ALL_TEAMS_KEY;
-      if (prev != null && teamRows.some((r) => r.key === prev)) return prev;
-      const firstWith = teamRows.find((r) => r.cases.length > 0);
-      return firstWith?.key ?? teamRows[0].key;
+      if (prev == null) return null;
+      return teamRows.some((r) => r.key === prev) ? prev : null;
     });
   }, [teamRows]);
 
-  /** 팀·월·상태 필터가 바뀌면 정렬을 접수일 오름차순으로 초기화 */
+  /** 팀·월이 바뀌면 정렬을 접수일 오름차순으로 초기화 */
   useEffect(() => {
     setTableSort({ key: 'submitted', direction: 'asc' });
-  }, [selectedTeamKey, monthKey, statusFilter]);
+  }, [selectedTeamKey, monthKey]);
 
   const selectedTeam = useMemo(
     () => teamRows.find((r) => r.key === selectedTeamKey) ?? null,
     [teamRows, selectedTeamKey]
   );
 
-  const isAllTeamsView = selectedTeamKey === ALL_TEAMS_KEY;
-
-  const tableFilteredCount = casesForTable.length;
+  /** null = 범위 내 전체 팀 (상단 '범위' 셀렉트와 동일 스코프) */
+  const isAllTeamsView = selectedTeamKey == null;
 
   const sortedCases = useMemo(() => {
     const raw = isAllTeamsView ? casesForTable : (selectedTeam?.cases ?? []);
@@ -254,6 +244,16 @@ export default function PendingCasesPage() {
       if (key === 'submitted') {
         const ta = a.submittedAt ? new Date(a.submittedAt).getTime() : 0;
         const tb = b.submittedAt ? new Date(b.submittedAt).getTime() : 0;
+        return (ta - tb) * mul;
+      }
+      if (key === 'callDate') {
+        const ta = a.callDate ? new Date(a.callDate).getTime() : NaN;
+        const tb = b.callDate ? new Date(b.callDate).getTime() : NaN;
+        const na = Number.isNaN(ta);
+        const nb = Number.isNaN(tb);
+        if (na && nb) return 0;
+        if (na) return 1 * mul;
+        if (nb) return -1 * mul;
         return (ta - tb) * mul;
       }
       return 0;
@@ -297,23 +297,10 @@ export default function PendingCasesPage() {
     <div className="page-container adm-dashboard adm-dashboard--yp fade-in pending-page">
       <header className="adm-header adm-header--yp pending-header">
         <div className="adm-header-row pending-header-row">
-          <button
-            type="button"
-            className="adm-back-btn"
-            onClick={() => navigate('/admin')}
-            aria-label="대시보드로 돌아가기"
-          >
-            <ArrowLeft size={18} strokeWidth={2.25} aria-hidden />
-            <span>뒤로</span>
-          </button>
           <div className="pending-header-body">
             <div className="adm-header-text">
               <p className="adm-identity-kicker">YOU PRO · 심사</p>
               <h1 className="adm-title">검토 대기</h1>
-              <p className="adm-sub">
-                <strong>2depth 센터</strong>를 고르면 그 하위 <strong>depth {filterMeta?.leafTeamDepth ?? 5}</strong>{' '}
-                팀만 나열합니다. 행에서 선정·비선정을 바로 처리하거나 상세로 이동하세요.
-              </p>
             </div>
             <div className="pending-header-actions">
               <div className="pending-header-stats" role="group" aria-label="센터별 검토 대기 건수">
@@ -389,28 +376,16 @@ export default function PendingCasesPage() {
                     onChange={(e) => setSecondDepthKey(e.target.value)}
                     aria-label="2depth 센터 범위"
                   >
-                    <option value="all">전체 (설정 루트 합집합)</option>
+                    <option value="all">전체 센터</option>
                     {secondDepthOptions.map((o) => (
                       <option key={o.id} value={String(o.id)}>
                         {o.name}
                       </option>
                     ))}
                   </select>
-                  <ChevronDown size={16} className="pending-scope-chevron" aria-hidden />
+                  <ChevronDown size={14} className="pending-scope-chevron" aria-hidden />
                 </div>
               </div>
-              <button
-                type="button"
-                className={`tree-view-all ${isAllTeamsView ? 'is-active' : ''}`}
-                onClick={() => setSelectedTeamKey(ALL_TEAMS_KEY)}
-                aria-pressed={isAllTeamsView}
-              >
-                <LayoutGrid size={14} strokeWidth={2.2} aria-hidden />
-                <span className="tree-view-all-main">
-                  <span className="tree-view-all-title">전체</span>
-                </span>
-                <ChevronRight size={14} className="tree-leaf-chevron" aria-hidden />
-              </button>
               <ul className="tree-list">
                 {teamRows.map((row, idx) => {
                   const isLast = idx === teamRows.length - 1;
@@ -423,7 +398,9 @@ export default function PendingCasesPage() {
                       <button
                         type="button"
                         className={`tree-leaf ${active ? 'is-active' : ''}`}
-                        onClick={() => setSelectedTeamKey(row.key)}
+                        onClick={() =>
+                          setSelectedTeamKey((prev) => (prev === row.key ? null : row.key))
+                        }
                         aria-pressed={active}
                       >
                         <span className="tree-leaf-main">
@@ -451,9 +428,7 @@ export default function PendingCasesPage() {
                       <h2 className="pending-panel-title">
                         {isAllTeamsView ? '사례 목록' : selectedTeam.teamName}
                       </h2>
-                      <p className="pending-panel-sub">
-                        접수월·상태 필터는 아래 테이블 상단에서 조정합니다.
-                      </p>
+                      <p className="pending-panel-sub">접수 월은 아래 테이블 상단에서 선택합니다.</p>
                     </div>
                     <div className="pending-panel-head-right">
                       <button
@@ -466,10 +441,6 @@ export default function PendingCasesPage() {
                         <RefreshCw size={14} className={isFetching ? 'pending-refresh-spin' : ''} aria-hidden />
                         새로고침
                       </button>
-                      <span className="pending-panel-badge">
-                        {statusFilter === 'pending' ? '대기' : '전체'}{' '}
-                        <strong>{isAllTeamsView ? tableFilteredCount : selectedTeam.cases.length}</strong>건
-                      </span>
                     </div>
                   </div>
                 </div>
@@ -497,24 +468,6 @@ export default function PendingCasesPage() {
                         <ChevronRight size={18} strokeWidth={2.25} aria-hidden />
                       </button>
                     </div>
-                    <div className="pending-table-toolbar-filters">
-                      <label className="pending-table-toolbar-label" htmlFor="pending-status-filter">
-                        상태
-                      </label>
-                      <div className="pending-status-select-wrap">
-                        <select
-                          id="pending-status-filter"
-                          className="pending-status-select"
-                          value={statusFilter}
-                          onChange={(e) => setStatusFilter(e.target.value)}
-                          aria-label="사례 상태 필터"
-                        >
-                          <option value="pending">대기</option>
-                          <option value="all">전체</option>
-                        </select>
-                        <ChevronDown size={16} className="pending-status-select-chevron" aria-hidden />
-                      </div>
-                    </div>
                   </div>
 
                   {(isAllTeamsView ? casesForTable.length === 0 : selectedTeam.cases.length === 0) ? (
@@ -525,16 +478,12 @@ export default function PendingCasesPage() {
                       <p className="pending-panel-empty-title">
                         {casesInMonth.length === 0
                           ? `${formatMonthBarLabel(monthKey)} 접수 건이 없습니다`
-                          : statusFilter === 'pending'
-                            ? '이 달에 검토 대기 건이 없습니다'
-                            : '표시할 사례가 없습니다'}
+                          : '이 달에 검토 대기 건이 없습니다'}
                       </p>
                       <p className="pending-panel-empty-hint">
                         {casesInMonth.length === 0
                           ? '위에서 다른 월로 이동하거나 새 접수를 기다려 주세요.'
-                          : statusFilter === 'pending'
-                            ? '상태 필터를 전체로 바꿔 선정·비선정 건을 확인해 보세요.'
-                            : '필터·월을 조정해 보세요.'}
+                          : '다른 월을 선택하거나 접수를 기다려 주세요.'}
                       </p>
                     </div>
                   ) : (
@@ -648,6 +597,27 @@ export default function PendingCasesPage() {
                           </th>
                           <th
                             scope="col"
+                            className="pending-th pending-th--callDate"
+                            aria-sort={
+                              tableSort.key === 'callDate'
+                                ? tableSort.direction === 'asc'
+                                  ? 'ascending'
+                                  : 'descending'
+                                : 'none'
+                            }
+                          >
+                            <button
+                              type="button"
+                              className="pending-th-btn"
+                              onClick={() => toggleSort('callDate')}
+                              aria-label="통화일자 기준 정렬"
+                            >
+                              <span>통화일자</span>
+                              <SortGlyph active={tableSort.key === 'callDate'} direction={tableSort.direction} />
+                            </button>
+                          </th>
+                          <th
+                            scope="col"
                             className="pending-th pending-th--selection"
                             aria-label="상세"
                           />
@@ -655,7 +625,14 @@ export default function PendingCasesPage() {
                       </thead>
                       <tbody>
                         {sortedCases.map((c) => (
-                          <tr key={c.id}>
+                          <tr
+                            key={c.id}
+                            className="pending-table-row--clickable"
+                            onClick={() => {
+                              if (loadingCaseId === c.id) return;
+                              openReview(c);
+                            }}
+                          >
                             <td className="pending-td-status">
                               <span className="pending-td-status-pill">{formatCaseStatus(c.status)}</span>
                             </td>
@@ -672,19 +649,21 @@ export default function PendingCasesPage() {
                               <span className="pending-td-title-text">{c.title}</span>
                             </td>
                             <td className="pending-td-date">
-                              <Clock size={10} className="pending-td-ico" aria-hidden />
-                              {formatDate(c.submittedAt)}
-                              {c.callDate && (
-                                <span className="pending-td-sub">
-                                  · 통화 {formatCaseCallDateTime(c.callDate)}
-                                </span>
-                              )}
+                              <span className="pending-td-date-val">{formatDate(c.submittedAt)}</span>
+                            </td>
+                            <td className="pending-td-call">
+                              <span className="pending-td-call-val">
+                                {c.callDate ? formatCaseCallDateTime(c.callDate) : '—'}
+                              </span>
                             </td>
                             <td className="pending-td-action pending-td-selection">
                               <button
                                 type="button"
                                 className="pending-qbtn pending-qbtn--detail"
-                                onClick={() => openReview(c)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openReview(c);
+                                }}
                                 disabled={loadingCaseId === c.id}
                               >
                                 <ExternalLink size={13} aria-hidden />

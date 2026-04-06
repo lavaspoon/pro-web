@@ -7,13 +7,13 @@ import {
   ChevronLeft,
   PlusCircle,
   Filter,
-  Heart,
 } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
 import { fetchMyCases } from '../../api/memberApi';
 import StatusBadge from '../common/StatusBadge';
 import { useMemberModalStore } from '../../store/memberModalStore';
 import { formatCaseCallDateTime } from '../../utils/caseDisplay';
+import MemberCaseDetailPanel from './MemberCaseDetailPanel';
 import '../../pages/member/CaseListPage.css';
 import './MemberSubmitModal.css';
 import './MemberCaseListModal.css';
@@ -25,13 +25,6 @@ function formatDate(dateStr) {
   if (!dateStr) return '-';
   const d = new Date(dateStr);
   return `${d.getFullYear()}. ${d.getMonth() + 1}. ${d.getDate()}`;
-}
-
-function monthChip(month) {
-  if (!month || typeof month !== 'string') return '—';
-  const parts = month.split('-');
-  if (parts.length >= 2) return `${parts[0]}년 ${parts[1]}월`;
-  return month;
 }
 
 function currentMonthKey() {
@@ -63,6 +56,7 @@ export default function MemberCaseListModal() {
   const open = useMemberModalStore((s) => s.caseListOpen);
   const caseDetailId = useMemberModalStore((s) => s.caseDetailId);
   const closeCaseList = useMemberModalStore((s) => s.closeCaseList);
+  const closeCaseDetail = useMemberModalStore((s) => s.closeCaseDetail);
   const openSubmit = useMemberModalStore((s) => s.openSubmit);
   const openCaseDetail = useMemberModalStore((s) => s.openCaseDetail);
   const [activeFilter, setActiveFilter] = useState('전체');
@@ -86,11 +80,14 @@ export default function MemberCaseListModal() {
   useEffect(() => {
     if (!open) return undefined;
     const onKey = (e) => {
-      if (e.key === 'Escape' && !caseDetailId) closeCaseList();
+      if (e.key === 'Escape') {
+        if (caseDetailId) closeCaseDetail();
+        else closeCaseList();
+      }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [open, closeCaseList, caseDetailId]);
+  }, [open, closeCaseList, closeCaseDetail, caseDetailId]);
 
   useEffect(() => {
     if (open) setMonthKey(currentMonthKey());
@@ -134,38 +131,41 @@ export default function MemberCaseListModal() {
       className="member-modal-root member-case-list-root"
       role="dialog"
       aria-modal="true"
-      aria-labelledby="member-case-list-title"
+      aria-labelledby={caseDetailId ? 'member-case-detail-title' : 'member-case-list-title'}
     >
       <button
         type="button"
         className="member-modal-backdrop member-modal-backdrop--list"
-        aria-label="모달 닫기"
-        onClick={closeCaseList}
+        aria-label={caseDetailId ? '뒤로' : '모달 닫기'}
+        onClick={() => (caseDetailId ? closeCaseDetail() : closeCaseList())}
       />
-      <div className="member-modal-panel member-case-list-modal">
-        <span className="member-modal-blob member-modal-blob--list1" aria-hidden />
-        <span className="member-modal-blob member-modal-blob--list2" aria-hidden />
-        <span className="member-modal-sticker member-modal-sticker--heart" aria-hidden>
-          <Heart size={17} fill="currentColor" />
-        </span>
-
+      <div
+        className={
+          caseDetailId
+            ? 'member-modal-panel member-case-detail-panel member-case-detail-panel--embedded'
+            : 'member-modal-panel member-case-list-modal'
+        }
+      >
+        {caseDetailId ? (
+          <MemberCaseDetailPanel embedded />
+        ) : (
+          <>
         <div className="member-case-list-head">
-          <div>
-            <p className="member-cute-kicker">나만의 기록장</p>
-            <h2 id="member-case-list-title" className="member-cute-title">
+          <div className="member-case-list-head-main">
+            <h2 id="member-case-list-title" className="member-case-list-title">
               내 사례 목록
             </h2>
-            <p className="member-cute-sub">접수한 사례를 한눈에 볼 수 있어요</p>
+            <p className="member-case-list-lede">접수한 사례를 월·상태별로 확인합니다</p>
           </div>
-          <div className="member-case-list-head-actions">
-            <button type="button" className="member-cute-mini-btn" onClick={goSubmit}>
-              <PlusCircle size={15} />
-              새 접수
-            </button>
-            <button type="button" className="member-modal-close" onClick={closeCaseList} aria-label="닫기">
-              <X size={20} strokeWidth={2.25} />
-            </button>
-          </div>
+          <button
+            type="button"
+            className="member-case-list-close"
+            onClick={closeCaseList}
+            aria-label="내 사례 목록 닫기"
+          >
+            <span className="member-case-list-close__ring" aria-hidden />
+            <X className="member-case-list-close__icon" size={20} strokeWidth={2} aria-hidden />
+          </button>
         </div>
 
         <div className="member-case-month-bar">
@@ -238,49 +238,75 @@ export default function MemberCaseListModal() {
                   </button>
                 </div>
               ) : (
-                <div className="case-list member-case-list-scroll">
+                <div className="case-list case-list--compact member-case-list-scroll">
                   {filtered.map((c, i) => (
                     <button
                       key={c.id}
                       type="button"
-                      className="case-item fade-in-up"
+                      className="case-item case-item--compact fade-in-up"
                       style={{ animationDelay: `${i * 0.04}s` }}
                       onClick={() => goDetail(c.id)}
                     >
-                      <div className="case-item-left">
-                        <div className="case-month-chip">{monthChip(c.month)}</div>
-                        <div className="case-item-body">
-                          <h3 className="case-item-title">{c.title}</h3>
-                          <p className="case-item-desc">{c.description}</p>
-                          <div className="case-item-meta">
-                            <span>접수: {formatDate(c.submittedAt)}</span>
+                      <div className="case-item-status">
+                        <StatusBadge status={c.status} size="sm" />
+                      </div>
+                      <div className="case-item-body">
+                        <h3 className="case-item-title">{c.title}</h3>
+                        <div className="case-item-meta">
+                            <span className="case-meta-line">
+                              <span className="case-meta-tag">접수 일자</span>
+                              <span className="case-meta-val">{formatDate(c.submittedAt)}</span>
+                            </span>
                             {c.callDate && (
                               <>
-                                <span>·</span>
-                                <span>통화 {formatCaseCallDateTime(c.callDate)}</span>
+                                <span className="case-meta-sep" aria-hidden>
+                                  ·
+                                </span>
+                                <span className="case-meta-line">
+                                  <span className="case-meta-tag">통화 일자</span>
+                                  <span className="case-meta-val">
+                                    {formatCaseCallDateTime(c.callDate)}
+                                  </span>
+                                </span>
                               </>
                             )}
                             {!c.callDate && c.customerType && (
                               <>
-                                <span>·</span>
-                                <span>{c.customerType}</span>
+                                <span className="case-meta-sep" aria-hidden>
+                                  ·
+                                </span>
+                                <span className="case-meta-line">
+                                  <span className="case-meta-tag">구분</span>
+                                  <span className="case-meta-val">{c.customerType}</span>
+                                </span>
                               </>
                             )}
                             {c.callDuration && (
                               <>
-                                <span>·</span>
-                                <span>통화시간 {c.callDuration}</span>
+                                <span className="case-meta-sep" aria-hidden>
+                                  ·
+                                </span>
+                                <span className="case-meta-line">
+                                  <span className="case-meta-tag">통화 시간</span>
+                                  <span className="case-meta-val">{c.callDuration}</span>
+                                </span>
                               </>
                             )}
-                          </div>
+                            {c.judgedAt && (
+                              <>
+                                <span className="case-meta-sep" aria-hidden>
+                                  ·
+                                </span>
+                                <span className="case-meta-line">
+                                  <span className="case-meta-tag">판정</span>
+                                  <span className="case-meta-val">{formatDate(c.judgedAt)}</span>
+                                </span>
+                              </>
+                            )}
                         </div>
                       </div>
                       <div className="case-item-right">
-                        <StatusBadge status={c.status} />
-                        {c.judgedAt && (
-                          <span className="judged-date">판정 {formatDate(c.judgedAt)}</span>
-                        )}
-                        <ChevronRight size={18} className="case-arrow" />
+                        <ChevronRight size={14} strokeWidth={2} className="case-arrow" />
                       </div>
                     </button>
                   ))}
@@ -288,6 +314,8 @@ export default function MemberCaseListModal() {
               )}
             </div>
           </>
+        )}
+        </>
         )}
       </div>
     </div>

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronDown, ChevronUp, Eye } from 'lucide-react';
 import { fetchCaseForReview } from '../../api/adminApi';
 import StatusBadge from '../../components/common/StatusBadge';
@@ -127,18 +128,20 @@ export default function AdminMemberDetailCard({ member, embedReadOnly = false })
         </div>
       )}
 
-      {reviewCase && (
-        <CaseReviewModal
-          variant={embedReadOnly ? 'detail' : 'wizard'}
-          caseData={reviewCase}
-          memberName={member.name}
-          onClose={() => setReviewCase(null)}
-          onRefreshCase={async () => {
-            const full = await fetchCaseForReview(reviewCase.id);
-            setReviewCase(full);
-          }}
-        />
-      )}
+      {reviewCase &&
+        createPortal(
+          <CaseReviewModal
+            variant={embedReadOnly ? 'detail' : 'wizard'}
+            caseData={reviewCase}
+            memberName={member.name}
+            onClose={() => setReviewCase(null)}
+            onRefreshCase={async () => {
+              const full = await fetchCaseForReview(reviewCase.id);
+              setReviewCase(full);
+            }}
+          />,
+          document.body
+        )}
     </div>
   );
 }

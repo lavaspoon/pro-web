@@ -2,6 +2,8 @@
    구성원 레이아웃 — YOU PRO (차분한 쿨 톤)
    ══════════════════════════════════════════════════════════════ */
 .member-shell {
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
   background:
     radial-gradient(1200px 600px at 12% -8%, rgba(10, 126, 164, 0.09), transparent 55%),
@@ -11,6 +13,9 @@
 
 /* Member main content */
 .member-main {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
   max-width: 1600px;
   margin: 0 auto;
   padding: 32px 48px 64px;
@@ -36,6 +41,219 @@
   background: var(--surface);
   border-bottom: 1px solid var(--border);
   box-shadow: var(--shadow-xs);
+}
+
+/* 관리자: 구성원 헤더와 동일한 폭 정렬 */
+.admin-topbar--admin {
+  padding: 0;
+  align-items: stretch;
+  justify-content: stretch;
+}
+
+.admin-topbar--admin .admin-topbar-wrap {
+  width: 100%;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 0 48px;
+  box-sizing: border-box;
+}
+
+.admin-topbar--admin .admin-topbar-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 52px;
+  box-sizing: border-box;
+}
+
+.admin-topbar-catblock {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.admin-topbar-catblock-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+}
+
+/* 구성원: 본문(.member-main)과 동일 — 1600 캔버스 + 1120 콘텐츠 행 → adm-header-text 와 좌측 정렬 일치 */
+.admin-topbar--member {
+  padding: 0;
+  align-items: stretch;
+  justify-content: stretch;
+}
+
+.member-topbar-wrap {
+  width: 100%;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 0 48px;
+  box-sizing: border-box;
+}
+
+.member-topbar-row {
+  max-width: 1120px;
+  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 52px;
+  box-sizing: border-box;
+}
+
+.admin-topbar-left {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  flex: 1;
+}
+
+/* 구성원 상단 — 세그먼트형 카테고리 */
+.member-topbar-catblock {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.member-topbar-catblock-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+}
+
+.member-topbar-cats {
+  display: inline-flex;
+  align-items: stretch;
+  padding: 4px;
+  gap: 3px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.045) 0%, rgba(15, 23, 42, 0.08) 100%);
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.88),
+    inset 0 -1px 0 rgba(15, 23, 42, 0.05);
+}
+
+.member-topbar-cat {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 16px 9px 14px;
+  border-radius: 11px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--text-secondary);
+  text-decoration: none;
+  border: 1px solid transparent;
+  background: transparent;
+  transition:
+    color 0.18s ease,
+    background 0.18s ease,
+    box-shadow 0.18s ease,
+    border-color 0.18s ease,
+    transform 0.18s ease;
+}
+
+.member-topbar-cat-ico {
+  flex-shrink: 0;
+  opacity: 0.72;
+  color: var(--text-tertiary);
+  transition:
+    opacity 0.18s ease,
+    color 0.18s ease,
+    transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.member-topbar-cat-text {
+  line-height: 1.2;
+}
+
+.member-topbar-cat:hover {
+  color: var(--text-primary);
+}
+
+.member-topbar-cat:hover .member-topbar-cat-ico {
+  opacity: 0.9;
+  color: var(--text-secondary);
+}
+
+.member-topbar-cat.is-active {
+  color: #0e7490;
+  background: var(--surface);
+  font-weight: 700;
+  border-color: rgba(15, 23, 42, 0.07);
+  box-shadow:
+    0 2px 8px rgba(15, 23, 42, 0.08),
+    0 1px 0 rgba(255, 255, 255, 0.98) inset;
+  transform: translateY(-0.5px);
+}
+
+.member-topbar-cat.is-active .member-topbar-cat-ico {
+  opacity: 1;
+  color: var(--accent);
+}
+
+.member-topbar-cat.is-active:hover {
+  color: #0a5c72;
+  box-shadow:
+    0 3px 10px rgba(15, 23, 42, 0.1),
+    0 1px 0 rgba(255, 255, 255, 0.98) inset;
+}
+
+.member-topbar-cat.is-active:hover .member-topbar-cat-ico {
+  transform: scale(1.05);
+}
+
+@media (max-width: 520px) {
+  .member-topbar-catblock {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .member-topbar-cat {
+    padding: 8px 12px 8px 11px;
+    font-size: 12px;
+  }
+
+  .member-topbar-cat-ico {
+    width: 15px;
+    height: 15px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .member-topbar-cat,
+  .member-topbar-cat-ico {
+    transition: none;
+  }
+
+  .member-topbar-cat.is-active {
+    transform: none;
+  }
+
+  .member-topbar-cat.is-active:hover .member-topbar-cat-ico {
+    transform: none;
+  }
 }
 
 .admin-topbar-brand {
@@ -76,6 +294,14 @@
 @media (max-width: 768px) {
   .admin-topbar {
     padding: 0 16px;
+    min-height: 48px;
+  }
+
+  .admin-topbar--member {
+    padding: 0;
+  }
+
+  .member-topbar-row {
     min-height: 48px;
   }
 }
@@ -126,6 +352,10 @@
   .member-main {
     padding: 28px 32px 56px;
   }
+
+  .member-topbar-wrap {
+    padding: 0 32px;
+  }
 }
 
 @media (max-width: 768px) {
@@ -135,5 +365,9 @@
 
   .member-main {
     padding: 20px 20px 48px;
+  }
+
+  .member-topbar-wrap {
+    padding: 0 20px;
   }
 }

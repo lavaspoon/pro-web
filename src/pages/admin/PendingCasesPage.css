@@ -7,6 +7,13 @@
   --pending-hair: rgba(60, 60, 67, 0.1);
   --pending-hair-strong: rgba(60, 60, 67, 0.14);
   --pending-surface-veil: rgba(248, 250, 252, 0.92);
+  /* 좌측 패널 — 액센트(#0a7ea4) 기준 통일 */
+  --pending-a08: rgba(10, 126, 164, 0.08);
+  --pending-a12: rgba(10, 126, 164, 0.12);
+  --pending-a16: rgba(10, 126, 164, 0.16);
+  --pending-a22: rgba(10, 126, 164, 0.22);
+  --pending-a35: rgba(10, 126, 164, 0.35);
+  --pending-sidebar-bg: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -284,39 +291,33 @@
   color: var(--accent);
 }
 
-/* 좌측 트리 루트 — 범위 블록 */
+/* 좌측 트리 루트 */
 .pending-tree__root {
   display: flex;
   flex-direction: column;
   gap: 0;
 }
 
-/* 범위 — 부드러운 select */
+/* 범위 — 컴팩트 · 부드러운 카드 */
 .pending-scope-filter {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 11px 12px 13px;
-  margin: 0 0 14px;
-  border-radius: 14px;
-  background: linear-gradient(
-    165deg,
-    rgba(255, 255, 255, 0.88) 0%,
-    rgba(252, 253, 255, 0.72) 100%
-  );
-  border: 1px solid rgba(15, 23, 42, 0.07);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.95),
-    0 1px 2px rgba(15, 23, 42, 0.04);
+  gap: 4px;
+  padding: 8px 8px 10px;
+  margin: 0 0 8px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid var(--pending-a12);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.95) inset;
 }
 
 .pending-scope-label {
   font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--text-tertiary);
-  margin-left: 2px;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: var(--text-secondary);
+  margin: 0;
 }
 
 .pending-scope-select-wrap {
@@ -329,96 +330,81 @@
   appearance: none;
   -webkit-appearance: none;
   margin: 0;
-  padding: 0.55rem 2.25rem 0.55rem 0.85rem;
-  border-radius: 999px;
-  border: 2px solid rgba(251, 182, 206, 0.55);
-  background:
-    linear-gradient(165deg, rgba(255, 250, 252, 0.98) 0%, rgba(255, 255, 255, 0.92) 50%, rgba(240, 249, 255, 0.65) 100%);
-  box-shadow:
-    0 2px 0 rgba(255, 255, 255, 0.85) inset,
-    0 4px 12px rgba(236, 72, 153, 0.08),
-    0 1px 2px rgba(15, 23, 42, 0.04);
-  font-size: 0.8125rem;
-  font-weight: 700;
+  padding: 6px 1.75rem 6px 8px;
+  border-radius: 10px;
+  border: 1px solid var(--pending-a22);
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  font-size: 0.75rem;
+  font-weight: 600;
   letter-spacing: -0.02em;
   color: var(--text-primary);
   cursor: pointer;
   transition:
-    border-color 0.18s ease,
-    box-shadow 0.18s ease,
-    transform 0.12s ease;
+    border-color 0.15s ease,
+    background 0.15s ease;
 }
 
 .pending-scope-select:hover {
-  border-color: rgba(244, 114, 182, 0.65);
-  box-shadow:
-    0 2px 0 rgba(255, 255, 255, 0.9) inset,
-    0 5px 16px rgba(236, 72, 153, 0.12),
-    0 1px 2px rgba(15, 23, 42, 0.05);
+  border-color: var(--pending-a35);
+  background: #f8fafc;
 }
 
 .pending-scope-select:focus {
   outline: none;
-  border-color: rgba(10, 126, 164, 0.45);
-  box-shadow:
-    0 0 0 3px rgba(10, 126, 164, 0.18),
-    0 2px 0 rgba(255, 255, 255, 0.85) inset;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--pending-a22);
 }
 
 .pending-scope-select:active {
-  transform: scale(0.99);
+  transform: none;
 }
 
 .pending-scope-chevron {
   position: absolute;
-  right: 0.65rem;
+  right: 0.45rem;
   top: 50%;
   transform: translateY(-50%);
   pointer-events: none;
-  color: rgba(219, 39, 119, 0.55);
+  color: var(--pending-a35);
+  width: 14px;
+  height: 14px;
 }
 
 /* ── 좌 트리 | 우 패널 ───────────────────────────────────── */
 .pending-split--yp {
   display: grid;
-  grid-template-columns: minmax(236px, 304px) minmax(0, 1fr);
+  grid-template-columns: minmax(188px, 248px) minmax(0, 1fr);
   gap: 0;
   border: 1px solid var(--pending-hair-strong);
-  border-radius: 22px;
+  border-radius: 16px;
   overflow: hidden;
   background: var(--surface);
   min-height: min(560px, calc(100vh - 240px));
   flex: 1;
   min-height: 420px;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.92),
-    0 10px 40px rgba(15, 23, 42, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    0 8px 28px rgba(15, 23, 42, 0.06),
     0 2px 8px rgba(15, 23, 42, 0.03);
 }
 
 .pending-tree {
   border-right: 1px solid var(--pending-hair);
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.55) 0%,
-    rgba(248, 250, 252, 0.95) 38%,
-    rgba(241, 245, 249, 0.88) 100%
-  );
+  background: var(--pending-sidebar-bg);
   overflow-y: auto;
-  padding: 1rem 0.9rem 1.2rem;
+  padding: 10px 8px 12px;
   scrollbar-gutter: stable;
 }
 
 .tree-list {
   list-style: none;
   margin: 0;
-  padding: 0 0 0 14px;
-  border-left: 2px solid rgba(10, 126, 164, 0.38);
-  box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.5);
+  padding: 0;
 }
 
 .tree-item {
-  margin: 0 0 4px;
+  margin: 0 0 3px;
 }
 
 .tree-item--last {
@@ -428,73 +414,81 @@
 .tree-leaf {
   display: flex;
   align-items: center;
-  gap: 0;
+  gap: 6px;
   width: 100%;
-  padding: 7px 8px 7px 2px;
-  margin-bottom: 3px;
-  border: none;
-  border-radius: 11px;
-  background: transparent;
+  padding: 5px 8px;
+  margin-bottom: 0;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.42);
   cursor: pointer;
   font: inherit;
   text-align: left;
   color: inherit;
   transition:
-    background 0.18s ease,
-    box-shadow 0.18s ease;
+    background 0.16s ease,
+    border-color 0.16s ease,
+    transform 0.12s ease;
 }
 
 .tree-leaf:hover {
-  background: rgba(10, 126, 164, 0.07);
+  background: rgba(255, 255, 255, 0.92);
+  border-color: var(--pending-a16);
 }
 
 .tree-leaf:focus-visible {
   outline: none;
-  box-shadow:
-    0 0 0 2px rgba(255, 255, 255, 0.95),
-    0 0 0 4px rgba(10, 126, 164, 0.35);
+  box-shadow: 0 0 0 2px var(--pending-a22);
 }
 
 .tree-leaf.is-active {
-  background: linear-gradient(135deg, rgba(10, 126, 164, 0.11) 0%, rgba(14, 165, 233, 0.07) 100%);
-  box-shadow: inset 0 0 0 1px rgba(10, 126, 164, 0.26);
+  background: linear-gradient(135deg, var(--pending-a12) 0%, rgba(14, 165, 233, 0.06) 100%);
+  border-color: var(--pending-a22);
+  box-shadow: 0 1px 3px var(--pending-a08);
+  padding-left: 8px;
 }
 
 .tree-leaf-main {
   flex: 1;
   min-width: 0;
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
 }
 
 .tree-leaf-name {
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 700;
   color: var(--text-primary);
-  letter-spacing: -0.02em;
-  line-height: 1.3;
+  letter-spacing: -0.03em;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .tree-leaf-stats {
   display: flex;
   align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
+  gap: 4px;
+  flex-wrap: nowrap;
+  flex-shrink: 0;
 }
 
 .tree-stat {
-  font-size: 11px;
-  font-weight: 600;
-  padding: 3px 8px;
-  border-radius: 8px;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 999px;
 }
 
 .tree-stat--wait {
-  color: #9a3412;
-  background: linear-gradient(180deg, rgba(255, 251, 235, 0.95) 0%, rgba(254, 243, 199, 0.65) 100%);
-  border: 1px solid rgba(245, 158, 11, 0.28);
-  letter-spacing: -0.02em;
+  color: #0e7490;
+  background: var(--pending-a08);
+  border: 1px solid var(--pending-a16);
+  letter-spacing: 0.02em;
 }
 
 .tree-stat--done {
@@ -507,81 +501,8 @@
   font-weight: 600;
 }
 
-.tree-leaf-chevron {
-  flex-shrink: 0;
-  color: var(--text-tertiary);
-  opacity: 0.65;
-}
-
-.tree-leaf.is-active .tree-leaf-chevron {
-  color: var(--accent);
-  opacity: 1;
-}
-
-.tree-view-all {
-  display: flex;
-  align-items: center;
-  gap: 0;
-  width: 100%;
-  padding: 9px 8px 9px 2px;
-  margin: 0 0 12px;
-  border: none;
-  border-radius: 11px;
-  background: rgba(255, 255, 255, 0.4);
-  cursor: pointer;
-  font: inherit;
-  text-align: left;
-  color: inherit;
-  transition:
-    background 0.18s ease,
-    box-shadow 0.18s ease;
-}
-
-.tree-view-all:hover {
-  background: rgba(10, 126, 164, 0.06);
-}
-
-.tree-view-all:focus-visible {
-  outline: none;
-  box-shadow:
-    0 0 0 2px rgba(255, 255, 255, 0.95),
-    0 0 0 4px rgba(10, 126, 164, 0.32);
-}
-
-.tree-view-all.is-active {
-  background: linear-gradient(135deg, rgba(10, 126, 164, 0.1) 0%, rgba(14, 165, 233, 0.06) 100%);
-  box-shadow: inset 0 0 0 1px rgba(10, 126, 164, 0.24);
-}
-
-.tree-view-all.is-active .tree-leaf-chevron {
-  color: var(--accent);
-  opacity: 1;
-}
-
-.tree-view-all-main {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding-left: 4px;
-}
-
-.tree-view-all-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-primary);
-  letter-spacing: -0.02em;
-  line-height: 1.25;
-}
-
-.tree-view-all-meta {
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--text-secondary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.pending-tree .tree-leaf-chevron {
+  display: none;
 }
 
 /* 우측 패널 */
@@ -653,27 +574,6 @@
   text-overflow: ellipsis;
 }
 
-.pending-panel-badge {
-  font-size: 0.8125rem;
-  color: var(--text-secondary);
-  flex-shrink: 0;
-  padding: 7px 13px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.85);
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.95),
-    0 1px 2px rgba(15, 23, 42, 0.04);
-}
-
-.pending-panel-badge strong {
-  color: var(--accent);
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-}
-
 .pending-panel-head-right {
   display: flex;
   align-items: center;
@@ -732,7 +632,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 12px 18px;
   margin-bottom: 12px;
   padding: 11px 14px;
@@ -799,85 +699,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-.pending-table-toolbar-filters {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.pending-table-toolbar-label {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--text-tertiary);
-  cursor: default;
-}
-
-.pending-status-select-wrap {
-  position: relative;
-  min-width: 5.75rem;
-}
-
-.pending-status-select {
-  width: 100%;
-  min-width: 5.75rem;
-  appearance: none;
-  -webkit-appearance: none;
-  margin: 0;
-  padding: 0.45rem 2rem 0.45rem 0.75rem;
-  border-radius: 999px;
-  border: 2px solid rgba(45, 212, 191, 0.45);
-  background: linear-gradient(
-    165deg,
-    rgba(240, 253, 250, 0.95) 0%,
-    rgba(255, 255, 255, 0.96) 55%,
-    rgba(236, 254, 255, 0.65) 100%
-  );
-  box-shadow:
-    0 2px 0 rgba(255, 255, 255, 0.88) inset,
-    0 3px 10px rgba(13, 148, 136, 0.08),
-    0 1px 2px rgba(15, 23, 42, 0.04);
-  font-size: 0.8125rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  color: var(--text-primary);
-  cursor: pointer;
-  transition:
-    border-color 0.18s ease,
-    box-shadow 0.18s ease,
-    transform 0.12s ease;
-}
-
-.pending-status-select:hover {
-  border-color: rgba(20, 184, 160, 0.55);
-  box-shadow:
-    0 2px 0 rgba(255, 255, 255, 0.92) inset,
-    0 4px 14px rgba(13, 148, 136, 0.12),
-    0 1px 2px rgba(15, 23, 42, 0.05);
-}
-
-.pending-status-select:focus {
-  outline: none;
-  border-color: rgba(10, 126, 164, 0.45);
-  box-shadow:
-    0 0 0 3px rgba(10, 126, 164, 0.18),
-    0 2px 0 rgba(255, 255, 255, 0.85) inset;
-}
-
-.pending-status-select:active {
-  transform: scale(0.99);
-}
-
-.pending-status-select-chevron {
-  position: absolute;
-  right: 0.55rem;
-  top: 50%;
-  transform: translateY(-50%);
-  pointer-events: none;
-  color: rgba(13, 148, 136, 0.6);
-}
-
 .pending-table-wrap {
   display: flex;
   flex-direction: column;
@@ -920,11 +741,6 @@
 
 .pending-panel:has(.pending-table--compact) .pending-panel-title {
   font-size: 1rem;
-}
-
-.pending-panel:has(.pending-table--compact) .pending-panel-badge {
-  font-size: 0.75rem;
-  padding: 5px 11px;
 }
 
 .pending-table-wrap:has(.pending-table--compact) {
@@ -987,11 +803,15 @@
 }
 
 .pending-table--compact.pending-table--with-team .pending-th--title {
-  width: 30%;
+  width: 26%;
 }
 
 .pending-table--compact.pending-table--with-team .pending-th--date {
-  width: 15%;
+  width: 9%;
+}
+
+.pending-table--compact.pending-table--with-team .pending-th--callDate {
+  width: 11%;
 }
 
 .pending-table--compact:not(.pending-table--with-team) .pending-th--member {
@@ -1003,7 +823,11 @@
 }
 
 .pending-table--compact:not(.pending-table--with-team) .pending-th--date {
-  width: 20%;
+  width: 10%;
+}
+
+.pending-table--compact:not(.pending-table--with-team) .pending-th--callDate {
+  width: 12%;
 }
 
 .pending-table--compact .pending-td-team {
@@ -1051,9 +875,17 @@
   min-width: 0;
 }
 
-.pending-table--compact .pending-td-date {
+.pending-table--compact .pending-td-date,
+.pending-table--compact .pending-td-call {
   font-size: 12px;
   color: var(--text-secondary);
+}
+
+.pending-table--compact .pending-td-call-val {
+  display: inline-block;
+  max-width: 100%;
+  line-height: 1.35;
+  word-break: break-word;
 }
 
 .pending-table--compact .pending-td-action {
@@ -1289,7 +1121,8 @@
   min-width: 160px;
 }
 
-.pending-th--date {
+.pending-th--date,
+.pending-th--callDate {
   width: 1%;
   white-space: nowrap;
 }
@@ -1313,6 +1146,10 @@
   background: rgba(10, 126, 164, 0.07);
 }
 
+.pending-table tbody tr.pending-table-row--clickable {
+  cursor: pointer;
+}
+
 .pending-table tbody tr:nth-child(even):hover td {
   background: rgba(10, 126, 164, 0.09);
 }
@@ -1321,6 +1158,10 @@
 .pending-table--compact tbody tr:hover td,
 .pending-table--compact tbody tr:nth-child(even):hover td {
   background: transparent;
+}
+
+.pending-table--compact tbody tr.pending-table-row--clickable {
+  cursor: pointer;
 }
 
 .pending-td-member {
@@ -1367,29 +1208,24 @@
   white-space: nowrap;
 }
 
-.pending-td-date {
+.pending-td-date,
+.pending-td-call {
   color: var(--text-secondary);
-  white-space: nowrap;
+  white-space: normal;
+  font-size: inherit;
+  vertical-align: middle;
+}
+
+.pending-td-call-val {
+  font-variant-numeric: tabular-nums;
+}
+
+.pending-td-meta {
+  display: block;
+  max-width: 16rem;
   font-size: 11px;
-}
-
-.pending-td-ico {
-  display: inline;
-  vertical-align: -0.15em;
-  margin-right: 4px;
-  opacity: 0.7;
-}
-
-.pending-td-sub {
-  display: none;
-}
-
-@media (min-width: 1100px) {
-  .pending-td-sub {
-    display: inline;
-    color: var(--text-tertiary);
-    font-size: 10px;
-  }
+  line-height: 1.45;
+  color: var(--text-tertiary);
 }
 
 .pending-td-action {

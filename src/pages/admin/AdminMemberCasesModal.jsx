@@ -18,13 +18,6 @@ function formatDate(dateStr) {
   return `${d.getFullYear()}. ${d.getMonth() + 1}. ${d.getDate()}`;
 }
 
-function monthChip(month) {
-  if (!month || typeof month !== 'string') return '—';
-  const parts = month.split('-');
-  if (parts.length >= 2) return `${parts[0]}년 ${parts[1]}월`;
-  return month;
-}
-
 /**
  * 관리자 대시보드 — 구성원 카드 클릭 시 접수 내역 (구성원 MemberCaseListModal UI 참고)
  */
@@ -160,50 +153,76 @@ export default function AdminMemberCasesModal({ open, member, onClose }) {
                     <p>해당 구성원의 우수사례 접수 내역이 없습니다</p>
                   </div>
                 ) : (
-                  <div className="case-list member-case-list-scroll">
+                  <div className="case-list case-list--compact member-case-list-scroll">
                     {filtered.map((c, i) => (
                       <button
                         key={c.id}
                         type="button"
-                        className="case-item fade-in-up"
+                        className="case-item case-item--compact fade-in-up"
                         style={{ animationDelay: `${i * 0.04}s` }}
                         onClick={() => openReview(c)}
                         disabled={loadingCaseId === c.id}
                       >
-                        <div className="case-item-left">
-                          <div className="case-month-chip">{monthChip(c.month)}</div>
-                          <div className="case-item-body">
-                            <h3 className="case-item-title">{c.title}</h3>
-                            <p className="case-item-desc">{c.description}</p>
-                            <div className="case-item-meta">
-                              <span>접수: {formatDate(c.submittedAt)}</span>
+                        <div className="case-item-status">
+                          <StatusBadge status={c.status} size="sm" />
+                        </div>
+                        <div className="case-item-body">
+                          <h3 className="case-item-title">{c.title}</h3>
+                          <div className="case-item-meta">
+                              <span className="case-meta-line">
+                                <span className="case-meta-tag">접수 일자</span>
+                                <span className="case-meta-val">{formatDate(c.submittedAt)}</span>
+                              </span>
                               {c.callDate && (
                                 <>
-                                  <span>·</span>
-                                  <span>통화 {formatCaseCallDateTime(c.callDate)}</span>
+                                  <span className="case-meta-sep" aria-hidden>
+                                    ·
+                                  </span>
+                                  <span className="case-meta-line">
+                                    <span className="case-meta-tag">통화 일자</span>
+                                    <span className="case-meta-val">
+                                      {formatCaseCallDateTime(c.callDate)}
+                                    </span>
+                                  </span>
                                 </>
                               )}
                               {!c.callDate && c.customerType && (
                                 <>
-                                  <span>·</span>
-                                  <span>{c.customerType}</span>
+                                  <span className="case-meta-sep" aria-hidden>
+                                    ·
+                                  </span>
+                                  <span className="case-meta-line">
+                                    <span className="case-meta-tag">구분</span>
+                                    <span className="case-meta-val">{c.customerType}</span>
+                                  </span>
                                 </>
                               )}
                               {c.callDuration && (
                                 <>
-                                  <span>·</span>
-                                  <span>통화시간 {c.callDuration}</span>
+                                  <span className="case-meta-sep" aria-hidden>
+                                    ·
+                                  </span>
+                                  <span className="case-meta-line">
+                                    <span className="case-meta-tag">통화 시간</span>
+                                    <span className="case-meta-val">{c.callDuration}</span>
+                                  </span>
                                 </>
                               )}
-                            </div>
+                              {c.judgedAt && (
+                                <>
+                                  <span className="case-meta-sep" aria-hidden>
+                                    ·
+                                  </span>
+                                  <span className="case-meta-line">
+                                    <span className="case-meta-tag">판정</span>
+                                    <span className="case-meta-val">{formatDate(c.judgedAt)}</span>
+                                  </span>
+                                </>
+                              )}
                           </div>
                         </div>
                         <div className="case-item-right">
-                          <StatusBadge status={c.status} />
-                          {c.judgedAt && (
-                            <span className="judged-date">판정 {formatDate(c.judgedAt)}</span>
-                          )}
-                          <ChevronRight size={18} className="case-arrow" />
+                          <ChevronRight size={14} strokeWidth={2} className="case-arrow" />
                         </div>
                       </button>
                     ))}

@@ -1,12 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
 import {
   Users,
   Award,
   BarChart2,
   FileText,
-  ChevronRight,
   Trophy,
 } from 'lucide-react';
 import {
@@ -161,12 +159,6 @@ export default function DashboardPage() {
     enabled: selectedTeamId != null,
   });
 
-  /** 센터 전체 검토 대기 건수 — 대시보드 집계 팀 합산 */
-  const totalPendingReview = useMemo(
-    () => teamsEnriched.reduce((sum, t) => sum + Number(t.pendingSum ?? 0), 0),
-    [teamsEnriched]
-  );
-
   const handleSort = (key) => {
     setSortConfig((prev) => {
       if (prev.key !== key) {
@@ -222,23 +214,10 @@ export default function DashboardPage() {
             <p className="adm-identity-kicker">YOU PRO · 관리</p>
             <h1 className="adm-title">유프로 구성원 현황 대시보드</h1>
             <p className="adm-sub">
-              STT·AI 기반 YOU프로 선정과 정기 연금형 인센티브 운영을 지원합니다. {year}년 기준 실(부서)별·
+              {year}년 기준 실별·
               구성원별 선정 실적을 확인하세요.
             </p>
           </div>
-          <Link
-            className="adm-header-link adm-header-link--pending-btn adm-pending-btn--cute"
-            to="/admin/pending"
-            aria-label={`검토 대기 ${totalPendingReview}건으로 이동`}
-          >
-            <span className="adm-pending-shine" aria-hidden />
-            <span className="adm-pending-btn__inner">
-              <span className="adm-pending-btn__label">검토 대기</span>
-              <span className="adm-pending-btn__num">{totalPendingReview}</span>
-              <span className="adm-pending-btn__unit">건</span>
-            </span>
-            <ChevronRight className="adm-pending-btn__chev" size={18} strokeWidth={2.25} aria-hidden />
-          </Link>
         </div>
       </header>
 
@@ -249,7 +228,7 @@ export default function DashboardPage() {
           <div>
             <h2 className="adm-section-heading">전체 센터 현황</h2>
             <p className="adm-section-hint">
-              2depth 부서 <strong>{secondDepthLabelHint}</strong> 하위 합산 · {year}년 기준
+              <strong>{secondDepthLabelHint}</strong> · {year}년 기준
             </p>
           </div>
         </div>
@@ -333,7 +312,7 @@ export default function DashboardPage() {
           <div>
             <h2 className="adm-section-heading">랭킹</h2>
             <p className="adm-section-hint">
-              {year}년 사례 접수 건수(TB_YOU_PRO_CASE) 기준 · 2depth 센터별 접수 합계 및 상위 {RANK_TOP_N}명
+              {year}년 사례 접수 건수 기준
             </p>
           </div>
         </div>
@@ -349,7 +328,7 @@ export default function DashboardPage() {
             />
           ))}
           <RankingCard
-            title={`2depth 전체 합집합 · 센터 접수 ${rankingData?.combined?.totalSubmitted ?? 0}건`}
+            title={`전체 센터 접수 ${rankingData?.combined?.totalSubmitted ?? 0}건`}
             badgeClass="adm-badge--combined"
             icon={Trophy}
             rows={rankRowsFromApi(rankingData?.combined?.topMembers)}
@@ -365,13 +344,10 @@ export default function DashboardPage() {
           <div className="adm-section-title-text">
             <h2 className="adm-section-heading">실(부서)별 성과</h2>
             <p className="adm-section-hint">
-              2depth 부서를 고르면 그 하위 depth {leafDepthHint} 팀만 표시 · 행을 클릭하면 해당 팀 구성원을 아래에 표시
+              행을 클릭하면 해당 팀 구성원을 아래에 표시
             </p>
           </div>
           <div className="adm-dept-filter">
-            <label className="adm-dept-filter-label" htmlFor="adm-dept-performance-filter">
-              2depth 부서
-            </label>
             <select
               id="adm-dept-performance-filter"
               className="adm-dept-filter-select"
@@ -379,7 +355,7 @@ export default function DashboardPage() {
               onChange={(e) => setSecondDepthKey(e.target.value)}
               aria-label="2depth 부서 필터"
             >
-              <option value="all">전체 (설정 루트 합집합)</option>
+              <option value="all">전체</option>
               {secondDepthOptions.map((o) => (
                 <option key={o.id} value={String(o.id)}>
                   {o.name}

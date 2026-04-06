@@ -8,6 +8,7 @@ import HomePage from './pages/member/HomePage';
 import CaseListPage from './pages/member/CaseListPage';
 import SubmitCasePage from './pages/member/SubmitCasePage';
 import CaseDetailPage from './pages/member/CaseDetailPage';
+import CsSatisfactionPage from './pages/member/CsSatisfactionPage';
 import DashboardPage from './pages/admin/DashboardPage';
 import TeamDetailPage from './pages/admin/TeamDetailPage';
 import PendingCasesPage from './pages/admin/PendingCasesPage';
@@ -39,6 +40,7 @@ function MemberLayout() {
         <Route path="/cases" element={<CaseListPage />} />
         <Route path="/cases/:id" element={<CaseDetailPage />} />
         <Route path="/submit" element={<SubmitCasePage />} />
+        <Route path="/cs-satisfaction" element={<CsSatisfactionPage />} />
       </Routes>
     </Layout>
   );
