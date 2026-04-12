@@ -662,11 +662,11 @@
 }
 
 @media (min-width: 769px) {
-  .yp-quick-row--two > .yp-quick-col-stack {
+  .yp-quick-row--two>.yp-quick-col-stack {
     height: 100%;
   }
 
-  .yp-quick-row--two > .yp-annual-panel--quick {
+  .yp-quick-row--two>.yp-annual-panel--quick {
     height: 100%;
   }
 }
@@ -1638,7 +1638,7 @@
   box-sizing: border-box;
 }
 
-.yp-quick-row--two > .yp-annual-panel--quick .yp-passbook {
+.yp-quick-row--two>.yp-annual-panel--quick .yp-passbook {
   margin-top: auto;
 }
 

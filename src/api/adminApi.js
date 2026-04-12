@@ -95,3 +95,86 @@ export const judgeCase = async ({
   const { data } = await axiosInstance.post(`/api/admin/cases/${caseId}/judge`, body);
   return data;
 };
+
+/**
+ * CS 만족도 — 연간 실(2depth)별 요약
+ * GET /api/admin/cs-satisfaction/summary?year=&secondDepthDeptId=
+ */
+export const fetchCsSatisfactionSummary = async (year, secondDepthDeptId) => {
+  const params = {};
+  if (year != null) params.year = year;
+  if (secondDepthDeptId != null && secondDepthDeptId !== '') {
+    params.secondDepthDeptId = secondDepthDeptId;
+  }
+  const { data } = await axiosInstance.get('/api/admin/cs-satisfaction/summary', { params });
+  return data;
+};
+
+/**
+ * CS 만족도 — 월별 평가·만족 건수 (실 1개 선택 시)
+ * GET /api/admin/cs-satisfaction/monthly-trend?year=&secondDepthDeptId=
+ */
+export const fetchCsSatisfactionMonthlyTrend = async (year, secondDepthDeptId) => {
+  const { data } = await axiosInstance.get('/api/admin/cs-satisfaction/monthly-trend', {
+    params: { year, secondDepthDeptId },
+  });
+  return data;
+};
+
+/**
+ * 선택 센터 — 특정 연·월 이달 요약 + 구성원별 만족도 (year/month 생략 시 서버 기준 당월)
+ * GET /api/admin/cs-satisfaction/center-month-detail?secondDepthDeptId=&year=&month=
+ */
+export const fetchCsSatisfactionCenterMonthDetail = async (secondDepthDeptId, year, month) => {
+  const params = { secondDepthDeptId };
+  if (year != null) params.year = year;
+  if (month != null) params.month = month;
+  const { data } = await axiosInstance.get('/api/admin/cs-satisfaction/center-month-detail', { params });
+  return data;
+};
+
+/**
+ * CS 만족도 엑셀 업로드 (.xlsx) — multipart 필드명 file
+ * (FormData 사용 시 기본 JSON Content-Type을 쓰지 않도록 fetch 사용)
+ */
+export const uploadCsSatisfactionExcel = async (file) => {
+  const baseURL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080';
+  const formData = new FormData();
+  formData.append('file', file);
+  const res = await fetch(`${baseURL}/api/admin/cs-satisfaction/upload`, {
+    method: 'POST',
+    body: formData,
+  });
+  const text = await res.text();
+  if (!res.ok) {
+    let msg = text || res.statusText;
+    try {
+      const j = JSON.parse(text);
+      msg = j.message || j.error || msg;
+    } catch {
+      /* ignore */
+    }
+    throw new Error(msg);
+  }
+  return text ? JSON.parse(text) : {};
+};
+
+/**
+ * CS 만족도 — 해당 연·월의 센터별 목표% 조회 (월 1회 설정, DB는 그 달 1일 키)
+ * GET /api/admin/cs-satisfaction/monthly-targets?year=&month=
+ */
+export const fetchCsSatisfactionMonthlyTargets = async (year, month) => {
+  const { data } = await axiosInstance.get('/api/admin/cs-satisfaction/monthly-targets', {
+    params: { year, month },
+  });
+  return data;
+};
+
+/**
+ * CS 만족도 — 월간 목표% 저장
+ * POST /api/admin/cs-satisfaction/monthly-targets
+ * @param {{ year: number, month: number, targets: Array<{ secondDepthDeptId: number, targetPercent: number }> }} body
+ */
+export const saveCsSatisfactionMonthlyTargets = async (body) => {
+  await axiosInstance.post('/api/admin/cs-satisfaction/monthly-targets', body);
+};

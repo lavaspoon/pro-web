@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
   Users,
@@ -6,6 +7,8 @@ import {
   BarChart2,
   FileText,
   Trophy,
+  Clock,
+  ChevronRight,
 } from 'lucide-react';
 import {
   fetchAdminDashboard,
@@ -218,6 +221,18 @@ export default function DashboardPage() {
               구성원별 선정 실적을 확인하세요.
             </p>
           </div>
+          <Link
+            to="/admin/pending"
+            className="adm-header-link adm-pending-btn--cute"
+            aria-label="검토 대기 화면으로 이동"
+          >
+            <span className="adm-pending-shine" aria-hidden />
+            <span className="adm-pending-btn__inner">
+              <Clock size={18} strokeWidth={2.25} aria-hidden />
+              <span className="adm-pending-btn__label">검토 대기</span>
+            </span>
+            <ChevronRight className="adm-pending-btn__chev" size={18} strokeWidth={2.25} aria-hidden />
+          </Link>
         </div>
       </header>
 

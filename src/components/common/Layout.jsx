@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { BarChart3, Clock, LayoutDashboard, LogOut, Sparkles } from 'lucide-react';
+import { BarChart3, LogOut, Sparkles } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
 import MemberSubmitModal from '../member/MemberSubmitModal';
 import MemberCaseListModal from '../member/MemberCaseListModal';
@@ -64,9 +64,19 @@ function MemberLayout({ children }) {
   );
 }
 
+/** 대시보드 · 검토 대기 · 팀 상세는 YOU PRO 탭으로 묶음 (만족도 경로 제외) */
+function isAdminYouProActive(pathname) {
+  if (pathname.startsWith('/admin/satisfaction')) return false;
+  return (
+    pathname === '/admin' ||
+    pathname.startsWith('/admin/pending') ||
+    pathname.startsWith('/admin/team/')
+  );
+}
+
 const ADMIN_TABS = [
-  { to: '/admin', label: '대시보드', Icon: LayoutDashboard, exact: true },
-  { to: '/admin/pending', label: '검토 대기', Icon: Clock, exact: false },
+  { to: '/admin', label: 'YOU PRO', Icon: Sparkles, isActive: isAdminYouProActive },
+  { to: '/admin/satisfaction', label: '만족도 관리', Icon: BarChart3, exact: false },
 ];
 
 function AdminLayout({ children }) {
@@ -88,8 +98,12 @@ function AdminLayout({ children }) {
               <div className="admin-topbar-catblock">
                 <span className="admin-topbar-catblock-label">YOU PRO 관리자</span>
                 <nav className="member-topbar-cats admin-topbar-cats" aria-label="관리자 메뉴">
-                  {ADMIN_TABS.map(({ to, label, Icon, exact }) => {
-                    const active = exact ? pathname === to : pathname.startsWith(to);
+                  {ADMIN_TABS.map(({ to, label, Icon, exact, isActive }) => {
+                    const active = isActive
+                      ? isActive(pathname)
+                      : exact
+                        ? pathname === to
+                        : pathname.startsWith(to);
                     return (
                       <Link
                         key={to}

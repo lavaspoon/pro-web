@@ -27,6 +27,13 @@
   margin-bottom: 0 !important;
 }
 
+.pending-header-back {
+  display: inline-flex;
+  margin-bottom: 0.65rem;
+  text-decoration: none;
+  color: inherit;
+}
+
 .pending-header-row {
   display: flex;
   align-items: flex-start;

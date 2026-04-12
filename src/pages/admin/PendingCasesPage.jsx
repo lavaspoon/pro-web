@@ -1,10 +1,12 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { useQuery, useQueries } from '@tanstack/react-query';
 import {
   Clock,
   FileText,
   ChevronRight,
   ChevronLeft,
+  ArrowLeft,
   ChevronDown,
   ArrowUp,
   ArrowDown,
@@ -296,6 +298,14 @@ export default function PendingCasesPage() {
   return (
     <div className="page-container adm-dashboard adm-dashboard--yp fade-in pending-page">
       <header className="adm-header adm-header--yp pending-header">
+        <Link
+          to="/admin"
+          className="adm-back-btn pending-header-back"
+          aria-label="대시보드로 돌아가기"
+        >
+          <ArrowLeft size={18} strokeWidth={2.25} aria-hidden />
+          <span>뒤로</span>
+        </Link>
         <div className="adm-header-row pending-header-row">
           <div className="pending-header-body">
             <div className="adm-header-text">

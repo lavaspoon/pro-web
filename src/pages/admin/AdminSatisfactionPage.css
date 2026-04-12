@@ -1,0 +1,186 @@
+/* 만족도 관리 — YOU PRO 대시보드 톤에 맞춘 패널·표 중심 UI */
+
+.adm-sat-page.adm-dashboard--yp {
+  gap: 2.25rem;
+}
+
+.adm-sat-page .adm-header-text .adm-sub strong {
+  color: var(--accent, #0a7ea4);
+  font-weight: 700;
+}
+
+.adm-sat-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.65rem 0.85rem;
+  flex-shrink: 0;
+}
+
+.adm-sat-upload-entry {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  text-decoration: none;
+}
+
+.adm-sat-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.55rem;
+  align-items: center;
+  padding: 0.4rem 0.5rem;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.adm-sat-page .adm-sat-filters .adm-dept-filter-select {
+  min-height: 2.35rem;
+  padding: 0.45rem 0.75rem;
+  border-radius: 10px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: #fff;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #0f172a;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.adm-sat-page .adm-sat-filters .adm-dept-filter-select:hover {
+  border-color: rgba(10, 126, 164, 0.35);
+}
+
+.adm-sat-page .adm-sat-filters .adm-dept-filter-select:focus {
+  outline: none;
+  border-color: var(--accent, #0a7ea4);
+  box-shadow: 0 0 0 3px rgba(10, 126, 164, 0.2);
+}
+
+.adm-sat-refresh {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.25rem;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
+.adm-sat-spin {
+  animation: adm-sat-spin 0.85s linear infinite;
+}
+
+@keyframes adm-sat-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.adm-sat-trend-section {
+  margin-bottom: 0;
+}
+
+.adm-sat-chart-shell {
+  margin-top: 0.25rem;
+  padding: 1.2rem 1.25rem 0.85rem;
+  border-radius: 16px;
+  border: 1px solid var(--adm-hairline, rgba(60, 60, 67, 0.12));
+  background: linear-gradient(
+    168deg,
+    rgba(255, 255, 255, 0.99) 0%,
+    rgba(248, 252, 255, 0.96) 38%,
+    rgba(241, 245, 249, 0.55) 100%
+  );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    0 4px 24px rgba(10, 126, 164, 0.07),
+    0 1px 3px rgba(15, 23, 42, 0.04);
+}
+
+.adm-sat-chart-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  min-height: 280px;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.adm-sat-chart-loading .spinner {
+  margin: 0;
+}
+
+.adm-sat-chart-error {
+  margin: 0;
+  padding: 2rem 1.25rem;
+  text-align: center;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--danger, #dc2626);
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.adm-sat-query-err {
+  margin: 0 0 1rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 10px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #b91c1c;
+  background: rgba(254, 226, 226, 0.65);
+  border: 1px solid rgba(248, 113, 113, 0.35);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .adm-sat-spin {
+    animation: none;
+  }
+}
+
+/* 실 표 바로 아래 — 선택 시 구성원 표만 */
+.adm-sat-members-below {
+  margin-top: 1.35rem;
+}
+
+.adm-sat-page .adm-sat-members-loading {
+  padding: 1.5rem 1rem;
+}
+
+.adm-sat-page .adm-sat-members-loading p {
+  margin: 0;
+  font-size: 0.8125rem;
+}
+
+.adm-sat-member-name {
+  display: block;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.adm-sat-member-skid {
+  display: block;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  margin-top: 0.1rem;
+}
+
+.adm-sat-member-dept {
+  color: var(--text-secondary);
+  max-width: 10rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

@@ -12,6 +12,8 @@ import CsSatisfactionPage from './pages/member/CsSatisfactionPage';
 import DashboardPage from './pages/admin/DashboardPage';
 import TeamDetailPage from './pages/admin/TeamDetailPage';
 import PendingCasesPage from './pages/admin/PendingCasesPage';
+import AdminSatisfactionPage from './pages/admin/AdminSatisfactionPage';
+import AdminSatisfactionSetupPage from './pages/admin/AdminSatisfactionSetupPage';
 import './styles/global.css';
 
 const queryClient = new QueryClient({
@@ -53,6 +55,9 @@ function AdminLayout() {
         <Route path="/" element={<DashboardPage />} />
         <Route path="/team/:teamId" element={<TeamDetailPage />} />
         <Route path="/pending" element={<PendingCasesPage />} />
+        <Route path="/satisfaction" element={<AdminSatisfactionPage />} />
+        <Route path="/satisfaction/setup" element={<AdminSatisfactionSetupPage />} />
+        <Route path="/satisfaction/upload" element={<Navigate to="/admin/satisfaction/setup" replace />} />
       </Routes>
     </Layout>
   );
