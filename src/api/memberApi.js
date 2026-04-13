@@ -40,3 +40,14 @@ export const submitCase = async ({ skid, title, description, callDate }) => {
   });
   return data;
 };
+
+/**
+ * 구성원 CS 만족도 조회
+ * GET /api/member/satisfaction?skid={skid}&year={year}&month={month}
+ */
+export const fetchMemberSatisfaction = async ({ skid, year, month }) => {
+  const { data } = await axiosInstance.get('/api/member/satisfaction', {
+    params: { skid, year, month },
+  });
+  return data;
+};

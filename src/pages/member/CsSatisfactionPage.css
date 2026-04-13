@@ -1,23 +1,935 @@
-.cs-sat-page {
-  max-width: 1120px;
-  margin: 0 auto;
+/* ═══════════════════════════════════════════════════════════
+   CS 만족도 — 구성원 개인 화면
+   YOU PRO Design System (Apple-inspired · navy/teal)
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── 페이지 컨테이너 gap 재정의 (YOU PRO 기본 2rem → 1rem) */
+.cs-sat-page.adm-dashboard--yp {
+  gap: 1rem;
 }
 
-.cs-sat-head {
-  margin-bottom: 1.5rem;
+/* ── 페이지 헤더 ──────────────────────────────────────────── */
+.cs-sat-page-header {
+  padding-bottom: 0.75rem;
+  margin-bottom: 0 !important;
+  border-bottom: 1px solid rgba(60, 60, 67, 0.12);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.85);
 }
 
-.cs-sat-title {
-  font-size: 1.5rem;
+/* ── 4-섹션 그리드 ────────────────────────────────────────── */
+.cs-sat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  align-items: stretch;   /* 같은 행의 카드 높이 통일 */
+}
+
+@media (max-width: 900px) {
+  .cs-sat-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── 공통 카드 ────────────────────────────────────────────── */
+.cs-sat-card {
+  background: var(--surface, #fff);
+  border: 1px solid var(--border, rgba(15, 23, 42, 0.08));
+  border-radius: var(--r-lg, 16px);
+  box-shadow:
+    0 1px 3px rgba(15, 23, 42, 0.05),
+    0 2px 8px rgba(15, 23, 42, 0.03);
+  padding: 1.1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+/* ── 플레이스홀더 카드 ────────────────────────────────────── */
+.cs-sat-card--placeholder {
+  min-height: 240px;
+}
+
+.cs-sat-placeholder-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.85rem;
+  color: var(--text-tertiary);
+  opacity: 0.45;
+}
+
+.cs-sat-placeholder-body p {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+/* ══════════════════════════════════════════════════════════
+   공통 헤더 / 뱃지 (모든 카드 공용)
+   ══════════════════════════════════════════════════════════ */
+
+.cs-sat-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.cs-sat-period-badge {
+  font-size: 0.72rem;
   font-weight: 700;
+  color: var(--yp-accent, #0d4f6c);
+  background: rgba(13, 79, 108, 0.08);
+  border: 1px solid rgba(13, 79, 108, 0.16);
+  border-radius: var(--r-full, 9999px);
+  padding: 0.28rem 0.8rem;
+  white-space: nowrap;
+  letter-spacing: -0.01em;
+}
+
+/* 차트 범례 */
+.cs-sat-chart-legend {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.cs-sat-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: var(--text-tertiary);
+}
+
+.cs-sat-legend-line {
+  width: 12px;
+  height: 2.5px;
+  border-radius: 2px;
+  background: var(--yp-accent-bright, #0a7ea4);
+  flex-shrink: 0;
+}
+
+.cs-sat-legend-dash {
+  width: 12px;
+  height: 0;
+  border-bottom: 2px dashed var(--warning, #ff9500);
+  flex-shrink: 0;
+}
+
+/* ══════════════════════════════════════════════════════════
+   패널 A — 당월 누적 만족도 (좌상단)   csm-* 네임스페이스
+   ══════════════════════════════════════════════════════════ */
+
+.csm-card {
+  gap: 0.65rem;
+}
+
+/* ── KPI 3대 지표 스트립 ──────────────────────────────────── */
+.csm-kpi-strip {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--border, rgba(15, 23, 42, 0.08));
+  border-radius: var(--r-md, 12px);
+  overflow: hidden;
+  background: var(--surface-inset, #eef1f6);
+}
+
+/* 구분선 */
+.csm-kpi-sep {
+  width: 1px;
+  background: var(--border, rgba(15, 23, 42, 0.08));
+  flex-shrink: 0;
+}
+
+/* 공통 KPI 셀 */
+.csm-kpi {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+  padding: 0.7rem 0.4rem 0.6rem;
+  position: relative;
+  transition: background 0.2s ease;
+}
+
+.csm-kpi-eyebrow {
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.csm-kpi-val {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  color: var(--text-primary);
+}
+
+.csm-kpi-unit {
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-left: 1px;
+  letter-spacing: -0.02em;
+}
+
+/* ── 목표 셀 */
+.csm-kpi--target {
+  background: rgba(13, 79, 108, 0.04);
+}
+
+.csm-kpi--target .csm-kpi-eyebrow {
+  color: var(--yp-accent, #0d4f6c);
+}
+
+.csm-kpi--target .csm-kpi-val {
+  color: var(--yp-accent, #0d4f6c);
+}
+
+/* ── 만족도 점수 셀 — 중앙, 가장 강조 */
+.csm-kpi--score {
+  flex: 1.5;
+  background: var(--surface, #fff);
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.07);
+}
+
+.csm-kpi--score .csm-kpi-eyebrow {
+  font-size: 0.62rem;
+  color: var(--text-secondary);
+}
+
+.csm-kpi-val--hero {
+  font-size: 1.95rem;
+  font-weight: 900;
+  letter-spacing: -0.055em;
+  color: var(--text-primary);
+}
+
+/* 목표 초과 시 빨간 강조 */
+.csm-kpi--score-above .csm-kpi-val--hero {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 60%, #b91c1c 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* 달성 표시 dot */
+.csm-kpi-status-dot {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 0 2.5px rgba(16, 185, 129, 0.25);
+  animation: csm-pulse 2.5s ease-in-out infinite;
+}
+
+@keyframes csm-pulse {
+  0%, 100% { box-shadow: 0 0 0 2.5px rgba(16, 185, 129, 0.25); }
+  50%       { box-shadow: 0 0 0 5px rgba(16, 185, 129, 0.1); }
+}
+
+/* ── 달성률 셀 */
+.csm-kpi--rate {
+  background: rgba(15, 23, 42, 0.03);
+  position: relative;
+}
+
+.csm-kpi--rate-above .csm-kpi-eyebrow {
+  color: #059669;
+}
+
+.csm-kpi--rate-above .csm-kpi-val {
+  color: #dc2626;
+}
+
+.csm-rate-arrow {
+  font-size: 0.6rem;
+  font-weight: 900;
+  color: #dc2626;
+  letter-spacing: 0;
+  margin-top: -2px;
+}
+
+/* ── 샘플 통계 인라인 스트립 ─────────────────────────────── */
+.csm-stat-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 0.45rem 0.6rem;
+  background: var(--surface-inset, #eef1f6);
+  border: 1px solid var(--border, rgba(15, 23, 42, 0.08));
+  border-radius: var(--r-sm, 8px);
+}
+
+.csm-stat-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.csm-stat-sep {
+  width: 1px;
+  height: 20px;
+  background: var(--border, rgba(15, 23, 42, 0.08));
+}
+
+.csm-stat-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.csm-stat-dot--total { background: rgba(15, 23, 42, 0.3); }
+.csm-stat-dot--pos   { background: var(--yp-accent-bright, #0a7ea4); }
+.csm-stat-dot--neg   { background: #dc2626; }
+
+.csm-stat-label {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.csm-stat-val {
+  font-size: 0.875rem;
+  font-weight: 800;
   letter-spacing: -0.03em;
   color: var(--text-primary);
-  margin: 0 0 0.5rem;
 }
 
-.cs-sat-sub {
-  font-size: 0.875rem;
+.csm-stat-val em {
+  font-size: 0.65rem;
+  font-style: normal;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  margin-left: 1px;
+}
+
+.csm-stat-val--pos { color: var(--yp-accent-bright, #0a7ea4); }
+.csm-stat-val--neg { color: #dc2626; }
+
+/* ── 미니 추이 차트 ───────────────────────────────────────── */
+.csm-chart-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.55rem 0.75rem 0.5rem;
+  background: rgba(15, 23, 42, 0.02);
+  border: 1px solid var(--border, rgba(15, 23, 42, 0.07));
+  border-radius: var(--r-sm, 8px);
+}
+
+.csm-chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.csm-chart-body {
+  height: 72px;
+  flex: none;
+}
+
+.csm-chart-title {
+  font-size: 0.72rem;
+  font-weight: 600;
   color: var(--text-secondary);
-  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+/* ══════════════════════════════════════════════════════════
+   패널 C — 불만족 원인 건수 (좌하단)
+   ══════════════════════════════════════════════════════════ */
+
+.cs-sat-card--unsat {
+  border-color: rgba(220, 38, 38, 0.1);
+}
+
+/* 요약 배너 */
+.cs-sat-unsat-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.7rem;
+  border-radius: var(--r-sm, 8px);
+  font-size: 0.775rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.cs-sat-unsat-banner--clear {
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  color: #047857;
+}
+
+.cs-sat-unsat-banner--clear svg {
+  color: #10b981;
+  flex-shrink: 0;
+}
+
+.cs-sat-unsat-banner--alert {
+  background: rgba(220, 38, 38, 0.07);
+  border: 1px solid rgba(220, 38, 38, 0.18);
+  color: #991b1b;
+}
+
+.cs-sat-unsat-banner--alert svg {
+  color: #dc2626;
+  flex-shrink: 0;
+}
+
+.cs-sat-unsat-banner--alert strong {
+  font-weight: 800;
+}
+
+/* ── 카테고리 리스트 ──────────────────────────────────────── */
+.cs-sat-ucat-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: 1px solid var(--border, rgba(15, 23, 42, 0.08));
+  border-radius: var(--r-lg, 16px);
+  overflow: hidden;
+  flex: 1;              /* 남은 높이 모두 차지 */
+}
+
+.cs-sat-ucat-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  padding: 0.5rem 0.85rem;
+  background: var(--surface, #fff);
+  transition: background 0.15s ease;
+  flex: 1;
+}
+
+.cs-sat-ucat-item:not(:last-child) {
+  border-bottom: 1px solid var(--divider, rgba(15, 23, 42, 0.06));
+}
+
+.cs-sat-ucat-item:hover {
+  background: rgba(15, 23, 42, 0.02);
+}
+
+.cs-sat-ucat-item--alert {
+  background: rgba(254, 226, 226, 0.35);
+}
+
+.cs-sat-ucat-item--alert:hover {
+  background: rgba(254, 226, 226, 0.55);
+}
+
+/* 좌측: 순번 + 라벨 */
+.cs-sat-ucat-left {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.cs-sat-ucat-rank {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--surface-inset, #eef1f6);
+  border: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 0.65rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.cs-sat-ucat-rank--alert {
+  background: rgba(220, 38, 38, 0.1);
+  border-color: rgba(220, 38, 38, 0.25);
+  color: #dc2626;
+}
+
+.cs-sat-ucat-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 우측: 바 + 건수 */
+.cs-sat-ucat-right {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-shrink: 0;
+}
+
+.cs-sat-ucat-bar-track {
+  width: 80px;
+  height: 6px;
+  background: rgba(15, 23, 42, 0.07);
+  border-radius: var(--r-full, 9999px);
+  overflow: hidden;
+}
+
+.cs-sat-ucat-bar-fill {
+  height: 100%;
+  border-radius: var(--r-full, 9999px);
+  background: var(--border-strong, rgba(15, 23, 42, 0.14));
+  transition: width 0.5s var(--ease, cubic-bezier(0.16, 1, 0.3, 1));
+}
+
+.cs-sat-ucat-bar-fill--alert {
+  background: linear-gradient(90deg, #f87171, #dc2626);
+}
+
+.cs-sat-ucat-count {
+  min-width: 40px;
+  text-align: right;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--text-tertiary);
+  letter-spacing: -0.02em;
+}
+
+.cs-sat-ucat-count--alert {
+  color: #dc2626;
+  font-size: 1rem;
+}
+
+.cs-sat-ucat-count--alert em {
+  font-size: 0.7rem;
+  font-style: normal;
+  font-weight: 600;
+  color: #ef4444;
+  margin-left: 1px;
+}
+
+.cs-sat-ucat-clear-icon {
+  color: #10b981;
+}
+
+/* 각주 */
+.cs-sat-ucat-footnote {
+  font-size: 0.68rem;
+  color: var(--text-tertiary);
+  letter-spacing: -0.01em;
+  padding-top: 0.25rem;
+}
+
+/* ══════════════════════════════════════════════════════════
+   패널 B — Good 멘트 사례 (우상단)
+   ══════════════════════════════════════════════════════════ */
+
+/* 카드 베이스 — 왼쪽 accent 라인 + 서브틀 그라데이션 배경 */
+.cs-sat-card--good {
+  position: relative;
+  overflow: hidden;
+  border-color: rgba(16, 185, 129, 0.18);
+  background: linear-gradient(
+    160deg,
+    rgba(16, 185, 129, 0.03) 0%,
+    var(--surface, #fff) 55%
+  );
+}
+
+.cs-sat-card--good::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  height: 100%;
+  background: linear-gradient(180deg, #10b981 0%, #34d399 60%, transparent 100%);
+  border-radius: 0 2px 2px 0;
+}
+
+/* 건수 뱃지 */
+.cs-sat-good-count-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #059669;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.22);
+  border-radius: var(--r-full, 9999px);
+  padding: 0.25rem 0.7rem;
+  white-space: nowrap;
+}
+
+/* 안내 문구 */
+.cs-sat-good-desc {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  padding: 0.4rem 0.65rem;
+  background: rgba(16, 185, 129, 0.06);
+  border: 1px solid rgba(16, 185, 129, 0.14);
+  border-radius: var(--r-sm, 8px);
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: #047857;
+  line-height: 1.45;
+}
+
+.cs-sat-good-desc-icon {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: #10b981;
+}
+
+/* ── 멘트 리스트 ──────────────────────────────────────────── */
+.cs-sat-good-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.cs-sat-good-item {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  background: var(--surface, #fff);
+  border: 1px solid rgba(16, 185, 129, 0.14);
+  border-radius: var(--r-sm, 8px);
+  box-shadow: 0 1px 3px rgba(16, 185, 129, 0.06);
+  transition: box-shadow 0.18s ease, border-color 0.18s ease;
+  position: relative;
+  overflow: hidden;
+  flex: 1;
+  align-items: flex-start;
+}
+
+.cs-sat-good-item::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #10b981, #34d399, transparent);
+  opacity: 0.35;
+}
+
+.cs-sat-good-item:hover {
+  border-color: rgba(16, 185, 129, 0.3);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.1);
+}
+
+/* 장식용 따옴표 */
+.cs-sat-good-quote-mark {
+  font-size: 1.7rem;
+  line-height: 1;
+  font-family: Georgia, 'Times New Roman', serif;
+  color: rgba(16, 185, 129, 0.25);
+  font-weight: 900;
+  flex-shrink: 0;
+  margin-top: -4px;
+  user-select: none;
+}
+
+/* 본문 + 푸터 */
+.cs-sat-good-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.cs-sat-good-text {
+  font-size: 0.775rem;
+  font-weight: 500;
+  color: var(--text-primary);
   line-height: 1.5;
+  letter-spacing: -0.01em;
+}
+
+.cs-sat-good-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cs-sat-good-date {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--text-tertiary);
+}
+
+.cs-sat-good-like-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+}
+
+/* 하단 안내 */
+.cs-sat-good-notice {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  text-align: center;
+  padding-top: 0.25rem;
+  letter-spacing: -0.01em;
+}
+
+/* ══════════════════════════════════════════════════════════
+   패널 B — AI Insight (우상단)   ai-* 네임스페이스
+   ══════════════════════════════════════════════════════════ */
+
+/* ── 카드 베이스 ── */
+.ai-card {
+  position: relative;
+  overflow: hidden;
+  border-color: rgba(99, 102, 241, 0.18);
+  background: linear-gradient(
+    155deg,
+    rgba(99, 102, 241, 0.04) 0%,
+    var(--surface, #fff) 50%
+  );
+  gap: 0.6rem;
+}
+
+/* 좌측 accent 라인 */
+.ai-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  height: 100%;
+  background: linear-gradient(180deg, #7c3aed 0%, #818cf8 60%, transparent 100%);
+  border-radius: 0 2px 2px 0;
+  pointer-events: none;
+}
+
+/* ── 헤더 ── */
+.ai-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.ai-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+/* 아이콘 뱃지 — 인디고/바이올렛 gradient */
+.ai-icon-badge {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #7c3aed 0%, #6366f1 55%, #38bdf8 100%);
+  color: #fff;
+  flex-shrink: 0;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.15) inset,
+    0 2px 6px rgba(99, 102, 241, 0.35);
+}
+
+.ai-title {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #2e1065;
+  letter-spacing: -0.03em;
+}
+
+.ai-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.62rem;
+  font-weight: 500;
+  color: var(--text-tertiary);
+}
+
+/* ── 요약 바 ── */
+.ai-summary-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.8rem;
+  border-radius: var(--r-sm, 8px);
+  border: 1px solid;
+  font-size: 0.775rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  flex-wrap: nowrap;
+}
+
+.ai-summary-bar--over {
+  background: rgba(16, 185, 129, 0.06);
+  border-color: rgba(16, 185, 129, 0.18);
+  color: #065f46;
+}
+
+.ai-summary-bar--under {
+  background: rgba(245, 158, 11, 0.06);
+  border-color: rgba(245, 158, 11, 0.2);
+  color: #78350f;
+}
+
+.ai-sum-status { font-weight: 700; white-space: nowrap; }
+
+.ai-sum-divider {
+  width: 1px;
+  height: 13px;
+  background: currentColor;
+  opacity: 0.18;
+  flex-shrink: 0;
+}
+
+.ai-sum-score { font-weight: 800; white-space: nowrap; }
+
+.ai-sum-score em {
+  font-size: 0.7rem;
+  font-style: normal;
+  font-weight: 600;
+  margin-left: 1px;
+  opacity: 0.72;
+}
+
+.ai-sum-rate { font-weight: 700; white-space: nowrap; }
+
+.ai-sum-sample {
+  margin-left: auto;
+  font-size: 0.65rem;
+  font-weight: 500;
+  opacity: 0.5;
+  white-space: nowrap;
+}
+
+/* ── Insight 피드 리스트 ── */
+.ai-feed-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.ai-feed-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  padding: 0.5rem 0;
+  flex: 1;
+}
+
+.ai-feed-item:not(:last-child) {
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+/* 아이콘 칩 — 둥근 정사각형 */
+.ai-feed-icon-chip {
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--chip-bg, rgba(109, 40, 217, 0.1));
+  color: var(--chip-color, #6d28d9);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* 텍스트 컨테이너 */
+.ai-feed-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+/* 카테고리 레이블 — 배경 없이 컬러 텍스트만 */
+.ai-feed-label {
+  font-size: 0.6rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--chip-color, #6d28d9);
+  line-height: 1.2;
+}
+
+/* 본문 */
+.ai-feed-body {
+  font-size: 0.775rem;
+  font-weight: 400;
+  color: var(--text-primary, #1e293b);
+  line-height: 1.5;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+/* ── 하단 고지 ── */
+.ai-disclaimer {
+  font-size: 0.6rem;
+  color: var(--text-tertiary);
+  letter-spacing: -0.01em;
+  line-height: 1.4;
+}
+
+/* ── 차트 툴팁 ───────────────────────────────────────────── */
+.cs-sat-tooltip {
+  background: var(--yp-ink, #0f172a);
+  color: #fff;
+  border-radius: var(--r-sm, 8px);
+  padding: 0.5rem 0.8rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+}
+
+.cs-sat-tooltip-label {
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.65rem;
+  font-weight: 500;
+}
+
+.cs-sat-tooltip-val {
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
 }
