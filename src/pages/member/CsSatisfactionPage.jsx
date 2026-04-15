@@ -17,7 +17,6 @@ import {
   CalendarDays,
   CheckCircle2,
   ShieldAlert,
-  Bot,
   TrendingUp,
   Lightbulb,
   TriangleAlert,
@@ -25,6 +24,9 @@ import {
   X,
   Loader2,
   MessageSquareText,
+  Target,
+  Star,
+  ClipboardCheck,
 } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
 import {
@@ -154,18 +156,94 @@ function TrendTooltip({ active, payload, label }) {
 }
 
 /* ════════════════════════════════════════════════════════════
-   패널 A — 당월 누적 만족도 (좌상단) · 한 줄 KPI 스트립
+   상단 4지표 — 게이지 없이 숫자·라벨 중심
    ════════════════════════════════════════════════════════════ */
-function MonthlyAccumulatedPanel({ data, year, month }) {
+function CsSatisfactionKpiRow({ data, year, month }) {
   const d = data ?? MOCK_DATA;
-  const rate = d.achievementRate;
+  const rate = Number(d.achievementRate);
   const achievementBand =
     rate >= 100 ? 'met' : rate >= 90 ? 'near' : 'below';
   const achievementCaption =
     rate >= 100 ? '목표 달성' : rate >= 90 ? '목표에 근접' : '목표 미달';
 
   return (
-    <div className="cs-sat-card csm-card cs-sat-card--good">
+    <div className="cs-sat-kpi-tiles" aria-label="당월 핵심 지표">
+      <div className="cs-sat-kpi-tile cs-sat-kpi-tile--target">
+        <div className="cs-sat-kpi-tile-top">
+          <span className="cs-sat-kpi-tile-label">
+            {year}년 {month}월 목표
+          </span>
+          <Target size={17} strokeWidth={2} className="cs-sat-kpi-tile-ico" aria-hidden />
+        </div>
+        <p className="cs-sat-kpi-tile-value">
+          {fmt(d.target)}
+          <span className="cs-sat-kpi-tile-unit">%</span>
+        </p>
+      </div>
+
+      <div className={`cs-sat-kpi-tile cs-sat-kpi-tile--rate cs-sat-kpi-tile--${achievementBand}`}>
+        <div className="cs-sat-kpi-tile-top">
+          <span className="cs-sat-kpi-tile-label">달성률</span>
+          <TrendingUp size={17} strokeWidth={2} className="cs-sat-kpi-tile-ico" aria-hidden />
+        </div>
+        <p className="cs-sat-kpi-tile-value">
+          {fmt(rate)}
+          <span className="cs-sat-kpi-tile-unit">%</span>
+        </p>
+        <p className="cs-sat-kpi-tile-hint">{achievementCaption}</p>
+      </div>
+
+      <div className="cs-sat-kpi-tile cs-sat-kpi-tile--score">
+        <div className="cs-sat-kpi-tile-top">
+          <span className="cs-sat-kpi-tile-label">만족도 점수</span>
+          <Star size={17} strokeWidth={2} className="cs-sat-kpi-tile-ico" aria-hidden />
+        </div>
+        <p className="cs-sat-kpi-tile-value">
+          {fmt(d.score)}
+          <span className="cs-sat-kpi-tile-unit">점</span>
+        </p>
+      </div>
+
+      <div className="cs-sat-kpi-tile cs-sat-kpi-tile--focus">
+        <div className="cs-sat-kpi-tile-top">
+          <span className="cs-sat-kpi-tile-label">중점추진과제</span>
+          <ClipboardCheck size={17} strokeWidth={2} className="cs-sat-kpi-tile-ico" aria-hidden />
+        </div>
+        <ul className="cs-sat-kpi-focus-list">
+          <li>
+            <span>5대도시</span>
+            <strong>{Number(d.fiveMajorCitiesCount ?? 0)}</strong>
+            <span className="cs-sat-kpi-focus-unit">건</span>
+          </li>
+          <li>
+            <span>5060</span>
+            <strong>{Number(d.gen5060Count ?? 0)}</strong>
+            <span className="cs-sat-kpi-focus-unit">건</span>
+          </li>
+          <li>
+            <span>문제해결</span>
+            <strong>{Number(d.problemResolvedCount ?? 0)}</strong>
+            <span className="cs-sat-kpi-focus-unit">건</span>
+          </li>
+        </ul>
+        <p className="cs-sat-kpi-tile-micro">당월 해당 상담</p>
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════
+   패널 A — 당월 누적 만족도 (좌측 메인) · 샘플·불만족·차트
+   ════════════════════════════════════════════════════════════ */
+function MonthlyAccumulatedPanel({ data, year, month, children }) {
+  const d = data ?? MOCK_DATA;
+  const goodList =
+    Array.isArray(d.goodComments) && d.goodComments.length > 0
+      ? d.goodComments
+      : MOCK_DATA.goodComments;
+
+  return (
+    <div className="cs-sat-card csm-card cs-sat-card--good cs-sat-monthly-compact">
 
       {/* ── 헤더 ── */}
       <div className="cs-sat-card-header">
@@ -173,49 +251,6 @@ function MonthlyAccumulatedPanel({ data, year, month }) {
           <span className="section-title">당월 누적 만족도</span>
         </div>
         <span className="cs-sat-period-badge">{year}년 {month}월</span>
-      </div>
-
-      {/* ── KPI: 한 줄 스트립 — 가운데 달성률 강조, 양쪽 목표·점수 보조 ── */}
-      <div className="csm-kpi-strip" aria-label="당월 누적 지표">
-        <div className="csm-kpi-side">
-          <span className="csm-kpi-side-label">목표</span>
-          <span className="csm-kpi-side-val">{fmt(d.target)}%</span>
-        </div>
-        <div className="csm-kpi-sep" aria-hidden />
-        <div className={`csm-kpi-center csm-kpi-center--${achievementBand}`}>
-          <span className="csm-kpi-center-label">달성률</span>
-          <div className="csm-kpi-center-row">
-            <span className="csm-kpi-center-value">
-              {fmt(rate)}
-              <span className="csm-kpi-center-unit">%</span>
-            </span>
-            <span className="csm-kpi-center-cap">{achievementCaption}</span>
-          </div>
-        </div>
-        <div className="csm-kpi-sep" aria-hidden />
-        <div className="csm-kpi-side">
-          <span className="csm-kpi-side-label">만족도 점수</span>
-          <span className="csm-kpi-side-val">{fmt(d.score)}점</span>
-        </div>
-      </div>
-
-      {/* ── 중점추진과제 (당월 Y 건수) ── */}
-      <div className="csm-focus-strip" aria-label="중점추진과제 당월 건수">
-        <span className="csm-focus-hint">중점추진과제</span>
-        <div className="csm-focus-chips">
-          <span className="csm-focus-chip" title="5대도시 해당 건수">
-            <span className="csm-focus-chip-label">5대도시</span>
-            <span className="csm-focus-chip-val">{Number(d.fiveMajorCitiesCount ?? 0)}</span>
-          </span>
-          <span className="csm-focus-chip" title="5060 해당 건수">
-            <span className="csm-focus-chip-label">5060</span>
-            <span className="csm-focus-chip-val">{Number(d.gen5060Count ?? 0)}</span>
-          </span>
-          <span className="csm-focus-chip" title="문제해결 해당 건수">
-            <span className="csm-focus-chip-label">문제해결</span>
-            <span className="csm-focus-chip-val">{Number(d.problemResolvedCount ?? 0)}</span>
-          </span>
-        </div>
       </div>
 
       {/* ── 샘플 통계 인라인 ── */}
@@ -240,6 +275,8 @@ function MonthlyAccumulatedPanel({ data, year, month }) {
           </span>
         </div>
       </div>
+
+      {children}
 
       {/* ── 미니 추이 차트 ── */}
       <div className="csm-chart-wrap">
@@ -293,6 +330,37 @@ function MonthlyAccumulatedPanel({ data, year, month }) {
         </div>
       </div>
 
+      {/* Good 멘트 — 당월 누적 카드에 통합 */}
+      <div className="cs-sat-monthly-good" aria-label="Good 멘트 사례">
+        <div className="cs-sat-monthly-good-head">
+          <span className="cs-sat-monthly-good-icon-wrap" aria-hidden>
+            <ThumbsUp size={16} strokeWidth={2.2} />
+          </span>
+          <span className="cs-sat-monthly-good-title">Good 멘트 사례</span>
+          <span className="cs-sat-monthly-good-badge">{goodList.length}건</span>
+        </div>
+        <p className="cs-sat-monthly-good-lead">
+          <Sparkles size={12} strokeWidth={2} className="cs-sat-monthly-good-lead-ico" aria-hidden />
+          고객이 남긴 긍정 평가 멘트입니다.
+        </p>
+        <ul className="cs-sat-monthly-good-list">
+          {goodList.map((item, idx) => (
+            <li key={item.id ?? idx} className="cs-sat-monthly-good-item">
+              <span className="cs-sat-monthly-good-quote" aria-hidden>
+                {'\u201c'}
+              </span>
+              <div className="cs-sat-monthly-good-body">
+                <p className="cs-sat-monthly-good-text">{item.comment}</p>
+                <span className="cs-sat-monthly-good-date">
+                  <CalendarDays size={11} strokeWidth={2} aria-hidden />
+                  {formatDate(item.date)}
+                </span>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+
     </div>
   );
 }
@@ -306,6 +374,7 @@ function UnsatisfiedCategoriesPanel({
   month,
   skid,
   detailFallbackByType = MOCK_DATA.unsatisfiedDetailSamples,
+  embedded = false,
 }) {
   const list = categories.length > 0 ? categories : MOCK_DATA.unsatisfiedCategories;
   const total = list.reduce((s, c) => s + c.count, 0);
@@ -349,16 +418,23 @@ function UnsatisfiedCategoriesPanel({
     };
   }, [selected]);
 
-  return (
-    <div className="cs-sat-card cs-sat-card--unsat">
-
-      {/* 헤더 */}
-      <div className="cs-sat-card-header">
-        <div className="section-header" style={{ marginBottom: 0 }}>
-          <span className="section-title">불만족 원인 건수</span>
-        </div>
-        <span className="cs-sat-period-badge">{year}년 {month}월</span>
+  const headerBlock = embedded ? (
+    <div className="cs-sat-ucat-embed-head">
+      <span className="cs-sat-ucat-embed-title">불만족 원인 건수</span>
+      <span className="cs-sat-ucat-embed-badge">{year}년 {month}월</span>
+    </div>
+  ) : (
+    <div className="cs-sat-card-header">
+      <div className="section-header" style={{ marginBottom: 0 }}>
+        <span className="section-title">불만족 원인 건수</span>
       </div>
+      <span className="cs-sat-period-badge">{year}년 {month}월</span>
+    </div>
+  );
+
+  const body = (
+    <>
+      {headerBlock}
 
       {/* 요약 배너 */}
       {isAllClear ? (
@@ -424,6 +500,16 @@ function UnsatisfiedCategoriesPanel({
       <p className="cs-sat-ucat-footnote">
         * 건수가 있는 항목을 누르면 해당 상담 상세를 볼 수 있습니다.
       </p>
+    </>
+  );
+
+  return (
+    <>
+      {embedded ? (
+        <div className="cs-sat-ucat-embedded">{body}</div>
+      ) : (
+        <div className="cs-sat-card cs-sat-card--unsat">{body}</div>
+      )}
 
       {selected && createPortal(
         <div
@@ -559,63 +645,7 @@ function UnsatisfiedCategoriesPanel({
         </div>,
         document.body,
       )}
-    </div>
-  );
-}
-
-/* ════════════════════════════════════════════════════════════
-   패널 B — Good 멘트 사례 (우상단) ← 신규
-   ════════════════════════════════════════════════════════════ */
-function GoodCommentsPanel({ comments = [] }) {
-  const list = comments.length > 0 ? comments : MOCK_DATA.goodComments;
-
-  return (
-    <div className="cs-sat-card cs-sat-card--good">
-
-      {/* 헤더 */}
-      <div className="cs-sat-card-header">
-        <div className="section-header" style={{ marginBottom: 0 }}>
-          <span className="section-title">Good 멘트 사례</span>
-        </div>
-        <span className="cs-sat-good-count-badge">
-          <ThumbsUp size={11} strokeWidth={2.2} />
-          {list.length}건
-        </span>
-      </div>
-
-      {/* 안내 문구 */}
-      <div className="cs-sat-good-desc">
-        <Sparkles size={13} strokeWidth={2} className="cs-sat-good-desc-icon" />
-        <span>고객이 직접 남긴 긍정 평가 멘트입니다. 추후 raw 데이터와 자동 연동됩니다.</span>
-      </div>
-
-      {/* 멘트 카드 목록 */}
-      <ul className="cs-sat-good-list">
-        {list.map((item, idx) => (
-          <li key={item.id ?? idx} className="cs-sat-good-item">
-            {/* 데코 따옴표 */}
-            <span className="cs-sat-good-quote-mark" aria-hidden="true">"</span>
-            <div className="cs-sat-good-content">
-              <p className="cs-sat-good-text">{item.comment}</p>
-              <div className="cs-sat-good-footer">
-                <span className="cs-sat-good-date">
-                  <CalendarDays size={11} strokeWidth={2} />
-                  {formatDate(item.date)}
-                </span>
-                <span className="cs-sat-good-like-icon">
-                  <ThumbsUp size={11} strokeWidth={2} />
-                </span>
-              </div>
-            </div>
-          </li>
-        ))}
-      </ul>
-
-      {/* 하단 안내 */}
-      <div className="cs-sat-good-notice">
-        실제 고객 원문 데이터가 연동되면 자동으로 업데이트됩니다.
-      </div>
-    </div>
+    </>
   );
 }
 
@@ -686,49 +716,53 @@ function AiInsightPanel({ data }) {
   const generatedAt = now.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' });
 
   return (
-    <div className="cs-sat-card ai-card cs-sat-card--good">
+    <div className="cs-sat-card ai-card ai-card--hero">
 
       {/* ── 헤더 ── */}
-      <div className="ai-header">
-        <div className="ai-title-wrap">
-          <span className="ai-title-icon" aria-hidden>
-            <Sparkles size={14} strokeWidth={1.75} />
+      <div className="ai-hero-top">
+        <div className="ai-hero-title-block">
+          <span className="ai-hero-icon" aria-hidden>
+            <Sparkles size={22} strokeWidth={1.85} />
           </span>
-          <span className="ai-title">인사이트</span>
-          <span className="ai-title-badge">AI</span>
+          <div>
+            <div className="ai-hero-kicker">AI 인사이트</div>
+            <h2 className="ai-hero-title">이번 달 상담 품질 요약</h2>
+          </div>
         </div>
-        <div className="ai-meta">
-          <span>{generatedAt} 기준</span>
+        <span className="ai-hero-meta">{generatedAt} 기준</span>
+      </div>
+
+      {/* ── 요약 하이라이트 ── */}
+      <div className={`ai-hero-highlight${isOver ? ' ai-hero-highlight--over' : ' ai-hero-highlight--under'}`}>
+        <div className="ai-hero-highlight-main">
+          <span className="ai-hero-highlight-label">만족도 점수</span>
+          <span className="ai-hero-highlight-score">
+            {d.score.toFixed(1)}
+            <em>점</em>
+          </span>
+        </div>
+        <div className="ai-hero-highlight-side">
+          <span className={`ai-hero-pill${isOver ? ' ai-hero-pill--pos' : ' ai-hero-pill--warn'}`}>
+            {isOver ? '목표 초과' : '목표 미달'}
+          </span>
+          <span className="ai-hero-delta">
+            목표 대비 <strong>{isOver ? '+' : '-'}{delta}%p</strong>
+          </span>
+          <span className="ai-hero-n">
+            샘플 <strong>{d.totalSamples}</strong>건 분석
+          </span>
         </div>
       </div>
 
-      {/* ── 요약 바 ── */}
-      <div className={`ai-summary-bar${isOver ? ' ai-summary-bar--over' : ' ai-summary-bar--under'}`}>
-        <span className="ai-sum-status">{isOver ? '목표 초과' : '목표 미달'}</span>
-        <span className="ai-sum-divider" aria-hidden />
-        <span className="ai-sum-score">
-          <strong className="ai-sum-num">{d.score.toFixed(1)}</strong>
-          <em>점</em>
-        </span>
-        <span className="ai-sum-divider" aria-hidden />
-        <span className="ai-sum-rate">
-          <strong className="ai-sum-num">{isOver ? '+' : '-'}{delta}%p</strong>
-        </span>
-        <span className="ai-sum-sample">
-          <strong className="ai-sum-num ai-sum-num--soft">{d.totalSamples}</strong>
-          건 분석
-        </span>
-      </div>
-
-      {/* ── Insight 피드 ── */}
-      <ul className="ai-feed-list">
+      {/* ── Insight 카드 그리드 (우측 영역 메인) ── */}
+      <ul className="ai-feed-list ai-feed-list--hero">
         {feed.map((item, idx) => {
           const s = FEED_STYLE[item.type] ?? FEED_STYLE.tip;
           const Icon = s.icon;
           return (
-            <li key={idx} className="ai-feed-item">
-              <div className="ai-feed-icon-chip" aria-hidden>
-                <Icon size={12} strokeWidth={2} />
+            <li key={idx} className="ai-feed-item ai-feed-item--hero">
+              <div className="ai-feed-icon-chip ai-feed-icon-chip--hero" aria-hidden>
+                <Icon size={18} strokeWidth={2} />
               </div>
               <div className="ai-feed-content">
                 <span className="ai-feed-label">{item.tag}</span>
@@ -739,7 +773,7 @@ function AiInsightPanel({ data }) {
         })}
       </ul>
 
-      <p className="ai-disclaimer">AI 생성 요약이며 참고용입니다.</p>
+      <p className="ai-disclaimer ai-disclaimer--hero">AI 생성 요약이며 참고용입니다.</p>
     </div>
   );
 }
@@ -787,24 +821,24 @@ export default function CsSatisfactionPage() {
         </div>
       </header>
 
-      <div className="cs-sat-grid">
-        {/* 좌상단: 당월 누적 만족도 */}
-        <MonthlyAccumulatedPanel data={satData} year={year} month={month} />
+      <CsSatisfactionKpiRow data={satData} year={year} month={month} />
 
-        {/* 우상단: 인사이트 */}
-        <AiInsightPanel data={satData} />
-
-        {/* 좌하단: 불만족 원인 건수 */}
-        <UnsatisfiedCategoriesPanel
-          categories={satData?.unsatisfiedCategories}
-          year={year}
-          month={month}
-          skid={user?.skid}
-          detailFallbackByType={MOCK_DATA.unsatisfiedDetailSamples}
-        />
-
-        {/* 우하단: Good 멘트 사례 */}
-        <GoodCommentsPanel comments={satData?.goodComments} />
+      <div className="cs-sat-hero-layout">
+        <div className="cs-sat-hero-left">
+          <MonthlyAccumulatedPanel data={satData} year={year} month={month}>
+            <UnsatisfiedCategoriesPanel
+              embedded
+              categories={satData?.unsatisfiedCategories}
+              year={year}
+              month={month}
+              skid={user?.skid}
+              detailFallbackByType={MOCK_DATA.unsatisfiedDetailSamples}
+            />
+          </MonthlyAccumulatedPanel>
+        </div>
+        <div className="cs-sat-hero-ai">
+          <AiInsightPanel data={satData} />
+        </div>
       </div>
     </div>
   );

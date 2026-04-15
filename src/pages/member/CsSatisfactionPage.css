@@ -19,9 +19,11 @@
   opacity: 0.68;
 }
 
-/* ── 페이지 컨테이너 gap 재정의 (YOU PRO 기본 2rem → 1rem) */
+/* ── 페이지 컨테이너 gap 재정의 (YOU PRO 기본 2rem → 1rem) · 홈과 동일 폭 */
 .cs-sat-page.adm-dashboard--yp {
   gap: 1rem;
+  max-width: 1120px;
+  margin: 0 auto;
 }
 
 /* ── 페이지 헤더 ──────────────────────────────────────────── */
@@ -32,18 +34,300 @@
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.85);
 }
 
-/* ── 4-섹션 그리드 ────────────────────────────────────────── */
-.cs-sat-grid {
+/* ── 상단 4지표 — 게이지 없음, 숫자·라벨 중심 ───────────────── */
+.cs-sat-kpi-tiles {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-  align-items: stretch;   /* 같은 행의 카드 높이 통일 */
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.65rem;
 }
 
 @media (max-width: 900px) {
-  .cs-sat-grid {
+  .cs-sat-kpi-tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 440px) {
+  .cs-sat-kpi-tiles {
     grid-template-columns: 1fr;
   }
+}
+
+.cs-sat-kpi-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: 14px;
+  border: 1px solid var(--border, rgba(15, 23, 42, 0.1));
+  background: var(--surface, #fff);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  border-left: 3px solid rgba(15, 23, 42, 0.2);
+  min-height: 5.5rem;
+  box-sizing: border-box;
+}
+
+.cs-sat-kpi-tile--target {
+  border-left-color: rgba(180, 83, 9, 0.55);
+}
+
+.cs-sat-kpi-tile--rate.cs-sat-kpi-tile--met {
+  border-left-color: rgba(5, 150, 105, 0.55);
+}
+
+.cs-sat-kpi-tile--rate.cs-sat-kpi-tile--near {
+  border-left-color: rgba(217, 119, 6, 0.55);
+}
+
+.cs-sat-kpi-tile--rate.cs-sat-kpi-tile--below {
+  border-left-color: rgba(100, 116, 139, 0.5);
+}
+
+.cs-sat-kpi-tile--score {
+  border-left-color: rgba(13, 148, 136, 0.5);
+}
+
+.cs-sat-kpi-tile--focus {
+  border-left-color: rgba(109, 40, 217, 0.45);
+}
+
+.cs-sat-kpi-tile-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.35rem;
+}
+
+.cs-sat-kpi-tile-label {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-secondary);
+  line-height: 1.35;
+}
+
+.cs-sat-kpi-tile-ico {
+  flex-shrink: 0;
+  opacity: 0.55;
+  color: var(--text-tertiary);
+}
+
+.cs-sat-kpi-tile-value {
+  margin: 0;
+  font-size: 1.65rem;
+  font-weight: 800;
+  letter-spacing: -0.05em;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+.cs-sat-kpi-tile-unit {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  margin-left: 0.08em;
+  color: var(--text-tertiary);
+}
+
+.cs-sat-kpi-tile-hint {
+  margin: 0.1rem 0 0;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text-secondary);
+}
+
+.cs-sat-kpi-focus-list {
+  list-style: none;
+  margin: 0.15rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+}
+
+.cs-sat-kpi-focus-list li {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: -0.02em;
+}
+
+.cs-sat-kpi-focus-list strong {
+  font-size: 0.9375rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+  margin-left: auto;
+}
+
+.cs-sat-kpi-focus-unit {
+  font-size: 0.62rem;
+  font-weight: 600;
+  color: var(--text-tertiary);
+}
+
+.cs-sat-kpi-tile-micro {
+  margin: 0.2rem 0 0;
+  font-size: 0.58rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text-tertiary);
+}
+
+/* ── 본문: 당월+Good(좌) · AI(우) 동일 너비 1:1 ─────────── */
+.cs-sat-hero-layout {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  align-items: stretch;
+  min-height: min(70vh, 520px);
+}
+
+.cs-sat-hero-left {
+  min-width: 0;
+}
+
+.cs-sat-hero-ai {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.cs-sat-hero-ai .ai-card--hero {
+  flex: 1;
+  min-height: 0;
+}
+
+@media (max-width: 1024px) {
+  .cs-sat-hero-layout {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+}
+
+/* ── 당월 카드 안 Good 멘트 통합 ─────────────────────────── */
+.cs-sat-monthly-good {
+  margin-top: 0.15rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid rgba(16, 185, 129, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.cs-sat-monthly-good-head {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.cs-sat-monthly-good-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 8px;
+  color: #059669;
+  background: rgba(16, 185, 129, 0.12);
+  flex-shrink: 0;
+}
+
+.cs-sat-monthly-good-title {
+  font-size: 0.8125rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: #065f46;
+}
+
+.cs-sat-monthly-good-badge {
+  margin-left: auto;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: #059669;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  border-radius: 999px;
+  padding: 0.15rem 0.5rem;
+}
+
+.cs-sat-monthly-good-lead {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  color: rgba(5, 95, 70, 0.85);
+  line-height: 1.35;
+}
+
+.cs-sat-monthly-good-lead-ico {
+  flex-shrink: 0;
+  color: #10b981;
+  opacity: 0.9;
+}
+
+.cs-sat-monthly-good-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.cs-sat-monthly-good-item {
+  display: flex;
+  gap: 0.35rem;
+  align-items: flex-start;
+  padding: 0.5rem 0.55rem;
+  border-radius: 10px;
+  border: 1px solid rgba(16, 185, 129, 0.14);
+  background: rgba(255, 255, 255, 0.75);
+  box-shadow: 0 1px 2px rgba(16, 185, 129, 0.05);
+}
+
+.cs-sat-monthly-good-quote {
+  font-size: 1.35rem;
+  line-height: 1;
+  font-family: Georgia, 'Times New Roman', serif;
+  color: rgba(16, 185, 129, 0.28);
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-top: -2px;
+  user-select: none;
+}
+
+.cs-sat-monthly-good-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.cs-sat-monthly-good-text {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.48;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+
+.cs-sat-monthly-good-date {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-top: 0.3rem;
+  font-size: 0.62rem;
+  font-weight: 600;
+  color: var(--text-tertiary);
 }
 
 /* ── 공통 카드 ────────────────────────────────────────────── */
@@ -175,6 +459,59 @@
 
 .csm-card {
   gap: 0.55rem;
+}
+
+/* 좌열 당월 누적 — 컴팩트 */
+.cs-sat-monthly-compact {
+  padding: 0.75rem 0.85rem;
+  gap: 0.45rem;
+}
+
+.cs-sat-monthly-compact .section-title {
+  font-size: 0.8125rem;
+}
+
+.cs-sat-monthly-compact .cs-sat-period-badge {
+  font-size: 0.65rem;
+  padding: 0.18rem 0.55rem;
+}
+
+.cs-sat-monthly-compact .csm-stat-strip {
+  padding: 0.32rem 0.42rem;
+}
+
+.cs-sat-monthly-compact .csm-stat-label {
+  font-size: 0.65rem;
+}
+
+.cs-sat-monthly-compact .csm-stat-val {
+  font-size: 0.8rem;
+}
+
+.cs-sat-monthly-compact .csm-chart-wrap {
+  padding: 0.4rem 0.5rem 0.35rem;
+}
+
+.cs-sat-monthly-compact .csm-chart-body {
+  height: 52px;
+}
+
+.cs-sat-monthly-compact .csm-chart-title {
+  font-size: 0.65rem;
+}
+
+.cs-sat-monthly-compact .cs-sat-ucat-embedded {
+  margin-top: 0.08rem;
+  padding: 0.45rem 0.55rem;
+}
+
+.cs-sat-monthly-compact .cs-sat-ucat-embedded .cs-sat-ucat-list {
+  max-height: 130px;
+}
+
+.cs-sat-monthly-compact .cs-sat-ucat-footnote {
+  font-size: 0.58rem;
+  padding-top: 0.15rem;
 }
 
 /* ── KPI: 한 줄 스트립 — 낮은 높이, 가운데만 달성률 색 ───── */
@@ -317,60 +654,62 @@
   color: var(--text-primary);
 }
 
-/* ── 중점추진과제 (5대도시·5060·문제해결) 컴팩트 ──────────── */
+/* ── 중점추진과제 (5대도시·5060·문제해결) ─────────────────── */
 .csm-focus-strip {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.4rem 0.65rem;
-  padding: 0.38rem 0.5rem;
-  border-radius: var(--r-sm, 8px);
-  border: 1px solid rgba(16, 185, 129, 0.14);
-  background: rgba(16, 185, 129, 0.04);
+  gap: 0.55rem 0.75rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: var(--r-md, 10px);
+  border: 1px solid rgba(16, 185, 129, 0.18);
+  background: rgba(16, 185, 129, 0.06);
 }
 
 .csm-focus-hint {
-  font-size: 0.58rem;
+  font-size: 0.75rem;
   font-weight: 800;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: rgba(5, 95, 70, 0.75);
+  letter-spacing: -0.02em;
+  color: rgba(5, 95, 70, 0.92);
   flex-shrink: 0;
+  line-height: 1.2;
 }
 
 .csm-focus-chips {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.45rem;
   flex: 1;
   min-width: 0;
 }
 
 .csm-focus-chip {
   display: inline-flex;
-  align-items: baseline;
-  gap: 0.28rem;
-  padding: 0.18rem 0.45rem 0.16rem;
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.75);
-  border: 1px solid rgba(16, 185, 129, 0.12);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.32rem 0.55rem 0.3rem;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(16, 185, 129, 0.16);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.95) inset;
 }
 
 .csm-focus-chip-label {
-  font-size: 0.62rem;
+  font-size: 0.78rem;
   font-weight: 700;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.025em;
   color: var(--text-secondary);
 }
 
 .csm-focus-chip-val {
-  font-size: 0.78rem;
+  font-size: 1.05rem;
   font-weight: 800;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.04em;
   font-variant-numeric: tabular-nums;
   color: var(--text-primary);
+  min-width: 1.15em;
+  text-align: right;
 }
 
 /* ── 샘플 통계 인라인 스트립 ─────────────────────────────── */
@@ -494,6 +833,51 @@
   color: #b91c1c;
   background: rgba(220, 38, 38, 0.08);
   border-color: rgba(220, 38, 38, 0.18);
+}
+
+/* 당월 누적 카드 안에 넣는 불만족 원인(임베드) */
+.cs-sat-ucat-embedded {
+  margin-top: 0.2rem;
+  padding: 0.65rem 0.75rem 0.55rem;
+  border-radius: var(--r-md, 12px);
+  border: 1px solid rgba(220, 38, 38, 0.16);
+  background: linear-gradient(
+    165deg,
+    rgba(220, 38, 38, 0.05) 0%,
+    var(--surface, #fff) 70%
+  );
+}
+
+.cs-sat-ucat-embed-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.45rem;
+}
+
+.cs-sat-ucat-embed-title {
+  font-size: 0.8125rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: #991b1b;
+}
+
+.cs-sat-ucat-embed-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #b91c1c;
+  background: rgba(220, 38, 38, 0.08);
+  border: 1px solid rgba(220, 38, 38, 0.16);
+  border-radius: var(--r-full, 9999px);
+  padding: 0.18rem 0.55rem;
+  white-space: nowrap;
+}
+
+.cs-sat-ucat-embedded .cs-sat-ucat-list {
+  flex: none;
+  max-height: min(240px, 42vh);
+  overflow-y: auto;
 }
 
 /* 요약 배너 */
@@ -948,151 +1332,6 @@
 }
 
 /* ══════════════════════════════════════════════════════════
-   패널 — Good 멘트 사례 (우하단) · 카드 테마는 공통 .cs-sat-card--good
-   ══════════════════════════════════════════════════════════ */
-
-/* 건수 뱃지 */
-.cs-sat-good-count-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: #059669;
-  background: rgba(16, 185, 129, 0.1);
-  border: 1px solid rgba(16, 185, 129, 0.22);
-  border-radius: var(--r-full, 9999px);
-  padding: 0.25rem 0.7rem;
-  white-space: nowrap;
-}
-
-/* 안내 문구 */
-.cs-sat-good-desc {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.4rem;
-  padding: 0.45rem 0.7rem;
-  background: rgba(16, 185, 129, 0.06);
-  border: 1px solid rgba(16, 185, 129, 0.14);
-  border-radius: var(--r-sm, 8px);
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  color: #065f46;
-  line-height: 1.45;
-}
-
-.cs-sat-good-desc-icon {
-  flex-shrink: 0;
-  margin-top: 1px;
-  color: #10b981;
-}
-
-/* ── 멘트 리스트 ──────────────────────────────────────────── */
-.cs-sat-good-list {
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  flex: 1;
-}
-
-.cs-sat-good-item {
-  display: flex;
-  gap: 0.5rem;
-  padding: 0.6rem 0.75rem;
-  background: var(--surface, #fff);
-  border: 1px solid rgba(16, 185, 129, 0.14);
-  border-radius: var(--r-sm, 8px);
-  box-shadow: 0 1px 3px rgba(16, 185, 129, 0.06);
-  transition: box-shadow 0.18s ease, border-color 0.18s ease;
-  position: relative;
-  overflow: hidden;
-  flex: 1;
-  align-items: flex-start;
-}
-
-.cs-sat-good-item::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, #10b981, #34d399, transparent);
-  opacity: 0.35;
-}
-
-.cs-sat-good-item:hover {
-  border-color: rgba(16, 185, 129, 0.3);
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.1);
-}
-
-/* 장식용 따옴표 */
-.cs-sat-good-quote-mark {
-  font-size: 1.7rem;
-  line-height: 1;
-  font-family: Georgia, 'Times New Roman', serif;
-  color: rgba(16, 185, 129, 0.25);
-  font-weight: 900;
-  flex-shrink: 0;
-  margin-top: -4px;
-  user-select: none;
-}
-
-/* 본문 + 푸터 */
-.cs-sat-good-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.cs-sat-good-text {
-  font-size: 0.8125rem;
-  font-weight: 500;
-  color: var(--text-primary);
-  line-height: 1.5;
-  letter-spacing: -0.02em;
-}
-
-.cs-sat-good-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.cs-sat-good-date {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  font-size: 0.68rem;
-  font-weight: 600;
-  color: var(--text-tertiary);
-}
-
-.cs-sat-good-like-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: rgba(16, 185, 129, 0.1);
-  color: #10b981;
-}
-
-/* 하단 안내 */
-.cs-sat-good-notice {
-  font-size: 0.7rem;
-  font-weight: 500;
-  color: var(--text-tertiary);
-  text-align: center;
-  padding-top: 0.25rem;
-  letter-spacing: -0.01em;
-}
-
-/* ══════════════════════════════════════════════════════════
    패널 B — 인사이트 (우상단)   ai-* · YOU PRO 톤, 과장 없음
    ══════════════════════════════════════════════════════════ */
 
@@ -1103,8 +1342,38 @@
   background: var(--surface, #fff);
 }
 
-/* 인사이트 — 그린 베이스 + 아주 은은한 인디고( AI 톤 ), 과하지 않게 */
-.cs-sat-card--good.ai-card {
+/* 인사이트 히어로(우측 대형) — 인디고·틸 그라데이션 */
+.cs-sat-card.ai-card--hero {
+  position: relative;
+  overflow: hidden;
+  gap: 1rem;
+  padding: 1.35rem 1.35rem 1.2rem 1.45rem;
+  border-color: rgba(99, 102, 241, 0.22);
+  background: linear-gradient(
+    155deg,
+    rgba(99, 102, 241, 0.09) 0%,
+    rgba(45, 212, 191, 0.06) 42%,
+    var(--surface, #fff) 68%
+  );
+  box-shadow:
+    0 8px 32px rgba(99, 102, 241, 0.1),
+    0 2px 8px rgba(15, 23, 42, 0.04);
+}
+
+.cs-sat-card.ai-card--hero::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  border-radius: 0 3px 3px 0;
+  background: linear-gradient(180deg, #6366f1 0%, #14b8a6 55%, #34d399 100%);
+  pointer-events: none;
+}
+
+/* 구버전: Good+AI 겹침 시 (미사용 시 무해) */
+.cs-sat-card--good.ai-card:not(.ai-card--hero) {
   border-color: rgba(16, 185, 129, 0.16);
   background: linear-gradient(
     155deg,
@@ -1112,16 +1381,6 @@
     rgba(99, 102, 241, 0.02) 38%,
     var(--surface, #fff) 62%
   );
-}
-
-.cs-sat-card--good.ai-card::before {
-  background: linear-gradient(
-    180deg,
-    #10b981 0%,
-    #6366f1 48%,
-    rgba(52, 211, 153, 0.35) 100%
-  );
-  opacity: 0.85;
 }
 
 .ai-title-icon {
@@ -1132,21 +1391,171 @@
   flex-shrink: 0;
 }
 
-.cs-sat-card--good.ai-card .ai-title-badge {
-  color: #4f46a3;
-  background: rgba(99, 102, 241, 0.07);
-  border-color: rgba(99, 102, 241, 0.16);
+.cs-sat-card.ai-card--hero .ai-feed-icon-chip--hero {
+  background: rgba(99, 102, 241, 0.12);
+  color: rgba(67, 56, 202, 0.88);
 }
 
-.cs-sat-card--good.ai-card .ai-feed-icon-chip {
-  background: rgba(99, 102, 241, 0.06);
-  color: rgba(67, 56, 202, 0.72);
+.ai-disclaimer--hero {
+  padding-top: 0.55rem;
+  margin-top: 0.15rem;
+  border-top: 1px solid rgba(99, 102, 241, 0.12);
 }
 
-.cs-sat-card--good.ai-card .ai-disclaimer {
-  padding-top: 0.4rem;
-  margin-top: 0.1rem;
-  border-top: 1px solid rgba(99, 102, 241, 0.1);
+/* 히어로 헤더·하이라이트 */
+.ai-hero-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.ai-hero-title-block {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.ai-hero-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 14px;
+  flex-shrink: 0;
+  color: #6366f1;
+  background: linear-gradient(145deg, rgba(99, 102, 241, 0.18), rgba(45, 212, 191, 0.12));
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.15);
+}
+
+.ai-hero-kicker {
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(79, 70, 229, 0.75);
+  margin-bottom: 0.2rem;
+}
+
+.ai-hero-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1.2;
+  color: var(--text-primary);
+}
+
+.ai-hero-meta {
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+}
+
+.ai-hero-highlight {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 1rem 1.25rem;
+  padding: 1rem 1.1rem;
+  border-radius: 14px;
+  border: 1px solid rgba(99, 102, 241, 0.14);
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(8px);
+}
+
+.ai-hero-highlight--over {
+  border-color: rgba(13, 148, 136, 0.25);
+  background: linear-gradient(
+    120deg,
+    rgba(13, 148, 136, 0.1) 0%,
+    rgba(255, 255, 255, 0.75) 100%
+  );
+}
+
+.ai-hero-highlight--under {
+  border-color: rgba(15, 23, 42, 0.1);
+  background: rgba(248, 250, 252, 0.9);
+}
+
+.ai-hero-highlight-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.ai-hero-highlight-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-secondary);
+}
+
+.ai-hero-highlight-score {
+  font-size: 2.35rem;
+  font-weight: 900;
+  letter-spacing: -0.055em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--yp-accent, #0d4f6c);
+}
+
+.ai-hero-highlight-score em {
+  font-size: 1.1rem;
+  font-style: normal;
+  font-weight: 800;
+  margin-left: 0.12em;
+  color: var(--text-tertiary);
+}
+
+.ai-hero-highlight-side {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  justify-content: center;
+  flex: 1;
+  min-width: 140px;
+}
+
+.ai-hero-pill {
+  align-self: flex-start;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+}
+
+.ai-hero-pill--pos {
+  color: #047857;
+  background: rgba(16, 185, 129, 0.18);
+  border: 1px solid rgba(16, 185, 129, 0.28);
+}
+
+.ai-hero-pill--warn {
+  color: #9a3412;
+  background: rgba(251, 146, 60, 0.15);
+  border: 1px solid rgba(251, 146, 60, 0.28);
+}
+
+.ai-hero-delta,
+.ai-hero-n {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--text-secondary);
+}
+
+.ai-hero-delta strong,
+.ai-hero-n strong {
+  font-weight: 800;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
 }
 
 .ai-header {
@@ -1302,6 +1711,63 @@
 
 .ai-feed-item:first-child {
   padding-top: 0.15rem;
+}
+
+/* 인사이트 본문: 2×2 큰 그리드 */
+.ai-feed-list--hero {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.85rem 1rem;
+  flex: 1;
+  min-height: 0;
+  align-content: start;
+}
+
+.ai-feed-item--hero {
+  margin: 0;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid rgba(99, 102, 241, 0.12);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 1px 3px rgba(99, 102, 241, 0.06);
+  border-bottom: 1px solid rgba(99, 102, 241, 0.1);
+  min-height: 6.5rem;
+  align-items: flex-start;
+}
+
+.ai-feed-item--hero .ai-feed-label {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: rgba(67, 56, 202, 0.92);
+}
+
+.ai-feed-item--hero .ai-feed-body {
+  font-size: 0.90625rem;
+  line-height: 1.55;
+}
+
+/* 기본 리스트 규칙(마지막 줄 제거 등) 무력화 */
+.ai-feed-list--hero .ai-feed-item--hero:first-child,
+.ai-feed-list--hero .ai-feed-item--hero:last-child {
+  padding-top: 0.85rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid rgba(99, 102, 241, 0.12);
+}
+
+.ai-feed-icon-chip--hero {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 10px;
+}
+
+@media (max-width: 640px) {
+  .ai-feed-list--hero {
+    grid-template-columns: 1fr;
+  }
+
+  .ai-feed-item--hero {
+    min-height: 0;
+  }
 }
 
 .ai-feed-icon-chip {
