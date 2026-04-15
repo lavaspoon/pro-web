@@ -9,6 +9,7 @@ import {
   Trophy,
   Clock,
   ChevronRight,
+  X,
 } from 'lucide-react';
 import {
   fetchAdminDashboard,
@@ -20,7 +21,14 @@ import { mergeSecondDepthOptions } from '../../utils/adminSecondDepth';
 import AdminMemberDetailCard from './AdminMemberDetailCard';
 import './DashboardPage.css';
 
-const RANK_TOP_N = 3;
+const RANK_TOP_N = 15;
+
+/** 좌→우: 1~5위 | 6~10위 | 11~15위 (열당 5행 고정) */
+const RANK_BLOCKS = [
+  { id: 'r1-5', title: '1 ~ 5위', startRank: 1, endRank: 5 },
+  { id: 'r6-10', title: '6 ~ 10위', startRank: 6, endRank: 10 },
+  { id: 'r11-15', title: '11 ~ 15위', startRank: 11, endRank: 15 },
+];
 
 /** API 랭킹 항목 → 카드 행 (TB_YOU_PRO_CASE 접수 건수) */
 function rankRowsFromApi(entries) {
@@ -39,6 +47,11 @@ function enrichTeam(team) {
     0
   );
   return { ...team, pendingSum };
+}
+
+/** 센터·그룹 필터용 정규화 (빈 값은 '') */
+function normFilterKey(v) {
+  return String(v ?? '').trim();
 }
 
 function SortTh({ label, sortKey, sortConfig, onSort }) {
@@ -61,37 +74,11 @@ function SortTh({ label, sortKey, sortConfig, onSort }) {
   );
 }
 
-function RankingCard({ title, badgeClass, icon: Icon, rows, emptyHint }) {
-  return (
-    <div className="adm-ranking-card">
-      <div className={`adm-ranking-badge ${badgeClass}`}>
-        <Icon size={13} strokeWidth={2.2} />
-        {title}
-      </div>
-      <div className="adm-ranking-list">
-        {rows.length === 0 ? (
-          <p className="adm-ranking-empty">{emptyHint}</p>
-        ) : (
-          rows.map((row, index) => (
-            <div key={String(row.id)} className="adm-ranking-row">
-              <span className={`adm-rank-num adm-rank-num--${index + 1}`}>{index + 1}</span>
-              <div className="adm-rank-info">
-                <span className="adm-rank-name">{row.name}</span>
-                <span className="adm-rank-dept">{row.teamName}</span>
-              </div>
-              <span className="adm-rank-val">{row.value}</span>
-            </div>
-          ))
-        )}
-      </div>
-    </div>
-  );
-}
-
 export default function DashboardPage() {
   const [selectedTeamId, setSelectedTeamId] = useState(null);
-  /** 2depth 부서 필터: 전체 | 백엔드 설정 dept_id */
-  const [secondDepthKey, setSecondDepthKey] = useState('all');
+  /** null = 미적용, 문자열(빈 문자열 포함) = 해당 값과 일치하는 행만 */
+  const [filterCenter, setFilterCenter] = useState(null);
+  const [filterGroup, setFilterGroup] = useState(null);
   const [sortConfig, setSortConfig] = useState({
     key: 'totalSubmitted',
     direction: 'desc',
@@ -116,10 +103,14 @@ export default function DashboardPage() {
     enabled: dashYear != null,
   });
 
+  const rankingRows = useMemo(
+    () => rankRowsFromApi(rankingData?.combined?.topMembers),
+    [rankingData?.combined?.topMembers]
+  );
+
   const { data: leafPayload } = useQuery({
-    queryKey: ['admin-leaf-teams', secondDepthKey],
-    queryFn: () =>
-      fetchAdminLeafTeams(secondDepthKey === 'all' ? null : Number(secondDepthKey)),
+    queryKey: ['admin-leaf-teams'],
+    queryFn: () => fetchAdminLeafTeams(null),
     enabled: data != null,
   });
 
@@ -128,28 +119,59 @@ export default function DashboardPage() {
     return teams.map(enrichTeam);
   }, [leafPayload?.teams]);
 
+  const teamsFiltered = useMemo(() => {
+    return teamsEnriched.filter((t) => {
+      if (filterCenter !== null) {
+        const c = normFilterKey(t.centerName);
+        if (filterCenter === '' ? c !== '' : c !== filterCenter) return false;
+      }
+      if (filterGroup !== null) {
+        const g = normFilterKey(t.groupName);
+        if (filterGroup === '' ? g !== '' : g !== filterGroup) return false;
+      }
+      return true;
+    });
+  }, [teamsEnriched, filterCenter, filterGroup]);
+
   const sortedTeams = useMemo(() => {
-    const list = [...teamsEnriched];
+    const list = [...teamsFiltered];
     const { key, direction } = sortConfig;
     const dir = direction === 'asc' ? 1 : -1;
     const compare = (a, b) => {
-      if (key === 'name') {
-        return a.name.localeCompare(b.name, 'ko') * dir;
+      if (key === 'name' || key === 'centerName' || key === 'groupName') {
+        return String(a[key] ?? '').localeCompare(String(b[key] ?? ''), 'ko') * dir;
       }
       const va = Number(a[key] ?? 0);
       const vb = Number(b[key] ?? 0);
       return (va - vb) * dir;
     };
     return list.sort(compare);
-  }, [teamsEnriched, sortConfig]);
+  }, [teamsFiltered, sortConfig]);
+
+  const teamTableTotals = useMemo(() => {
+    return sortedTeams.reduce(
+      (acc, t) => ({
+        totalSubmitted: acc.totalSubmitted + Number(t.totalSubmitted ?? 0),
+        totalSelected: acc.totalSelected + Number(t.totalSelected ?? 0),
+        monthlySubmitted: acc.monthlySubmitted + Number(t.monthlySubmitted ?? 0),
+        monthlySelected: acc.monthlySelected + Number(t.monthlySelected ?? 0),
+      }),
+      {
+        totalSubmitted: 0,
+        totalSelected: 0,
+        monthlySubmitted: 0,
+        monthlySelected: 0,
+      }
+    );
+  }, [sortedTeams]);
 
   useEffect(() => {
     setSelectedTeamId((id) => {
       if (id == null) return null;
-      const still = teamsEnriched.some((t) => Number(t.id) === Number(id));
+      const still = teamsFiltered.some((t) => Number(t.id) === Number(id));
       return still ? id : null;
     });
-  }, [teamsEnriched]);
+  }, [teamsFiltered]);
 
   const {
     data: teamDetailData,
@@ -165,7 +187,7 @@ export default function DashboardPage() {
   const handleSort = (key) => {
     setSortConfig((prev) => {
       if (prev.key !== key) {
-        const isText = key === 'name';
+        const isText = key === 'name' || key === 'centerName' || key === 'groupName';
         return { key, direction: isText ? 'asc' : 'desc' };
       }
       return {
@@ -173,6 +195,23 @@ export default function DashboardPage() {
         direction: prev.direction === 'asc' ? 'desc' : 'asc',
       };
     });
+  };
+
+  const handleCenterFilterClick = (e, team) => {
+    e.stopPropagation();
+    const key = normFilterKey(team.centerName);
+    setFilterCenter((prev) => (prev === key ? null : key));
+  };
+
+  const handleGroupFilterClick = (e, team) => {
+    e.stopPropagation();
+    const key = normFilterKey(team.groupName);
+    setFilterGroup((prev) => (prev === key ? null : key));
+  };
+
+  const clearDeptFilters = () => {
+    setFilterCenter(null);
+    setFilterGroup(null);
   };
 
   if (isLoading || !data) {
@@ -201,14 +240,12 @@ export default function DashboardPage() {
     totalSelected = 0,
     memberCount = 0,
   } = data;
-  const selectedTeam = teamsEnriched.find((t) => Number(t.id) === Number(selectedTeamId));
+  const selectedTeam = teamsFiltered.find((t) => Number(t.id) === Number(selectedTeamId));
 
   const secondDepthLabelHint =
     secondDepthOptions.length > 0
       ? secondDepthOptions.map((o) => o.name).join(' · ')
       : '—';
-  const leafDepthHint = filterMeta?.leafTeamDepth ?? 5;
-
   return (
     <div className="page-container adm-dashboard adm-dashboard--yp fade-in">
       <header className="adm-header adm-header--yp">
@@ -320,78 +357,155 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      {/* 누적 개인 랭킹 — TB_YOU_PRO_CASE 접수 건수 (2depth 센터별 통계) */}
-      <section className="adm-section">
+      {/* 누적 개인 랭킹 — TB_YOU_PRO_CASE 접수 건수 (센터 구분 없이 1~15위) */}
+      <section className="adm-section adm-section--ranking">
         <div className="adm-section-title">
           <span className="adm-title-bar" />
           <div>
             <h2 className="adm-section-heading">랭킹</h2>
-            <p className="adm-section-hint">
-              {year}년 사례 접수 건수 기준
+            <p className="adm-section-hint adm-section-hint--ranking">
+              {year}년 사례 접수 건수 · 전체 센터 통합 상위 {RANK_TOP_N}위
             </p>
           </div>
         </div>
-        <div className="adm-ranking-row-three">
-          {(rankingData?.bySecondDepth ?? []).map((block, i) => (
-            <RankingCard
-              key={block.secondDepthDeptId}
-              title={`${block.secondDepthName?.trim() || `부서 ${block.secondDepthDeptId}`} · 센터 접수 ${block.centerTotalSubmitted}건`}
-              badgeClass={i % 3 === 0 ? 'adm-badge--lavender' : i % 3 === 1 ? 'adm-badge--rose' : 'adm-badge--combined'}
-              icon={Trophy}
-              rows={rankRowsFromApi(block.topMembers)}
-              emptyHint={`${block.secondDepthName?.trim() || `부서 ${block.secondDepthDeptId}`} 소속 구성원이 없거나 접수가 없습니다.`}
-            />
-          ))}
-          <RankingCard
-            title={`전체 센터 접수 ${rankingData?.combined?.totalSubmitted ?? 0}건`}
-            badgeClass="adm-badge--combined"
-            icon={Trophy}
-            rows={rankRowsFromApi(rankingData?.combined?.topMembers)}
-            emptyHint="해당 범위 구성원이 없거나 접수가 없습니다."
-          />
+        <div className="adm-rank-compact">
+          <div className="adm-rank-compact__head">
+            <Trophy className="adm-rank-compact__ico" size={19} strokeWidth={2.25} aria-hidden />
+            <span>
+              전체 접수 <strong>{rankingData?.combined?.totalSubmitted ?? 0}</strong>건
+            </span>
+          </div>
+          {rankingRows.length === 0 ? (
+            <p className="adm-rank-compact__empty">해당 범위 구성원이 없거나 접수가 없습니다.</p>
+          ) : (
+            <div className="adm-rank-compact__grid-wrap">
+              <div className="adm-rank-compact__grid">
+                {RANK_BLOCKS.map((block) => (
+                  <div key={block.id} className="adm-rank-compact__col">
+                    <div className="adm-rank-compact__block-title">{block.title}</div>
+                    <table className="adm-rank-compact__table">
+                      <thead>
+                        <tr>
+                          <th scope="col" className="adm-rank-compact__th adm-rank-compact__th--rank">
+                            순위
+                          </th>
+                          <th scope="col" className="adm-rank-compact__th">
+                            이름
+                          </th>
+                          <th scope="col" className="adm-rank-compact__th">
+                            소속
+                          </th>
+                          <th scope="col" className="adm-rank-compact__th adm-rank-compact__th--num">
+                            접수
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {Array.from(
+                          { length: block.endRank - block.startRank + 1 },
+                          (_, i) => block.startRank + i
+                        ).map((rank) => {
+                          const row = rankingRows[rank - 1];
+                          if (!row) {
+                            return (
+                              <tr key={`ph-${block.id}-${rank}`} className="adm-rank-compact__tr adm-rank-compact__tr--placeholder">
+                                <td className="adm-rank-compact__td adm-rank-compact__td--rank">
+                                  <span className="adm-rank-pill adm-rank-pill--rest">{rank}</span>
+                                </td>
+                                <td className="adm-rank-compact__td adm-rank-compact__td--placeholder" colSpan={3}>
+                                  —
+                                </td>
+                              </tr>
+                            );
+                          }
+                          return (
+                            <tr key={`r-${rank}-${row.id}`} className="adm-rank-compact__tr">
+                              <td className="adm-rank-compact__td adm-rank-compact__td--rank">
+                                <span
+                                  className={`adm-rank-pill ${
+                                    rank <= 3 ? `adm-rank-pill--${rank}` : 'adm-rank-pill--rest'
+                                  }`}
+                                >
+                                  {rank}
+                                </span>
+                              </td>
+                              <td className="adm-rank-compact__td adm-rank-compact__td--name">{row.name}</td>
+                              <td className="adm-rank-compact__td adm-rank-compact__td--team">{row.teamName}</td>
+                              <td className="adm-rank-compact__td adm-rank-compact__td--val">{row.value}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
       {/* 실별 성과 테이블 */}
       <section className="adm-section">
-        <div className="adm-section-title adm-section-title--with-filter">
+        <div className="adm-section-title">
           <span className="adm-title-bar" />
-          <div className="adm-section-title-text">
+          <div>
             <h2 className="adm-section-heading">실(부서)별 성과</h2>
             <p className="adm-section-hint">
-              행을 클릭하면 해당 팀 구성원을 아래에 표시
+              행을 클릭하면 해당 팀 구성원을 아래에 표시 ·{' '}
+              <strong>센터·그룹</strong>을 클릭하면 같은 값만 필터(다시 클릭하면 해제)
             </p>
           </div>
-          <div className="adm-dept-filter">
-            <select
-              id="adm-dept-performance-filter"
-              className="adm-dept-filter-select"
-              value={secondDepthKey}
-              onChange={(e) => setSecondDepthKey(e.target.value)}
-              aria-label="2depth 부서 필터"
-            >
-              <option value="all">전체</option>
-              {secondDepthOptions.map((o) => (
-                <option key={o.id} value={String(o.id)}>
-                  {o.name}
-                </option>
-              ))}
-            </select>
-          </div>
         </div>
+        {(filterCenter !== null || filterGroup !== null) && (
+          <div className="adm-dept-filter-bar" aria-label="적용 중인 필터">
+            <span className="adm-dept-filter-bar__label">필터</span>
+            {filterCenter !== null && (
+              <button
+                type="button"
+                className="adm-dept-filter-chip"
+                onClick={() => setFilterCenter(null)}
+                aria-label={`센터 필터 해제: ${filterCenter === '' ? '없음' : filterCenter}`}
+              >
+                센터: {filterCenter === '' ? '없음' : filterCenter}
+                <X className="adm-dept-filter-chip__x" size={14} strokeWidth={2.2} aria-hidden />
+              </button>
+            )}
+            {filterGroup !== null && (
+              <button
+                type="button"
+                className="adm-dept-filter-chip"
+                onClick={() => setFilterGroup(null)}
+                aria-label={`그룹 필터 해제: ${filterGroup === '' ? '없음' : filterGroup}`}
+              >
+                그룹: {filterGroup === '' ? '없음' : filterGroup}
+                <X className="adm-dept-filter-chip__x" size={14} strokeWidth={2.2} aria-hidden />
+              </button>
+            )}
+            <button type="button" className="adm-dept-filter-clear" onClick={clearDeptFilters}>
+              전체 해제
+            </button>
+          </div>
+        )}
         <div className="adm-table-wrap">
-          <table className="adm-table">
+          <table className="adm-table adm-table--dept-performance">
             <thead>
               <tr>
                 <SortTh
-                  label="실명"
-                  sortKey="name"
+                  label="센터"
+                  sortKey="centerName"
                   sortConfig={sortConfig}
                   onSort={handleSort}
                 />
                 <SortTh
-                  label="인원"
-                  sortKey="memberCount"
+                  label="그룹"
+                  sortKey="groupName"
+                  sortConfig={sortConfig}
+                  onSort={handleSort}
+                />
+                <SortTh
+                  label="실명"
+                  sortKey="name"
                   sortConfig={sortConfig}
                   onSort={handleSort}
                 />
@@ -424,10 +538,10 @@ export default function DashboardPage() {
             <tbody>
               {sortedTeams.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="adm-table-empty">
-                    {secondDepthKey === 'all'
+                  <td colSpan={7} className="adm-table-empty">
+                    {teamsEnriched.length === 0
                       ? 'leaf 팀이 없습니다. (부서 트리·depth 설정을 확인하세요)'
-                      : `선택한 2depth 하위 depth ${leafDepthHint} 팀이 없습니다.`}
+                      : '조건에 맞는 실이 없습니다. 필터를 해제하거나 다른 값을 선택해 보세요.'}
                   </td>
                 </tr>
               ) : (
@@ -440,10 +554,37 @@ export default function DashboardPage() {
                     }
                   >
                     <td>
+                      <button
+                        type="button"
+                        className={`adm-dept-filter-btn ${
+                          filterCenter !== null && normFilterKey(team.centerName) === filterCenter
+                            ? 'is-active'
+                            : ''
+                        }`}
+                        onClick={(e) => handleCenterFilterClick(e, team)}
+                        title="이 센터만 보기 (같은 값을 다시 클릭하면 해제)"
+                      >
+                        {team.centerName?.trim() ? team.centerName : '—'}
+                      </button>
+                    </td>
+                    <td>
+                      <button
+                        type="button"
+                        className={`adm-dept-filter-btn ${
+                          filterGroup !== null && normFilterKey(team.groupName) === filterGroup
+                            ? 'is-active'
+                            : ''
+                        }`}
+                        onClick={(e) => handleGroupFilterClick(e, team)}
+                        title="이 그룹만 보기 (같은 값을 다시 클릭하면 해제)"
+                      >
+                        {team.groupName?.trim() ? team.groupName : '—'}
+                      </button>
+                    </td>
+                    <td>
                       <span className="adm-team-name">{team.name}</span>
                       <span className="adm-member-badge">{team.memberCount}명</span>
                     </td>
-                    <td>{team.memberCount}</td>
                     <td>{Number(team.totalSubmitted ?? 0)}건</td>
                     <td>{team.totalSelected}건</td>
                     <td>{Number(team.monthlySubmitted ?? 0)}건</td>
@@ -452,6 +593,20 @@ export default function DashboardPage() {
                 ))
               )}
             </tbody>
+            {sortedTeams.length > 0 && (
+              <tfoot>
+                <tr className="adm-table-total-row">
+                  <td colSpan={3}>
+                    <span className="adm-table-total-label">합계</span>
+                    <span className="adm-table-total-sublabel">{sortedTeams.length}개 실</span>
+                  </td>
+                  <td>{teamTableTotals.totalSubmitted}건</td>
+                  <td>{teamTableTotals.totalSelected}건</td>
+                  <td>{teamTableTotals.monthlySubmitted}건</td>
+                  <td>{teamTableTotals.monthlySelected}건</td>
+                </tr>
+              </tfoot>
+            )}
           </table>
         </div>
       </section>

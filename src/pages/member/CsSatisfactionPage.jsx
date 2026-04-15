@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
   LineChart,
@@ -21,10 +22,16 @@ import {
   Lightbulb,
   TriangleAlert,
   CircleCheck,
-  RefreshCw,
+  X,
+  Loader2,
+  MessageSquareText,
 } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
-import { fetchMemberSatisfaction } from '../../api/memberApi';
+import {
+  fetchMemberSatisfaction,
+  fetchMemberFocusTasks,
+  fetchMemberUnsatisfiedDetails,
+} from '../../api/memberApi';
 import '../admin/DashboardPage.css';
 import './CsSatisfactionPage.css';
 
@@ -51,13 +58,40 @@ const MOCK_DATA = {
     { day: '4/14', score: 99.2 },
   ],
   unsatisfiedCategories: [
-    { label: '서비스 지식부족',         count: 0 },
-    { label: '성의 없는 태도',          count: 0 },
-    { label: '적절하지 않는 혜택 안내',  count: 0 },
-    { label: '알아듣기 어려운 설명',     count: 0 },
-    { label: '문의내용 이해 못함',       count: 1 },
+    { label: '서비스 지식부족', dissatisfactionType: 1, count: 0 },
+    { label: '성의 없는 태도', dissatisfactionType: 2, count: 0 },
+    { label: '적절하지 않는 혜택 안내', dissatisfactionType: 3, count: 0 },
+    { label: '알아듣기 어려운 설명', dissatisfactionType: 4, count: 0 },
+    { label: '문의내용 이해 못함', dissatisfactionType: 5, count: 1 },
   ],
+  /** API 미연동 시 상세 모달 예시 (유형 코드 → 레코드 배열) */
+  unsatisfiedDetailSamples: {
+    5: [
+      {
+        id: 9001,
+        evalDate: '2026-04-10',
+        consultTime: '143052',
+        subsidiaryType: '자회사A',
+        centerName: '서부',
+        groupName: '고객응대',
+        roomName: '1실',
+        consultType1: '요금',
+        consultType2: '변경',
+        consultType3: '해지',
+        skill: '일반',
+        satisfiedYn: 'N',
+        goodMent: null,
+        badMent: '설명이 길어 처음 의도를 파악하지 못했습니다.',
+        fiveMajorCitiesYn: 'N',
+        gen5060Yn: 'Y',
+        problemResolvedYn: 'Y',
+      },
+    ],
+  },
   /* 고객 Good 멘트 — 추후 raw 데이터 연동 예정 */
+  fiveMajorCitiesCount: 4,
+  gen5060Count: 6,
+  problemResolvedCount: 3,
   goodComments: [
     {
       id: 1,
@@ -87,6 +121,28 @@ function formatDate(dateStr) {
   return `${d.getMonth() + 1}월 ${d.getDate()}일`;
 }
 
+function formatCsEvalDate(iso) {
+  if (iso == null) return '—';
+  if (Array.isArray(iso) && iso.length >= 3) {
+    const [y, m, d] = iso;
+    return `${y}.${String(m).padStart(2, '0')}.${String(d).padStart(2, '0')}`;
+  }
+  const s = typeof iso === 'string' ? iso.slice(0, 10) : String(iso);
+  const parts = s.split('-');
+  if (parts.length >= 3) {
+    return `${parts[0]}.${parts[1]}.${parts[2]}`;
+  }
+  return s;
+}
+
+function ynLabel(yn) {
+  if (yn == null || yn === '') return '—';
+  const u = String(yn).trim().toUpperCase();
+  if (u === 'Y') return 'Y';
+  if (u === 'N') return 'N';
+  return String(yn);
+}
+
 function TrendTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
   return (
@@ -98,15 +154,18 @@ function TrendTooltip({ active, payload, label }) {
 }
 
 /* ════════════════════════════════════════════════════════════
-   패널 A — 당월 누적 만족도 (좌상단)
+   패널 A — 당월 누적 만족도 (좌상단) · 한 줄 KPI 스트립
    ════════════════════════════════════════════════════════════ */
 function MonthlyAccumulatedPanel({ data, year, month }) {
   const d = data ?? MOCK_DATA;
-  const isAboveTarget = d.score >= d.target;
-  const isRateAbove = d.achievementRate >= 100;
+  const rate = d.achievementRate;
+  const achievementBand =
+    rate >= 100 ? 'met' : rate >= 90 ? 'near' : 'below';
+  const achievementCaption =
+    rate >= 100 ? '목표 달성' : rate >= 90 ? '목표에 근접' : '목표 미달';
 
   return (
-    <div className="cs-sat-card csm-card">
+    <div className="cs-sat-card csm-card cs-sat-card--good">
 
       {/* ── 헤더 ── */}
       <div className="cs-sat-card-header">
@@ -116,43 +175,47 @@ function MonthlyAccumulatedPanel({ data, year, month }) {
         <span className="cs-sat-period-badge">{year}년 {month}월</span>
       </div>
 
-      {/* ── KPI 3대 지표 스트립 ── */}
-      <div className="csm-kpi-strip">
-
-        {/* 목표 */}
-        <div className="csm-kpi csm-kpi--target">
-          <span className="csm-kpi-eyebrow">목표</span>
-          <div className="csm-kpi-val">
-            {fmt(d.target)}<span className="csm-kpi-unit">%</span>
+      {/* ── KPI: 한 줄 스트립 — 가운데 달성률 강조, 양쪽 목표·점수 보조 ── */}
+      <div className="csm-kpi-strip" aria-label="당월 누적 지표">
+        <div className="csm-kpi-side">
+          <span className="csm-kpi-side-label">목표</span>
+          <span className="csm-kpi-side-val">{fmt(d.target)}%</span>
+        </div>
+        <div className="csm-kpi-sep" aria-hidden />
+        <div className={`csm-kpi-center csm-kpi-center--${achievementBand}`}>
+          <span className="csm-kpi-center-label">달성률</span>
+          <div className="csm-kpi-center-row">
+            <span className="csm-kpi-center-value">
+              {fmt(rate)}
+              <span className="csm-kpi-center-unit">%</span>
+            </span>
+            <span className="csm-kpi-center-cap">{achievementCaption}</span>
           </div>
         </div>
-
-        {/* 중앙 구분선 */}
-        <div className="csm-kpi-sep" />
-
-        {/* 만족도 점수 — 가장 크고 강조 */}
-        <div className={`csm-kpi csm-kpi--score${isAboveTarget ? ' csm-kpi--score-above' : ''}`}>
-          <span className="csm-kpi-eyebrow">만족도 점수</span>
-          <div className="csm-kpi-val csm-kpi-val--hero">
-            {fmt(d.score)}<span className="csm-kpi-unit">점</span>
-          </div>
-          {isAboveTarget && (
-            <span className="csm-kpi-status-dot" title="목표 초과 달성" />
-          )}
+        <div className="csm-kpi-sep" aria-hidden />
+        <div className="csm-kpi-side">
+          <span className="csm-kpi-side-label">만족도 점수</span>
+          <span className="csm-kpi-side-val">{fmt(d.score)}점</span>
         </div>
+      </div>
 
-        {/* 중앙 구분선 */}
-        <div className="csm-kpi-sep" />
-
-        {/* 달성률 */}
-        <div className={`csm-kpi csm-kpi--rate${isRateAbove ? ' csm-kpi--rate-above' : ''}`}>
-          <span className="csm-kpi-eyebrow">달성률</span>
-          <div className="csm-kpi-val">
-            {fmt(d.achievementRate)}<span className="csm-kpi-unit">%</span>
-          </div>
-          {isRateAbove && <span className="csm-rate-arrow">▲</span>}
+      {/* ── 중점추진과제 (당월 Y 건수) ── */}
+      <div className="csm-focus-strip" aria-label="중점추진과제 당월 건수">
+        <span className="csm-focus-hint">중점추진과제</span>
+        <div className="csm-focus-chips">
+          <span className="csm-focus-chip" title="5대도시 해당 건수">
+            <span className="csm-focus-chip-label">5대도시</span>
+            <span className="csm-focus-chip-val">{Number(d.fiveMajorCitiesCount ?? 0)}</span>
+          </span>
+          <span className="csm-focus-chip" title="5060 해당 건수">
+            <span className="csm-focus-chip-label">5060</span>
+            <span className="csm-focus-chip-val">{Number(d.gen5060Count ?? 0)}</span>
+          </span>
+          <span className="csm-focus-chip" title="문제해결 해당 건수">
+            <span className="csm-focus-chip-label">문제해결</span>
+            <span className="csm-focus-chip-val">{Number(d.problemResolvedCount ?? 0)}</span>
+          </span>
         </div>
-
       </div>
 
       {/* ── 샘플 통계 인라인 ── */}
@@ -237,11 +300,54 @@ function MonthlyAccumulatedPanel({ data, year, month }) {
 /* ════════════════════════════════════════════════════════════
    패널 C — 불만족 원인 건수 (좌하단)
    ════════════════════════════════════════════════════════════ */
-function UnsatisfiedCategoriesPanel({ categories = [], year, month }) {
+function UnsatisfiedCategoriesPanel({
+  categories = [],
+  year,
+  month,
+  skid,
+  detailFallbackByType = MOCK_DATA.unsatisfiedDetailSamples,
+}) {
   const list = categories.length > 0 ? categories : MOCK_DATA.unsatisfiedCategories;
   const total = list.reduce((s, c) => s + c.count, 0);
   const maxCount = Math.max(...list.map((c) => c.count), 1);
   const isAllClear = total === 0;
+
+  const [selected, setSelected] = useState(null);
+
+  const { data: detailRes, isLoading, isError } = useQuery({
+    queryKey: ['member-unsat-detail', skid, year, month, selected?.dissatisfactionType],
+    queryFn: () =>
+      fetchMemberUnsatisfiedDetails({
+        skid,
+        year,
+        month,
+        dissatisfactionType: selected.dissatisfactionType,
+      }),
+    enabled: !!skid && !!selected,
+    retry: false,
+  });
+
+  const detailRecords = useMemo(() => {
+    if (!selected) return [];
+    if (isError) {
+      const fb = detailFallbackByType?.[selected.dissatisfactionType];
+      return Array.isArray(fb) ? fb : [];
+    }
+    const fromApi = detailRes?.records;
+    return Array.isArray(fromApi) ? fromApi : [];
+  }, [detailRes, isError, selected, detailFallbackByType]);
+
+  const showFallbackHint = Boolean(selected && isError && detailRecords.length > 0);
+  const showLoadError = Boolean(selected && isError && detailRecords.length === 0 && !isLoading);
+
+  useEffect(() => {
+    if (!selected) return undefined;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [selected]);
 
   return (
     <div className="cs-sat-card cs-sat-card--unsat">
@@ -272,41 +378,187 @@ function UnsatisfiedCategoriesPanel({ categories = [], year, month }) {
         {list.map((cat, idx) => {
           const barWidth = cat.count === 0 ? 0 : Math.max((cat.count / maxCount) * 100, 8);
           const hasIssue = cat.count > 0;
+          const dissType = cat.dissatisfactionType ?? idx + 1;
           return (
-            <li key={cat.label} className={`cs-sat-ucat-item${hasIssue ? ' cs-sat-ucat-item--alert' : ''}`}>
-              {/* 좌: 순번 + 라벨 */}
-              <div className="cs-sat-ucat-left">
-                <span className={`cs-sat-ucat-rank${hasIssue ? ' cs-sat-ucat-rank--alert' : ''}`}>
-                  {idx + 1}
-                </span>
-                <span className="cs-sat-ucat-label">{cat.label}</span>
-              </div>
-
-              {/* 우: 바 + 건수 */}
-              <div className="cs-sat-ucat-right">
-                <div className="cs-sat-ucat-bar-track">
-                  <div
-                    className={`cs-sat-ucat-bar-fill${hasIssue ? ' cs-sat-ucat-bar-fill--alert' : ''}`}
-                    style={{ width: hasIssue ? `${barWidth}%` : '0%' }}
-                  />
+            <li
+              key={cat.label}
+              className={`cs-sat-ucat-item${hasIssue ? ' cs-sat-ucat-item--alert cs-sat-ucat-item--clickable' : ''}`}
+            >
+              <button
+                type="button"
+                className="cs-sat-ucat-row-btn"
+                disabled={!hasIssue || !skid}
+                onClick={() => {
+                  if (!hasIssue || !skid) return;
+                  setSelected({ dissatisfactionType: dissType, label: cat.label });
+                }}
+                aria-label={hasIssue ? `${cat.label} 상세 보기` : undefined}
+              >
+                <div className="cs-sat-ucat-left">
+                  <span className={`cs-sat-ucat-rank${hasIssue ? ' cs-sat-ucat-rank--alert' : ''}`}>
+                    {idx + 1}
+                  </span>
+                  <span className="cs-sat-ucat-label">{cat.label}</span>
                 </div>
-                <span className={`cs-sat-ucat-count${hasIssue ? ' cs-sat-ucat-count--alert' : ''}`}>
-                  {hasIssue ? (
-                    <>{cat.count}<em>건</em></>
-                  ) : (
-                    <CheckCircle2 size={14} strokeWidth={2.2} className="cs-sat-ucat-clear-icon" />
-                  )}
-                </span>
-              </div>
+                <div className="cs-sat-ucat-right">
+                  <div className="cs-sat-ucat-bar-track">
+                    <div
+                      className={`cs-sat-ucat-bar-fill${hasIssue ? ' cs-sat-ucat-bar-fill--alert' : ''}`}
+                      style={{ width: hasIssue ? `${barWidth}%` : '0%' }}
+                    />
+                  </div>
+                  <span className={`cs-sat-ucat-count${hasIssue ? ' cs-sat-ucat-count--alert' : ''}`}>
+                    {hasIssue ? (
+                      <>{cat.count}<em>건</em></>
+                    ) : (
+                      <CheckCircle2 size={14} strokeWidth={2.2} className="cs-sat-ucat-clear-icon" />
+                    )}
+                  </span>
+                </div>
+              </button>
             </li>
           );
         })}
       </ul>
 
-      {/* 하단 메모 */}
       <p className="cs-sat-ucat-footnote">
-        * 고객이 선택한 불만족 원인 유형별 집계입니다.
+        * 건수가 있는 항목을 누르면 해당 상담 상세를 볼 수 있습니다.
       </p>
+
+      {selected && createPortal(
+        <div
+          className="cs-ucat-detail-backdrop"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="cs-ucat-detail-title"
+          onClick={() => setSelected(null)}
+        >
+          <div
+            className="cs-ucat-detail-panel"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="cs-ucat-detail-head">
+              <div>
+                <h2 id="cs-ucat-detail-title" className="cs-ucat-detail-title">
+                  {selected.label}
+                </h2>
+                <p className="cs-ucat-detail-sub">
+                  {year}년 {month}월 · 유형 코드 {selected.dissatisfactionType}
+                </p>
+              </div>
+              <button
+                type="button"
+                className="cs-ucat-detail-close"
+                onClick={() => setSelected(null)}
+                aria-label="닫기"
+              >
+                <X size={20} strokeWidth={2} />
+              </button>
+            </div>
+
+            {showFallbackHint && (
+              <p className="cs-ucat-detail-fallback-hint">API 연결 전 예시 데이터입니다.</p>
+            )}
+
+            {isLoading && (
+              <div className="cs-ucat-detail-loading">
+                <Loader2 className="cs-ucat-detail-spin" size={22} />
+                <span>불러오는 중…</span>
+              </div>
+            )}
+
+            {showLoadError && (
+              <p className="cs-ucat-detail-empty cs-ucat-detail-empty--error">
+                상세 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.
+              </p>
+            )}
+
+            {!isLoading && !showLoadError && detailRecords.length === 0 && (
+              <p className="cs-ucat-detail-empty">해당 유형의 상세 상담 기록이 없습니다.</p>
+            )}
+
+            {!isLoading && !showLoadError && detailRecords.length > 0 && (
+              <ul className="cs-ucat-detail-list">
+                {detailRecords.map((rec, ridx) => (
+                  <li key={rec.id != null ? String(rec.id) : `rec-${ridx}`} className="cs-ucat-detail-card">
+                    <div className="cs-ucat-detail-card-head">
+                      <span className="cs-ucat-detail-date">
+                        <CalendarDays size={14} strokeWidth={2} aria-hidden />
+                        {formatCsEvalDate(rec.evalDate)}
+                        {rec.consultTime ? (
+                          <span className="cs-ucat-detail-time"> · {rec.consultTime}</span>
+                        ) : null}
+                      </span>
+                      <span
+                        className={`cs-ucat-detail-sat-badge${
+                          String(rec.satisfiedYn).toUpperCase() === 'N'
+                            ? ' cs-ucat-detail-sat-badge--neg'
+                            : ''
+                        }`}
+                      >
+                        만족 {ynLabel(rec.satisfiedYn)}
+                      </span>
+                    </div>
+
+                    <dl className="cs-ucat-detail-dl">
+                      {rec.subsidiaryType && (
+                        <>
+                          <dt>자회사</dt>
+                          <dd>{rec.subsidiaryType}</dd>
+                        </>
+                      )}
+                      <dt>센터</dt>
+                      <dd>{rec.centerName || '—'}</dd>
+                      <dt>그룹</dt>
+                      <dd>{rec.groupName || '—'}</dd>
+                      <dt>실</dt>
+                      <dd>{rec.roomName || '—'}</dd>
+                      <dt>상담유형</dt>
+                      <dd>
+                        {[rec.consultType1, rec.consultType2, rec.consultType3]
+                          .filter(Boolean)
+                          .join(' › ') || '—'}
+                      </dd>
+                      <dt>스킬</dt>
+                      <dd>{rec.skill || '—'}</dd>
+                      <dt>중점과제</dt>
+                      <dd className="cs-ucat-detail-yn-row">
+                        <span>5대도시 {ynLabel(rec.fiveMajorCitiesYn)}</span>
+                        <span>5060 {ynLabel(rec.gen5060Yn)}</span>
+                        <span>문제해결 {ynLabel(rec.problemResolvedYn)}</span>
+                      </dd>
+                    </dl>
+
+                    {(rec.goodMent || rec.badMent) && (
+                      <div className="cs-ucat-detail-ments">
+                        {rec.goodMent ? (
+                          <div className="cs-ucat-detail-ment cs-ucat-detail-ment--pos">
+                            <MessageSquareText size={14} strokeWidth={2} aria-hidden />
+                            <div>
+                              <span className="cs-ucat-detail-ment-label">긍정 코멘트</span>
+                              <p>{rec.goodMent}</p>
+                            </div>
+                          </div>
+                        ) : null}
+                        {rec.badMent ? (
+                          <div className="cs-ucat-detail-ment cs-ucat-detail-ment--neg">
+                            <MessageSquareText size={14} strokeWidth={2} aria-hidden />
+                            <div>
+                              <span className="cs-ucat-detail-ment-label">부정 코멘트</span>
+                              <p>{rec.badMent}</p>
+                            </div>
+                          </div>
+                        ) : null}
+                      </div>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>,
+        document.body,
+      )}
     </div>
   );
 }
@@ -417,14 +669,14 @@ function buildFeed(categories = [], score = 0, achievementRate = 0, totalSamples
 }
 
 const FEED_STYLE = {
-  success: { color: '#059669', chipBg: 'rgba(16, 185, 129, 0.1)',  icon: CircleCheck   },
-  warning: { color: '#b45309', chipBg: 'rgba(245, 158, 11, 0.12)', icon: TriangleAlert },
-  tip:     { color: '#6d28d9', chipBg: 'rgba(109, 40, 217, 0.1)',  icon: Lightbulb     },
-  trend:   { color: '#0369a1', chipBg: 'rgba(3, 105, 161, 0.1)',   icon: TrendingUp    },
+  success: { icon: CircleCheck },
+  warning: { icon: TriangleAlert },
+  tip:     { icon: Lightbulb },
+  trend:   { icon: TrendingUp },
 };
 
 /* ════════════════════════════════════════════════════════════
-   패널 B — AI Insight (우상단)
+   패널 B — 인사이트 (우상단)
    ════════════════════════════════════════════════════════════ */
 function AiInsightPanel({ data }) {
   const d      = data ?? MOCK_DATA;
@@ -434,30 +686,38 @@ function AiInsightPanel({ data }) {
   const generatedAt = now.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' });
 
   return (
-    <div className="cs-sat-card ai-card">
+    <div className="cs-sat-card ai-card cs-sat-card--good">
 
       {/* ── 헤더 ── */}
       <div className="ai-header">
         <div className="ai-title-wrap">
-          <div className="ai-icon-badge">
-            <Sparkles size={13} strokeWidth={2} />
-          </div>
-          <span className="ai-title">AI Insight</span>
+          <span className="ai-title-icon" aria-hidden>
+            <Sparkles size={14} strokeWidth={1.75} />
+          </span>
+          <span className="ai-title">인사이트</span>
+          <span className="ai-title-badge">AI</span>
         </div>
         <div className="ai-meta">
-          <RefreshCw size={9} strokeWidth={2.5} />
           <span>{generatedAt} 기준</span>
         </div>
       </div>
 
       {/* ── 요약 바 ── */}
       <div className={`ai-summary-bar${isOver ? ' ai-summary-bar--over' : ' ai-summary-bar--under'}`}>
-        <span className="ai-sum-status">{isOver ? '✓ 목표 초과' : '⚠ 목표 미달'}</span>
-        <span className="ai-sum-divider" />
-        <span className="ai-sum-score">{d.score.toFixed(1)}<em>점</em></span>
-        <span className="ai-sum-divider" />
-        <span className="ai-sum-rate">{isOver ? '+' : '-'}{delta}%p</span>
-        <span className="ai-sum-sample">{d.totalSamples}건 분석</span>
+        <span className="ai-sum-status">{isOver ? '목표 초과' : '목표 미달'}</span>
+        <span className="ai-sum-divider" aria-hidden />
+        <span className="ai-sum-score">
+          <strong className="ai-sum-num">{d.score.toFixed(1)}</strong>
+          <em>점</em>
+        </span>
+        <span className="ai-sum-divider" aria-hidden />
+        <span className="ai-sum-rate">
+          <strong className="ai-sum-num">{isOver ? '+' : '-'}{delta}%p</strong>
+        </span>
+        <span className="ai-sum-sample">
+          <strong className="ai-sum-num ai-sum-num--soft">{d.totalSamples}</strong>
+          건 분석
+        </span>
       </div>
 
       {/* ── Insight 피드 ── */}
@@ -466,13 +726,9 @@ function AiInsightPanel({ data }) {
           const s = FEED_STYLE[item.type] ?? FEED_STYLE.tip;
           const Icon = s.icon;
           return (
-            <li
-              key={idx}
-              className="ai-feed-item"
-              style={{ '--chip-color': s.color, '--chip-bg': s.chipBg }}
-            >
-              <div className="ai-feed-icon-chip">
-                <Icon size={11} strokeWidth={2.5} />
+            <li key={idx} className="ai-feed-item">
+              <div className="ai-feed-icon-chip" aria-hidden>
+                <Icon size={12} strokeWidth={2} />
               </div>
               <div className="ai-feed-content">
                 <span className="ai-feed-label">{item.tag}</span>
@@ -483,7 +739,7 @@ function AiInsightPanel({ data }) {
         })}
       </ul>
 
-      <p className="ai-disclaimer">* AI 분석 결과이며 참고용입니다.</p>
+      <p className="ai-disclaimer">AI 생성 요약이며 참고용입니다.</p>
     </div>
   );
 }
@@ -496,14 +752,30 @@ export default function CsSatisfactionPage() {
   const [year] = useState(currentYear);
   const [month] = useState(currentMonth);
 
-  const { data, isError } = useQuery({
+  const { data: satRaw, isError } = useQuery({
     queryKey: ['member-satisfaction', user?.skid, year, month],
     queryFn: () => fetchMemberSatisfaction({ skid: user.skid, year, month }),
     enabled: !!user?.skid,
     retry: false,
   });
 
-  const satData = isError || !data ? MOCK_DATA : data;
+  const { data: focusRaw } = useQuery({
+    queryKey: ['member-focus-tasks', user?.skid, year, month],
+    queryFn: () => fetchMemberFocusTasks({ skid: user.skid, year, month }),
+    enabled: !!user?.skid,
+    retry: false,
+  });
+
+  const satData = useMemo(() => {
+    const base = isError || !satRaw ? { ...MOCK_DATA } : satRaw;
+    const f = focusRaw ?? {};
+    return {
+      ...base,
+      fiveMajorCitiesCount: f.fiveMajorCitiesCount ?? base.fiveMajorCitiesCount ?? 0,
+      gen5060Count: f.gen5060Count ?? base.gen5060Count ?? 0,
+      problemResolvedCount: f.problemResolvedCount ?? base.problemResolvedCount ?? 0,
+    };
+  }, [satRaw, isError, focusRaw]);
 
   return (
     <div className="page-container cs-sat-page adm-dashboard--yp fade-in">
@@ -519,7 +791,7 @@ export default function CsSatisfactionPage() {
         {/* 좌상단: 당월 누적 만족도 */}
         <MonthlyAccumulatedPanel data={satData} year={year} month={month} />
 
-        {/* 우상단: AI Insight */}
+        {/* 우상단: 인사이트 */}
         <AiInsightPanel data={satData} />
 
         {/* 좌하단: 불만족 원인 건수 */}
@@ -527,6 +799,8 @@ export default function CsSatisfactionPage() {
           categories={satData?.unsatisfiedCategories}
           year={year}
           month={month}
+          skid={user?.skid}
+          detailFallbackByType={MOCK_DATA.unsatisfiedDetailSamples}
         />
 
         {/* 우하단: Good 멘트 사례 */}

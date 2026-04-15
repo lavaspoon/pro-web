@@ -51,3 +51,25 @@ export const fetchMemberSatisfaction = async ({ skid, year, month }) => {
   });
   return data;
 };
+
+/**
+ * 구성원 당월 중점추진과제(5대도시·5060·문제해결) Y 건수
+ * GET /api/member/satisfaction/focus-tasks?skid=&year=&month=
+ */
+export const fetchMemberFocusTasks = async ({ skid, year, month }) => {
+  const { data } = await axiosInstance.get('/api/member/satisfaction/focus-tasks', {
+    params: { skid, year, month },
+  });
+  return data;
+};
+
+/**
+ * 구성원 당월 불만족 유형(1~5)별 상담 상세
+ * GET /api/member/satisfaction/unsatisfied-details?skid=&year=&month=&dissatisfactionType=
+ */
+export const fetchMemberUnsatisfiedDetails = async ({ skid, year, month, dissatisfactionType }) => {
+  const { data } = await axiosInstance.get('/api/member/satisfaction/unsatisfied-details', {
+    params: { skid, year, month, dissatisfactionType },
+  });
+  return data;
+};

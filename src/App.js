@@ -57,7 +57,7 @@ function AdminLayout() {
         <Route path="/pending" element={<PendingCasesPage />} />
         <Route path="/satisfaction" element={<AdminSatisfactionPage />} />
         <Route path="/satisfaction/setup" element={<AdminSatisfactionSetupPage />} />
-        <Route path="/satisfaction/upload" element={<Navigate to="/admin/satisfaction/setup" replace />} />
+        <Route path="/satisfaction/upload" element={<Navigate to="/admin/satisfaction?setup=1" replace />} />
       </Routes>
     </Layout>
   );

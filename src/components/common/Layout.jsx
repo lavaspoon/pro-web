@@ -93,7 +93,7 @@ function AdminLayout({ children }) {
     <div className="admin-shell">
       <header className="admin-topbar admin-topbar--admin" role="banner">
         <div className="admin-topbar-wrap">
-          <div className="admin-topbar-row">
+          <div className="member-topbar-row">
             <div className="admin-topbar-left">
               <div className="admin-topbar-catblock">
                 <span className="admin-topbar-catblock-label">YOU PRO 관리자</span>

@@ -23,10 +23,10 @@ export const fetchAdminLeafTeams = async (secondDepthDeptId) => {
 };
 
 /**
- * 랭킹 — 사례(TB_YOU_PRO_CASE) 접수 건수 기준, 2depth 센터별 통계
+ * 랭킹 — 사례(TB_YOU_PRO_CASE) 접수 건수 기준 (combined 등 topN)
  * GET /api/admin/ranking?year=&topN=
  */
-export const fetchAdminRanking = async (year, topN = 3) => {
+export const fetchAdminRanking = async (year, topN = 15) => {
   const { data } = await axiosInstance.get('/api/admin/ranking', {
     params: { year, topN },
   });
@@ -122,13 +122,24 @@ export const fetchCsSatisfactionMonthlyTrend = async (year, secondDepthDeptId) =
 };
 
 /**
- * 선택 센터 — 특정 연·월 이달 요약 + 구성원별 만족도 (year/month 생략 시 서버 기준 당월)
+ * CS 만족도 — 통합 월별(평가·만족·불만족) + 중점추진과제 월별 건수
+ * GET /api/admin/cs-satisfaction/monthly-overview?year=
+ */
+export const fetchCsSatisfactionMonthlyOverview = async (year) => {
+  const params = {};
+  if (year != null) params.year = year;
+  const { data } = await axiosInstance.get('/api/admin/cs-satisfaction/monthly-overview', { params });
+  return data;
+};
+
+/**
+ * 선택 팀/센터 — 구성원별 만족도 (month 생략 시 해당 연도 전체, 지정 시 해당 월만)
  * GET /api/admin/cs-satisfaction/center-month-detail?secondDepthDeptId=&year=&month=
  */
 export const fetchCsSatisfactionCenterMonthDetail = async (secondDepthDeptId, year, month) => {
   const params = { secondDepthDeptId };
   if (year != null) params.year = year;
-  if (month != null) params.month = month;
+  if (month != null && month !== '') params.month = month;
   const { data } = await axiosInstance.get('/api/admin/cs-satisfaction/center-month-detail', { params });
   return data;
 };
@@ -177,4 +188,30 @@ export const fetchCsSatisfactionMonthlyTargets = async (year, month) => {
  */
 export const saveCsSatisfactionMonthlyTargets = async (body) => {
   await axiosInstance.post('/api/admin/cs-satisfaction/monthly-targets', body);
+};
+
+/**
+ * CS 만족도 — 통합 목표 조회 (부서/스킬/연간)
+ * GET /api/admin/cs-satisfaction/targets-unified?year=&month=
+ */
+export const fetchCsSatisfactionTargetsUnified = async (year, month) => {
+  const { data } = await axiosInstance.get('/api/admin/cs-satisfaction/targets-unified', {
+    params: { year, month },
+  });
+  return data;
+};
+
+/**
+ * CS 만족도 — 통합 목표 저장 (부서/스킬/연간)
+ * POST /api/admin/cs-satisfaction/targets-unified
+ * @param {{
+ *   year: number,
+ *   month: number,
+ *   deptTargets: Array<{ deptId: number, targetPercent: number }>,
+ *   skillTargets: Array<{ skillName: string, targetPercent: number }>,
+ *   annualTargets: Array<{ taskCode: string, targetPercent: number }>
+ * }} body
+ */
+export const saveCsSatisfactionTargetsUnified = async (body) => {
+  await axiosInstance.post('/api/admin/cs-satisfaction/targets-unified', body);
 };
