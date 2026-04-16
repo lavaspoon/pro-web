@@ -1,4 +1,10 @@
-/* ── 사례 상세 · AI 결과 (선정 여부 · 핵심 멘트 · 피드백) ───────── */
+/* ── 사례 상세 · 선정 여부 / 선정·비선정 사유 ───────── */
+
+.ai-insight-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
 
 .ai-result {
   border-radius: var(--r-xl);
@@ -25,6 +31,57 @@
 
 .ai-result__ribbon svg {
   color: #0d9488;
+}
+
+/* 선정·비선정 사유 카드 리본 (한글 라벨 — uppercase 제거) */
+.ai-result__ribbon--judgment {
+  text-transform: none;
+  letter-spacing: -0.03em;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.ai-result__ribbon--judgment-selected {
+  color: #047857;
+  background: linear-gradient(
+    90deg,
+    rgba(16, 185, 129, 0.12),
+    rgba(52, 211, 153, 0.08),
+    rgba(16, 185, 129, 0.12)
+  );
+}
+
+.ai-result__ribbon--judgment-selected svg {
+  color: #059669;
+}
+
+.ai-result__ribbon--judgment-rejected {
+  color: #991b1b;
+  background: linear-gradient(
+    90deg,
+    rgba(248, 113, 113, 0.12),
+    rgba(252, 165, 165, 0.08),
+    rgba(248, 113, 113, 0.12)
+  );
+}
+
+.ai-result__ribbon--judgment-rejected svg {
+  color: #dc2626;
+}
+
+/* 선정 여부 카드 리본 (한글 — uppercase 제거, 중립 톤) */
+.ai-result__ribbon--status {
+  text-transform: none;
+  letter-spacing: -0.03em;
+  font-size: 12px;
+  font-weight: 800;
+  color: #334155;
+  background: linear-gradient(
+    90deg,
+    rgba(148, 163, 184, 0.12),
+    rgba(226, 232, 240, 0.35),
+    rgba(148, 163, 184, 0.12)
+  );
 }
 
 .ai-result__block {
@@ -147,6 +204,10 @@
   color: var(--yp-ink, #0f172a);
 }
 
+.ai-verdict-card__value--solo {
+  margin-bottom: 0;
+}
+
 .ai-verdict-card__hint {
   margin: 0 0 10px;
   font-size: 13px;
@@ -171,82 +232,44 @@
   color: var(--text-secondary);
 }
 
-/* ── 2. 핵심 멘트 ─────────────────────────────────────────── */
-.ai-ment-list {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+/* ── 선정·비선정 사유 카드 ─────────────────────────────────── */
+.ai-result--judgment-card--selected {
+  border-color: rgba(52, 199, 89, 0.22);
 }
 
-.ai-ment-item {
-  display: flex;
-  gap: 12px;
-  align-items: flex-start;
-  padding: 12px 14px;
-  border-radius: var(--r-md);
-  background: var(--surface);
-  border: 1px solid rgba(15, 23, 42, 0.06);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset;
+.ai-result--judgment-card--rejected {
+  border-color: var(--border-strong);
 }
 
-.ai-ment-item__idx {
-  flex-shrink: 0;
-  width: 26px;
-  height: 26px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.ai-result__block--judgment-reason {
+  padding-top: 14px;
+  background: linear-gradient(180deg, rgba(241, 245, 249, 0.35) 0%, transparent 100%);
+}
+
+.ai-judgment-meta {
+  margin: 0 0 10px;
   font-size: 12px;
-  font-weight: 800;
-  color: #fff;
-  background: linear-gradient(145deg, #0ea5e9, #0d9488);
-}
-
-.ai-ment-item__text {
-  font-size: 14px;
-  line-height: 1.6;
-  color: var(--text-primary);
+  font-weight: 500;
+  color: var(--text-tertiary);
   letter-spacing: -0.02em;
 }
 
-/* ── 3. 피드백 ─────────────────────────────────────────────── */
-.ai-result__block--feedback {
-  background: linear-gradient(180deg, rgba(241, 245, 249, 0.5) 0%, transparent 100%);
-}
-
-.ai-feedback-panel {
-  padding: 14px 16px;
+.ai-judgment-reason-panel {
+  padding: 12px 14px;
   border-radius: var(--r-md);
   background: var(--surface-inset);
   border: 1px solid var(--border);
 }
 
-.ai-feedback-panel__lead {
-  margin: 0 0 10px;
-  font-size: 15px;
-  font-weight: 600;
-  line-height: 1.55;
-  color: var(--text-primary);
-  letter-spacing: -0.03em;
+.ai-result--judgment-card--selected .ai-judgment-reason-panel {
+  background: rgba(240, 253, 244, 0.45);
+  border-color: rgba(52, 199, 89, 0.2);
 }
 
-.ai-feedback-panel__lead:last-child {
-  margin-bottom: 0;
-}
-
-.ai-feedback-panel__detail {
+.ai-judgment-reason-text {
   margin: 0;
-  font-size: 13px;
-  line-height: 1.65;
+  font-size: 14px;
+  line-height: 1.6;
   color: var(--text-secondary);
   letter-spacing: -0.02em;
-}
-
-.ai-feedback-panel__lead + .ai-feedback-panel__detail {
-  padding-top: 10px;
-  border-top: 1px dashed var(--border-strong);
 }

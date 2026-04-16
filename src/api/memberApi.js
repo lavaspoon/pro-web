@@ -44,6 +44,9 @@ export const submitCase = async ({ skid, title, description, callDate }) => {
 /**
  * 구성원 CS 만족도 조회
  * GET /api/member/satisfaction?skid={skid}&year={year}&month={month}
+ *
+ * 응답에 `dailyTrend`가 있으면 차트에 사용:
+ * `{ day: '4/8', satisfiedCount, receivedCount }` — 만족도% = (만족/접수)×100, 접수 0(연차)은 실적 제외·차트는 선만 이어짐. 화면에서는 최근 7영업일만 표시.
  */
 export const fetchMemberSatisfaction = async ({ skid, year, month }) => {
   const { data } = await axiosInstance.get('/api/member/satisfaction', {

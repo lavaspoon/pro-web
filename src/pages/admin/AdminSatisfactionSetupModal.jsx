@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Calendar, CheckCircle2, Lock, Upload, X } from 'lucide-react';
 import {
@@ -9,6 +9,7 @@ import {
 import './DashboardPage.css';
 import './PendingCasesPage.css';
 import './AdminSatisfactionSetupPage.css';
+import { getBusinessDaysInMonth, getPublicHolidaysInMonth } from '../../utils/krBusinessCalendar';
 
 function localYearMonth() {
   const d = new Date();
@@ -129,6 +130,16 @@ export default function AdminSatisfactionSetupModal({ open, onClose, initialTab 
 
   const data = targetsQuery.data;
   const targetsReady = data?.allTargetsSet === true;
+
+  const { year: ribbonYear, month: ribbonMonth } = parseYearMonth(targetMonthStr);
+  const businessDaysInRibbonMonth = useMemo(
+    () => (ribbonYear && ribbonMonth ? getBusinessDaysInMonth(ribbonYear, ribbonMonth) : []),
+    [ribbonYear, ribbonMonth],
+  );
+  const publicHolidaysInRibbonMonth = useMemo(
+    () => (ribbonYear && ribbonMonth ? getPublicHolidaysInMonth(ribbonYear, ribbonMonth) : []),
+    [ribbonYear, ribbonMonth],
+  );
 
   const deptTargets = data?.deptTargets || [];
   const deptValid =
@@ -255,6 +266,41 @@ export default function AdminSatisfactionSetupModal({ open, onClose, initialTab 
                 </label>
               </div>
             </div>
+
+            {ribbonYear && ribbonMonth ? (
+              <div className="sat-setup-bizdays" aria-label="선택한 달의 영업일">
+                <div className="sat-setup-bizdays-head">
+                  <span className="sat-setup-bizdays-title">이달 영업일</span>
+                  <span className="sat-setup-bizdays-count">{businessDaysInRibbonMonth.length}일</span>
+                </div>
+                <div className="sat-setup-bizdays-chips">
+                  {businessDaysInRibbonMonth.map((b) => (
+                    <span
+                      key={`${b.year}-${b.month}-${b.day}`}
+                      className="sat-setup-bizday-chip"
+                      title={`${b.year}년 ${b.month}월 ${b.day}일 (${b.weekdayShort})`}
+                    >
+                      <span className="sat-setup-bizday-num">{b.day}</span>
+                      <span className="sat-setup-bizday-wd">{b.weekdayShort}</span>
+                    </span>
+                  ))}
+                </div>
+                {publicHolidaysInRibbonMonth.length > 0 ? (
+                  <p className="sat-setup-bizdays-hol">
+                    <span className="sat-setup-bizdays-hol-label">공휴일</span>
+                    <span className="sat-setup-bizdays-hol-text">
+                      {publicHolidaysInRibbonMonth
+                        .map((h) => `${ribbonMonth}월 ${h.day}일 ${h.name}`)
+                        .join(' · ')}
+                    </span>
+                  </p>
+                ) : ribbonYear !== 2026 ? (
+                  <p className="sat-setup-bizdays-note">
+                    공휴일 명칭은 2026년 기준입니다. 다른 연도는 주말만 제외한 영업일입니다.
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
 
             <div className="sat-setup-modal-tabs" role="tablist" aria-label="목표 및 업로드 구분">
               <button

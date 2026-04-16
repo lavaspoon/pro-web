@@ -19,13 +19,11 @@ import {
   ShieldAlert,
   TrendingUp,
   Lightbulb,
-  TriangleAlert,
-  CircleCheck,
   X,
   Loader2,
   MessageSquareText,
   Target,
-  Star,
+  BarChart2,
   ClipboardCheck,
 } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
@@ -34,31 +32,59 @@ import {
   fetchMemberFocusTasks,
   fetchMemberUnsatisfiedDetails,
 } from '../../api/memberApi';
+import { getBusinessDaysInMonth } from '../../utils/krBusinessCalendar';
 import '../admin/DashboardPage.css';
+import './HomePage.css';
 import './CsSatisfactionPage.css';
 
 const now = new Date();
 const currentYear = now.getFullYear();
 const currentMonth = now.getMonth() + 1;
 
+/** 만족도(%) 추이 차트에 표시할 최근 영업일 수(날짜 오름차순 중 마지막 N개, 접수 0일·연차 포함) */
+const SATISFACTION_TREND_CHART_DAYS = 7;
+
+/** 로컬 달력 기준 오늘 이전·당일만 true (차트에 미래 일자 미표시) */
+function isCalendarDayOnOrBeforeToday(y, m, d) {
+  const t = new Date();
+  const ty = t.getFullYear();
+  const tm = t.getMonth() + 1;
+  const td = t.getDate();
+  if (y < ty) return true;
+  if (y > ty) return false;
+  if (m < tm) return true;
+  if (m > tm) return false;
+  return d <= td;
+}
+
+/** API 미연동 시 일별 mock (접수 0인 날은 연차 등으로 간주) */
+function buildMockDailyTrend(year, month) {
+  const biz = getBusinessDaysInMonth(year, month).filter((b) =>
+    isCalendarDayOnOrBeforeToday(year, month, b.day),
+  );
+  return biz.map((b, i) => {
+    if (i % 5 === 2) {
+      return { day: `${month}/${b.day}`, satisfiedCount: 0, receivedCount: 0 };
+    }
+    const recv = 1 + (i % 4);
+    const sat = Math.max(0, recv - (i % 2));
+    return { day: `${month}/${b.day}`, satisfiedCount: sat, receivedCount: recv };
+  });
+}
+
 /* ── mock 데이터 ──────────────────────────────────────────── */
 const MOCK_DATA = {
+  /** 관리자 화면에서 설정한 당월 해당 구성원 스킬 목표 % */
+  monthlyTargetPct: 94.9,
+  /** 차트 목표선·호환용 (monthlyTargetPct 와 동일 권장) */
   target: 94.9,
+  /** 엑셀 업로드 접수 건수(해당 구성원 ID) — 실적 분모 */
+  receivedCount: 47,
   score: 99.2,
-  achievementRate: 105.4,
   totalSamples: 47,
   satisfiedCount: 46,
   unsatisfiedCount: 1,
   cumulativeSamples: 47,
-  weeklyTrend: [
-    { day: '4/8',  score: 92 },
-    { day: '4/9',  score: 95 },
-    { day: '4/10', score: 94 },
-    { day: '4/11', score: 97 },
-    { day: '4/12', score: 96 },
-    { day: '4/13', score: 98 },
-    { day: '4/14', score: 99.2 },
-  ],
   unsatisfiedCategories: [
     { label: '서비스 지식부족', dissatisfactionType: 1, count: 0 },
     { label: '성의 없는 태도', dissatisfactionType: 2, count: 0 },
@@ -118,6 +144,22 @@ function fmt(v, decimals = 1) {
   return Number(v).toFixed(decimals);
 }
 
+/** 당월 실적 % = (만족 Y 건 / 접수 건) × 100 */
+function computeMonthlyActualPct(d) {
+  const recv = Number(d.receivedCount ?? d.totalSamples ?? 0);
+  const sat = Number(d.satisfiedCount ?? 0);
+  if (!Number.isFinite(recv) || recv <= 0) return null;
+  return (sat / recv) * 100;
+}
+
+/** 당월 달성율 % = 목표 대비 (실적 ÷ 목표) × 100, 소수 첫째 자리 */
+function computeMonthlyAchievementVsTargetPct(d) {
+  const tgt = Number(d.monthlyTargetPct ?? d.target ?? 0);
+  const act = computeMonthlyActualPct(d);
+  if (!Number.isFinite(tgt) || tgt <= 0 || act == null) return null;
+  return (act / tgt) * 100;
+}
+
 function formatDate(dateStr) {
   const d = new Date(dateStr);
   return `${d.getMonth() + 1}월 ${d.getDate()}일`;
@@ -147,12 +189,120 @@ function ynLabel(yn) {
 
 function TrendTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
+  const row = payload[0]?.payload;
+  const sat = row?.satisfiedCount;
+  const recv = row?.receivedCount;
+  const excluded = row?.trendExcluded;
+  const val = payload[0]?.value;
+  const hasPct = val != null && !Number.isNaN(Number(val)) && !excluded;
   return (
     <div className="cs-sat-tooltip">
       <span className="cs-sat-tooltip-label">{label}</span>
-      <span className="cs-sat-tooltip-val">{Number(payload[0]?.value).toFixed(1)}점</span>
+      <span className="cs-sat-tooltip-val">{hasPct ? `${Number(val).toFixed(1)}%` : '—'}</span>
+      {excluded ? (
+        <span className="cs-sat-tooltip-meta">접수 0건</span>
+      ) : recv != null && sat != null ? (
+        <span className="cs-sat-tooltip-meta">
+          만족 {sat}건 / 접수 {recv}건
+        </span>
+      ) : null}
     </div>
   );
+}
+
+/** "4/8" 형태 라벨 파싱 */
+function parseTrendDayLabel(s) {
+  if (s == null || s === '') return null;
+  const str = String(s).trim();
+  const parts = str.split('/');
+  if (parts.length < 2) return null;
+  const m = parseInt(parts[0], 10);
+  const d = parseInt(parts[1], 10);
+  if (!Number.isFinite(m) || !Number.isFinite(d)) return null;
+  return { month: m, day: d };
+}
+
+/** 연차(접수 0) 구간: 선만 이어 보이게 이전·이후 실측 %로 채움. trendExcluded는 점·툴팁 %용. */
+function fillTrendLineCarryContinuity(points) {
+  const out = points.map((p) => ({ ...p }));
+  let last = null;
+  for (let i = 0; i < out.length; i += 1) {
+    if (!out[i].trendExcluded) {
+      last = out[i].satisfactionPct;
+    } else if (last != null) {
+      out[i].satisfactionPct = last;
+    }
+  }
+  let next = null;
+  for (let i = out.length - 1; i >= 0; i -= 1) {
+    if (!out[i].trendExcluded) {
+      next = out[i].satisfactionPct;
+    } else if (out[i].trendExcluded && out[i].satisfactionPct == null && next != null) {
+      out[i].satisfactionPct = next;
+    }
+  }
+  return out;
+}
+
+/** 일자별 만족건·접수건 → 만족도% = (만족/접수)×100. 접수 0(연차)은 실적 제외이나 차트 선은 끊지 않음(점만 생략). 영업일만, 미래 일 제외. 최근 SATISFACTION_TREND_CHART_DAYS영업일만. */
+function buildMonthlySatisfactionPctTrend(data, year, month) {
+  const biz = getBusinessDaysInMonth(year, month).filter((b) =>
+    isCalendarDayOnOrBeforeToday(year, month, b.day),
+  );
+  if (biz.length === 0) return [];
+  const bizDaySet = new Set(biz.map((b) => b.day));
+  const wdByDay = new Map(biz.map((b) => [b.day, b.weekdayShort]));
+
+  const daily = data.dailyTrend;
+  if (!Array.isArray(daily) || daily.length === 0) return [];
+
+  const points = [];
+  for (const row of daily) {
+    const p = parseTrendDayLabel(row.day ?? row.dateLabel);
+    if (!p || p.month !== month || !bizDaySet.has(p.day)) continue;
+    if (!isCalendarDayOnOrBeforeToday(year, month, p.day)) continue;
+
+    const recv = Number(row.receivedCount ?? row.received ?? 0);
+    if (!Number.isFinite(recv) || recv < 0) continue;
+
+    const sat = Number(row.satisfiedCount ?? row.satisfied ?? 0);
+    if (!Number.isFinite(sat) || sat < 0) continue;
+
+    const wd = wdByDay.get(p.day);
+    const dayStr = `${month}/${p.day}`;
+    const labelBase = wd ? `${dayStr}(${wd})` : dayStr;
+
+    if (recv > 0) {
+      const pct = (sat / recv) * 100;
+      points.push({
+        day: dayStr,
+        dayWithWeekday: labelBase,
+        satisfactionPct: Math.round(pct * 10) / 10,
+        weekdayShort: wd,
+        satisfiedCount: sat,
+        receivedCount: recv,
+        trendExcluded: false,
+      });
+    } else {
+      points.push({
+        day: dayStr,
+        dayWithWeekday: labelBase,
+        satisfactionPct: null,
+        weekdayShort: wd,
+        satisfiedCount: 0,
+        receivedCount: 0,
+        trendExcluded: true,
+      });
+    }
+  }
+
+  points.sort((a, b) => {
+    const pa = parseTrendDayLabel(a.day);
+    const pb = parseTrendDayLabel(b.day);
+    return (pa?.day ?? 0) - (pb?.day ?? 0);
+  });
+  const carried = fillTrendLineCarryContinuity(points);
+  return carried.slice(-SATISFACTION_TREND_CHART_DAYS);
 }
 
 /* ════════════════════════════════════════════════════════════
@@ -160,90 +310,123 @@ function TrendTooltip({ active, payload, label }) {
    ════════════════════════════════════════════════════════════ */
 function CsSatisfactionKpiRow({ data, year, month }) {
   const d = data ?? MOCK_DATA;
-  const rate = Number(d.achievementRate);
+  const monthlyTarget = Number(d.monthlyTargetPct ?? d.target ?? 0);
+  const actualPct = computeMonthlyActualPct(d);
+  const achievementVsTarget = computeMonthlyAchievementVsTargetPct(d);
+  const rate = achievementVsTarget != null ? Number(achievementVsTarget) : 0;
   const achievementBand =
     rate >= 100 ? 'met' : rate >= 90 ? 'near' : 'below';
-  const achievementCaption =
-    rate >= 100 ? '목표 달성' : rate >= 90 ? '목표에 근접' : '목표 미달';
+
+  const rateIcoClass =
+    achievementBand === 'met'
+      ? 'yp-kpi-ico--green'
+      : achievementBand === 'near'
+        ? 'yp-kpi-ico--blue'
+        : '';
+
+  const monthlyRecv = Number(d.receivedCount ?? d.totalSamples ?? 0);
+  const monthlySat = Number(d.satisfiedCount ?? 0);
 
   return (
-    <div className="cs-sat-kpi-tiles" aria-label="당월 핵심 지표">
-      <div className="cs-sat-kpi-tile cs-sat-kpi-tile--target">
-        <div className="cs-sat-kpi-tile-top">
-          <span className="cs-sat-kpi-tile-label">
-            {year}년 {month}월 목표
-          </span>
-          <Target size={17} strokeWidth={2} className="cs-sat-kpi-tile-ico" aria-hidden />
+    <div className="yp-kpi-row yp-kpi-row--4" aria-label="당월 핵심 지표">
+      <div className="yp-kpi-card yp-kpi-card--data">
+        <div className="yp-kpi-head">
+          <span className="yp-kpi-label">당월 목표</span>
+          <div className="yp-kpi-ico yp-kpi-ico--amber" aria-hidden>
+            <Target size={18} strokeWidth={2} />
+          </div>
         </div>
-        <p className="cs-sat-kpi-tile-value">
-          {fmt(d.target)}
-          <span className="cs-sat-kpi-tile-unit">%</span>
-        </p>
+        <div className="yp-kpi-values">
+          <span className="yp-kpi-big">{fmt(monthlyTarget)}</span>
+          <span className="yp-kpi-unit">%</span>
+        </div>
       </div>
 
-      <div className={`cs-sat-kpi-tile cs-sat-kpi-tile--rate cs-sat-kpi-tile--${achievementBand}`}>
-        <div className="cs-sat-kpi-tile-top">
-          <span className="cs-sat-kpi-tile-label">달성률</span>
-          <TrendingUp size={17} strokeWidth={2} className="cs-sat-kpi-tile-ico" aria-hidden />
+      <div className="yp-kpi-card yp-kpi-card--monthly">
+        <div className="yp-kpi-head">
+          <span className="yp-kpi-label">당월 실적</span>
+          <div className="yp-kpi-ico yp-kpi-ico--blue" aria-hidden>
+            <BarChart2 size={18} strokeWidth={2} />
+          </div>
         </div>
-        <p className="cs-sat-kpi-tile-value">
-          {fmt(rate)}
-          <span className="cs-sat-kpi-tile-unit">%</span>
-        </p>
-        <p className="cs-sat-kpi-tile-hint">{achievementCaption}</p>
+        <div className="yp-kpi-values">
+          <span className="yp-kpi-big">{actualPct != null ? fmt(actualPct) : '—'}</span>
+          <span className="yp-kpi-unit">%</span>
+        </div>
+        <div className="yp-kpi-monthly-detail" aria-label="당월 만족 및 접수 건수">
+          당월 만족 <span className="yp-kpi-monthly-detail-num">{monthlySat}</span>건 / 당월 접수{' '}
+          <span className="yp-kpi-monthly-detail-num">{monthlyRecv}</span>건
+        </div>
       </div>
 
-      <div className="cs-sat-kpi-tile cs-sat-kpi-tile--score">
-        <div className="cs-sat-kpi-tile-top">
-          <span className="cs-sat-kpi-tile-label">만족도 점수</span>
-          <Star size={17} strokeWidth={2} className="cs-sat-kpi-tile-ico" aria-hidden />
+      <div
+        className={`yp-kpi-card yp-kpi-card--cert cs-sat-kpi-achievement cs-sat-kpi-rate cs-sat-kpi-rate--${achievementBand}`}
+      >
+        <div className="yp-kpi-head">
+          <span className="yp-kpi-label">당월 달성율</span>
+          <div className={`yp-kpi-ico cs-sat-kpi-achievement-ico ${rateIcoClass}`.trim()} aria-hidden>
+            <TrendingUp size={20} strokeWidth={2.25} />
+          </div>
         </div>
-        <p className="cs-sat-kpi-tile-value">
-          {fmt(d.score)}
-          <span className="cs-sat-kpi-tile-unit">점</span>
-        </p>
+        <div className="yp-kpi-values">
+          <span className="yp-kpi-big">{achievementVsTarget != null ? fmt(achievementVsTarget) : '—'}</span>
+          <span className="yp-kpi-unit">%</span>
+        </div>
       </div>
 
-      <div className="cs-sat-kpi-tile cs-sat-kpi-tile--focus">
-        <div className="cs-sat-kpi-tile-top">
-          <span className="cs-sat-kpi-tile-label">중점추진과제</span>
-          <ClipboardCheck size={17} strokeWidth={2} className="cs-sat-kpi-tile-ico" aria-hidden />
+      <div className="yp-kpi-card yp-kpi-card--rank">
+        <div className="yp-kpi-head">
+          <span className="yp-kpi-label">중점추진과제</span>
+          <div className="yp-kpi-ico yp-kpi-ico--violet" aria-hidden>
+            <ClipboardCheck size={18} strokeWidth={2} />
+          </div>
         </div>
-        <ul className="cs-sat-kpi-focus-list">
-          <li>
-            <span>5대도시</span>
-            <strong>{Number(d.fiveMajorCitiesCount ?? 0)}</strong>
-            <span className="cs-sat-kpi-focus-unit">건</span>
-          </li>
-          <li>
-            <span>5060</span>
-            <strong>{Number(d.gen5060Count ?? 0)}</strong>
-            <span className="cs-sat-kpi-focus-unit">건</span>
-          </li>
-          <li>
-            <span>문제해결</span>
-            <strong>{Number(d.problemResolvedCount ?? 0)}</strong>
-            <span className="cs-sat-kpi-focus-unit">건</span>
-          </li>
-        </ul>
-        <p className="cs-sat-kpi-tile-micro">당월 해당 상담</p>
+        <div className="cs-sat-kpi-focus-grid" role="list">
+          <div className="cs-sat-kpi-focus-cell" role="listitem">
+            <span className="cs-sat-kpi-focus-cell-label">5대도시</span>
+            <span className="cs-sat-kpi-focus-cell-num">
+              <strong>{Number(d.fiveMajorCitiesCount ?? 0)}</strong>
+              <span className="cs-sat-kpi-focus-cell-unit">건</span>
+            </span>
+          </div>
+          <div className="cs-sat-kpi-focus-cell" role="listitem">
+            <span className="cs-sat-kpi-focus-cell-label">5060</span>
+            <span className="cs-sat-kpi-focus-cell-num">
+              <strong>{Number(d.gen5060Count ?? 0)}</strong>
+              <span className="cs-sat-kpi-focus-cell-unit">건</span>
+            </span>
+          </div>
+          <div className="cs-sat-kpi-focus-cell" role="listitem">
+            <span className="cs-sat-kpi-focus-cell-label">문제해결</span>
+            <span className="cs-sat-kpi-focus-cell-num">
+              <strong>{Number(d.problemResolvedCount ?? 0)}</strong>
+              <span className="cs-sat-kpi-focus-cell-unit">건</span>
+            </span>
+          </div>
+        </div>
       </div>
     </div>
   );
 }
 
 /* ════════════════════════════════════════════════════════════
-   패널 A — 당월 누적 만족도 (좌측 메인) · 샘플·불만족·차트
+   패널 A — 당월 누적 만족도 (좌측 메인) · 샘플·차트·불만족
    ════════════════════════════════════════════════════════════ */
 function MonthlyAccumulatedPanel({ data, year, month, children }) {
   const d = data ?? MOCK_DATA;
-  const goodList =
-    Array.isArray(d.goodComments) && d.goodComments.length > 0
-      ? d.goodComments
-      : MOCK_DATA.goodComments;
+  const satisfactionPctTrend = useMemo(
+    () => buildMonthlySatisfactionPctTrend(d, year, month),
+    [d, year, month],
+  );
+  const plottedDayCount = satisfactionPctTrend.length;
+  /** 이달 전체 영업일 수(미래 포함) — 주말·공휴일만 제외 */
+  const monthBizDayCount = useMemo(
+    () => getBusinessDaysInMonth(year, month).length,
+    [year, month],
+  );
 
   return (
-    <div className="cs-sat-card csm-card cs-sat-card--good cs-sat-monthly-compact">
+    <div className="cs-sat-card csm-card cs-sat-monthly-compact">
 
       {/* ── 헤더 ── */}
       <div className="cs-sat-card-header">
@@ -276,16 +459,13 @@ function MonthlyAccumulatedPanel({ data, year, month, children }) {
         </div>
       </div>
 
-      {children}
-
-      {/* ── 미니 추이 차트 ── */}
-      <div className="csm-chart-wrap">
+      {/* ── 만족도(%) 추이 (연차일은 선만 이어지고 점은 생략) ── */}
+      <div className="csm-chart-wrap csm-chart-wrap--bizdays">
         <div className="csm-chart-header">
-          <span className="csm-chart-title">최근 7일 만족도 추이</span>
+          <span className="csm-chart-title">만족도(%) 추이</span>
           <div className="cs-sat-chart-legend">
-            <span className="cs-sat-legend-item">
-              <span className="cs-sat-legend-line" />
-              누적 {d.cumulativeSamples}건
+            <span className="cs-sat-legend-item cs-sat-legend-item--biz">
+              이달 영업일 <strong>{monthBizDayCount}</strong>일
             </span>
             <span className="cs-sat-legend-item">
               <span className="cs-sat-legend-dash" />
@@ -293,73 +473,84 @@ function MonthlyAccumulatedPanel({ data, year, month, children }) {
             </span>
           </div>
         </div>
-        <div className="csm-chart-body">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={d.weeklyTrend} margin={{ top: 4, right: 6, bottom: 0, left: -22 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(15,23,42,0.06)" vertical={false} />
-              <XAxis
-                dataKey="day"
-                tick={{ fontSize: 9, fill: 'var(--text-tertiary)' }}
-                tickLine={false}
-                axisLine={false}
-              />
-              <YAxis
-                domain={[85, 100]}
-                tick={{ fontSize: 9, fill: 'var(--text-tertiary)' }}
-                tickLine={false}
-                axisLine={false}
-                width={28}
-              />
-              <Tooltip content={<TrendTooltip />} />
-              <ReferenceLine
-                y={d.target}
-                stroke="var(--warning)"
-                strokeWidth={1.5}
-                strokeDasharray="4 3"
-              />
-              <Line
-                type="monotone"
-                dataKey="score"
-                stroke="var(--yp-accent-bright)"
-                strokeWidth={2.5}
-                dot={{ r: 3, fill: 'var(--yp-accent-bright)', strokeWidth: 0 }}
-                activeDot={{ r: 5, fill: 'var(--yp-accent-bright)' }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
+        <div className="csm-chart-body csm-chart-body--bizdays">
+          {plottedDayCount === 0 ? (
+            <p className="cs-sat-chart-empty">접수가 있는 영업일이 없습니다.</p>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart
+                data={satisfactionPctTrend}
+                margin={{ top: 6, right: 8, bottom: 30, left: 4 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(15,23,42,0.06)" vertical={false} />
+                <XAxis
+                  dataKey="dayWithWeekday"
+                  interval={0}
+                  tick={{
+                    fontSize: 12,
+                    fontWeight: 600,
+                    fill: 'var(--text-secondary)',
+                    letterSpacing: '-0.02em',
+                  }}
+                  tickLine={false}
+                  axisLine={false}
+                  angle={-38}
+                  textAnchor="end"
+                  height={54}
+                />
+                <YAxis
+                  domain={[85, 100]}
+                  tick={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    fill: 'var(--text-primary)',
+                    letterSpacing: '-0.02em',
+                  }}
+                  tickLine={false}
+                  axisLine={false}
+                  width={44}
+                  tickFormatter={(v) => `${v}%`}
+                  ticks={[85, 90, 95, 100]}
+                />
+                <Tooltip content={<TrendTooltip />} />
+                <ReferenceLine
+                  y={d.target}
+                  stroke="var(--warning)"
+                  strokeWidth={1.5}
+                  strokeDasharray="4 3"
+                />
+                <Line
+                  type="monotone"
+                  dataKey="satisfactionPct"
+                  name="만족도"
+                  stroke="var(--yp-accent-bright)"
+                  strokeWidth={2}
+                  dot={(dotProps) => {
+                    if (dotProps.payload?.trendExcluded) return null;
+                    const r = plottedDayCount > 18 ? 2 : 2.5;
+                    return (
+                      <circle
+                        cx={dotProps.cx}
+                        cy={dotProps.cy}
+                        r={r}
+                        fill="var(--yp-accent-bright)"
+                        strokeWidth={0}
+                      />
+                    );
+                  }}
+                  activeDot={(adProps) =>
+                    adProps.payload?.trendExcluded ? null : (
+                      <circle cx={adProps.cx} cy={adProps.cy} r={4} fill="var(--yp-accent-bright)" />
+                    )
+                  }
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          )}
         </div>
       </div>
 
-      {/* Good 멘트 — 당월 누적 카드에 통합 */}
-      <div className="cs-sat-monthly-good" aria-label="Good 멘트 사례">
-        <div className="cs-sat-monthly-good-head">
-          <span className="cs-sat-monthly-good-icon-wrap" aria-hidden>
-            <ThumbsUp size={16} strokeWidth={2.2} />
-          </span>
-          <span className="cs-sat-monthly-good-title">Good 멘트 사례</span>
-          <span className="cs-sat-monthly-good-badge">{goodList.length}건</span>
-        </div>
-        <p className="cs-sat-monthly-good-lead">
-          <Sparkles size={12} strokeWidth={2} className="cs-sat-monthly-good-lead-ico" aria-hidden />
-          고객이 남긴 긍정 평가 멘트입니다.
-        </p>
-        <ul className="cs-sat-monthly-good-list">
-          {goodList.map((item, idx) => (
-            <li key={item.id ?? idx} className="cs-sat-monthly-good-item">
-              <span className="cs-sat-monthly-good-quote" aria-hidden>
-                {'\u201c'}
-              </span>
-              <div className="cs-sat-monthly-good-body">
-                <p className="cs-sat-monthly-good-text">{item.comment}</p>
-                <span className="cs-sat-monthly-good-date">
-                  <CalendarDays size={11} strokeWidth={2} aria-hidden />
-                  {formatDate(item.date)}
-                </span>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </div>
+      {children}
 
     </div>
   );
@@ -421,7 +612,6 @@ function UnsatisfiedCategoriesPanel({
   const headerBlock = embedded ? (
     <div className="cs-sat-ucat-embed-head">
       <span className="cs-sat-ucat-embed-title">불만족 원인 건수</span>
-      <span className="cs-sat-ucat-embed-badge">{year}년 {month}월</span>
     </div>
   ) : (
     <div className="cs-sat-card-header">
@@ -660,120 +850,151 @@ const FEEDBACK_MAP = {
   '문의내용 이해 못함':      '"말씀하신 내용이 ~이 맞나요?" 재확인으로 오해를 예방하세요.',
 };
 
-function buildFeed(categories = [], score = 0, achievementRate = 0, totalSamples = 0) {
+const AI_INSIGHT_ICONS = {
+  improve: ClipboardCheck,
+  tip: Lightbulb,
+  trend: TrendingUp,
+};
+
+function buildFeed(categories = []) {
   const unsatTotal = categories.reduce((s, c) => s + c.count, 0);
-  const issues     = categories.filter((c) => c.count > 0);
-  const diffPp     = (achievementRate - 100).toFixed(1);
-  const isOver     = achievementRate >= 100;
+  const issues = categories.filter((c) => c.count > 0);
+
+  const improveBullets =
+    unsatTotal === 0
+      ? null
+      : issues.map((c, idx) => ({
+          key: `${c.label}-${idx}`,
+          label: c.label,
+          count: c.count,
+          hint: FEEDBACK_MAP[c.label] ?? '한 번 상담 흐름을 점검해 보시면 어떨까요?',
+        }));
 
   return [
-    /* 1. 달성 현황 */
     {
-      type:  isOver ? 'success' : 'warning',
-      tag:   isOver ? '달성 초과' : '목표 미달',
-      body:  isOver
-        ? `${totalSamples}건 중 ${score.toFixed(1)}점 · 목표 +${diffPp}%p 초과 달성`
-        : `${score.toFixed(1)}점 · 목표 달성률 ${achievementRate.toFixed(1)}% (미달)`,
+      kind: 'improve',
+      tag: '개선 포인트',
+      bullets: improveBullets,
+      bodyFallback: '불만족으로 잡힌 원인이 없어요. 지금 흐름 그대로 가도 좋아 보여요.',
     },
-    /* 2. 개선 포인트 */
-    unsatTotal === 0
-      ? { type: 'success', tag: '개선 포인트', body: '불만족 원인 0건 · 모든 항목 클리어' }
-      : {
-          type: 'warning',
-          tag:  '개선 포인트',
-          body: issues.map((c) => `"${c.label}" ${c.count}건 — ${FEEDBACK_MAP[c.label] ?? '상담 방식 검토 권장'}`).join(' / '),
-        },
-    /* 3. 품질 팁 */
     {
-      type: 'tip',
-      tag:  '품질 팁',
-      body: '마무리 멘트("추가 도움이 필요하신가요?") 활용 시 만족도 +2~3점 향상',
+      kind: 'tip',
+      tag: '품질 팁',
+      paragraphs: [
+        '마무리할 때 이렇게 한마디만 더해도 좋아요.',
+        '「추가로 도움이 필요하신가요?」 같은 문장이 만족도에 +2~3점 정도 기여한다는 사례가 많아요.',
+      ],
     },
-    /* 4. 추이 */
     {
-      type: 'trend',
-      tag:  '추이 분석',
-      body: '최근 7일 꾸준한 상승세 · 현재 상담 방식 유지 권장',
+      kind: 'trend',
+      tag: '추이',
+      paragraphs: [
+        '최근 일주일 보면 점수가 꾸준히 올라가고 있어요.',
+        '지금 상담 습관을 유지하는 게 가장 안전해 보여요.',
+      ],
     },
   ];
 }
-
-const FEED_STYLE = {
-  success: { icon: CircleCheck },
-  warning: { icon: TriangleAlert },
-  tip:     { icon: Lightbulb },
-  trend:   { icon: TrendingUp },
-};
 
 /* ════════════════════════════════════════════════════════════
    패널 B — 인사이트 (우상단)
    ════════════════════════════════════════════════════════════ */
 function AiInsightPanel({ data }) {
-  const d      = data ?? MOCK_DATA;
-  const feed   = buildFeed(d.unsatisfiedCategories, d.score, d.achievementRate, d.totalSamples);
-  const isOver = d.achievementRate >= 100;
-  const delta  = Math.abs(d.achievementRate - 100).toFixed(1);
-  const generatedAt = now.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' });
+  const d = data ?? MOCK_DATA;
+  const feed = buildFeed(d.unsatisfiedCategories);
+  const goodList =
+    Array.isArray(d.goodComments) && d.goodComments.length > 0
+      ? d.goodComments
+      : MOCK_DATA.goodComments;
 
   return (
-    <div className="cs-sat-card ai-card ai-card--hero">
+    <div className="cs-sat-card ai-card ai-card--hero ai-card--insight-good">
 
-      {/* ── 헤더 ── */}
-      <div className="ai-hero-top">
+      <div className="ai-hero-top ai-hero-top--insight-only">
         <div className="ai-hero-title-block">
           <span className="ai-hero-icon" aria-hidden>
-            <Sparkles size={22} strokeWidth={1.85} />
+            <Sparkles size={18} strokeWidth={1.85} />
           </span>
-          <div>
-            <div className="ai-hero-kicker">AI 인사이트</div>
-            <h2 className="ai-hero-title">이번 달 상담 품질 요약</h2>
-          </div>
-        </div>
-        <span className="ai-hero-meta">{generatedAt} 기준</span>
-      </div>
-
-      {/* ── 요약 하이라이트 ── */}
-      <div className={`ai-hero-highlight${isOver ? ' ai-hero-highlight--over' : ' ai-hero-highlight--under'}`}>
-        <div className="ai-hero-highlight-main">
-          <span className="ai-hero-highlight-label">만족도 점수</span>
-          <span className="ai-hero-highlight-score">
-            {d.score.toFixed(1)}
-            <em>점</em>
-          </span>
-        </div>
-        <div className="ai-hero-highlight-side">
-          <span className={`ai-hero-pill${isOver ? ' ai-hero-pill--pos' : ' ai-hero-pill--warn'}`}>
-            {isOver ? '목표 초과' : '목표 미달'}
-          </span>
-          <span className="ai-hero-delta">
-            목표 대비 <strong>{isOver ? '+' : '-'}{delta}%p</strong>
-          </span>
-          <span className="ai-hero-n">
-            샘플 <strong>{d.totalSamples}</strong>건 분석
-          </span>
+          <h2 className="ai-hero-title">AI 인사이트</h2>
         </div>
       </div>
 
-      {/* ── Insight 카드 그리드 (우측 영역 메인) ── */}
-      <ul className="ai-feed-list ai-feed-list--hero">
-        {feed.map((item, idx) => {
-          const s = FEED_STYLE[item.type] ?? FEED_STYLE.tip;
-          const Icon = s.icon;
-          return (
-            <li key={idx} className="ai-feed-item ai-feed-item--hero">
-              <div className="ai-feed-icon-chip ai-feed-icon-chip--hero" aria-hidden>
-                <Icon size={18} strokeWidth={2} />
-              </div>
-              <div className="ai-feed-content">
-                <span className="ai-feed-label">{item.tag}</span>
-                <p className="ai-feed-body">{item.body}</p>
+      <div className="cs-sat-ai-insight-block" aria-label="AI 인사이트 요약">
+        <p className="cs-sat-ai-insight-lead">
+          <Sparkles size={11} strokeWidth={2} className="cs-sat-ai-insight-lead-ico" aria-hidden />
+          이번 달 데이터를 바탕으로 한 요약이에요.
+        </p>
+        <ul className="cs-sat-ai-insight-list">
+          {feed.map((item) => {
+            const Ico = AI_INSIGHT_ICONS[item.kind] ?? Sparkles;
+            return (
+              <li
+                key={item.tag}
+                className={`cs-sat-ai-insight-item cs-sat-ai-insight-item--${item.kind}`}
+              >
+                <div className="cs-sat-ai-insight-item-head">
+                  <span className="cs-sat-ai-insight-item-ico" aria-hidden>
+                    <Ico size={14} strokeWidth={2.1} />
+                  </span>
+                  <span className="cs-sat-ai-insight-item-title">{item.tag}</span>
+                </div>
+                {item.kind === 'improve' && item.bullets?.length ? (
+                  <ul className="cs-sat-ai-insight-bullets">
+                    {item.bullets.map((b) => (
+                      <li key={b.key} className="cs-sat-ai-insight-bullet">
+                        <span className="cs-sat-ai-insight-bullet-title">
+                          {b.label} <em>{b.count}건</em>
+                        </span>
+                        <p className="cs-sat-ai-insight-bullet-hint">{b.hint}</p>
+                      </li>
+                    ))}
+                  </ul>
+                ) : item.kind === 'improve' ? (
+                  <p className="cs-sat-ai-insight-body cs-sat-ai-insight-body--single">{item.bodyFallback}</p>
+                ) : (
+                  <div className="cs-sat-ai-insight-body-stack">
+                    {item.paragraphs.map((para, i) => (
+                      <p key={i} className="cs-sat-ai-insight-body">
+                        {para}
+                      </p>
+                    ))}
+                  </div>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+
+      <div className="cs-sat-monthly-good cs-sat-monthly-good--in-ai" aria-label="Good 멘트 사례">
+        <div className="cs-sat-monthly-good-head">
+          <span className="cs-sat-monthly-good-icon-wrap" aria-hidden>
+            <ThumbsUp size={16} strokeWidth={2.2} />
+          </span>
+          <span className="cs-sat-monthly-good-title">Good 멘트 사례</span>
+          <span className="cs-sat-monthly-good-badge">{goodList.length}건</span>
+        </div>
+        <p className="cs-sat-monthly-good-lead">
+          <Sparkles size={12} strokeWidth={2} className="cs-sat-monthly-good-lead-ico" aria-hidden />
+          고객이 남긴 긍정 평가 멘트입니다.
+        </p>
+        <ul className="cs-sat-monthly-good-list">
+          {goodList.map((item, idx) => (
+            <li key={item.id ?? idx} className="cs-sat-monthly-good-item">
+              <span className="cs-sat-monthly-good-quote" aria-hidden>
+                {'\u201c'}
+              </span>
+              <div className="cs-sat-monthly-good-body">
+                <p className="cs-sat-monthly-good-text">{item.comment}</p>
+                <span className="cs-sat-monthly-good-date">
+                  <CalendarDays size={11} strokeWidth={2} aria-hidden />
+                  {formatDate(item.date)}
+                </span>
               </div>
             </li>
-          );
-        })}
-      </ul>
-
-      <p className="ai-disclaimer ai-disclaimer--hero">AI 생성 요약이며 참고용입니다.</p>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 }
@@ -801,20 +1022,32 @@ export default function CsSatisfactionPage() {
   });
 
   const satData = useMemo(() => {
-    const base = isError || !satRaw ? { ...MOCK_DATA } : satRaw;
+    const isMock = isError || !satRaw;
+    const base = isMock ? { ...MOCK_DATA } : satRaw;
     const f = focusRaw ?? {};
-    return {
+    const merged = {
       ...base,
       fiveMajorCitiesCount: f.fiveMajorCitiesCount ?? base.fiveMajorCitiesCount ?? 0,
       gen5060Count: f.gen5060Count ?? base.gen5060Count ?? 0,
       problemResolvedCount: f.problemResolvedCount ?? base.problemResolvedCount ?? 0,
+      monthlyTargetPct: base.monthlyTargetPct ?? base.target,
+      receivedCount: base.receivedCount ?? base.totalSamples,
+      dailyTrend:
+        !isMock && Array.isArray(base.dailyTrend) && base.dailyTrend.length > 0
+          ? base.dailyTrend
+          : buildMockDailyTrend(year, month),
     };
-  }, [satRaw, isError, focusRaw]);
+    const achievementVsTarget = computeMonthlyAchievementVsTargetPct(merged);
+    return {
+      ...merged,
+      achievementRate: achievementVsTarget ?? merged.achievementRate ?? 0,
+    };
+  }, [satRaw, isError, focusRaw, year, month]);
 
   return (
-    <div className="page-container cs-sat-page adm-dashboard--yp fade-in">
+    <div className="page-container adm-dashboard adm-dashboard--yp cs-sat-page yp-home fade-in">
 
-      <header className="adm-header adm-header--yp cs-sat-page-header">
+      <header className="adm-header adm-header--yp">
         <div className="adm-header-text">
           <h1 className="adm-title">만족도</h1>
           <p className="adm-sub">나의 CS 만족도 현황과 추이를 한눈에 확인하세요.</p>

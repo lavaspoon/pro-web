@@ -7,14 +7,11 @@ import {
   CalendarClock,
   Clock,
   FileText,
-  CheckCircle,
-  XCircle,
 } from 'lucide-react';
 import { fetchCaseDetail } from '../../api/memberApi';
 import StatusBadge from '../common/StatusBadge';
 import AiInsight from './AiInsight';
 import { formatCaseCallDateTime } from '../../utils/caseDisplay';
-import { getMemberAiFallback } from '../../utils/memberAiFallback';
 import { useMemberModalStore } from '../../store/memberModalStore';
 import '../../pages/member/CaseDetailPage.css';
 import './MemberSubmitModal.css';
@@ -43,11 +40,6 @@ export default function MemberCaseDetailPanel({ embedded = false }) {
 
   const hasTranscript = Boolean(caseData?.fullTranscript && caseData.fullTranscript.trim());
   const showDuration = Boolean(caseData?.callDuration && String(caseData.callDuration).trim());
-
-  const displayAiInsight =
-    caseData &&
-    (caseData.aiKeyPoint ||
-      (caseData.status !== 'pending' ? getMemberAiFallback(caseData.id) : null));
 
   return (
     <>
@@ -121,31 +113,13 @@ export default function MemberCaseDetailPanel({ embedded = false }) {
               </div>
             )}
 
-            {displayAiInsight && caseData.status !== 'pending' && (
+            {caseData.status !== 'pending' && (
               <div className="member-case-ai-wrap">
-                <AiInsight insight={displayAiInsight} />
-              </div>
-            )}
-
-            {caseData.status !== 'pending' && caseData.judgmentReason && (
-              <div
-                className={`judgment-card ${caseData.status === 'selected' ? 'judgment-selected' : 'judgment-rejected'}`}
-              >
-                <div className="judgment-header">
-                  <span className="judgment-label">
-                    {caseData.status === 'selected' ? (
-                      <>
-                        <CheckCircle size={14} /> 선정 사유
-                      </>
-                    ) : (
-                      <>
-                        <XCircle size={14} /> 비선정 사유
-                      </>
-                    )}
-                  </span>
-                  <span className="judgment-date">판정일: {formatDateTime(caseData.judgedAt)}</span>
-                </div>
-                <p className="judgment-reason">{caseData.judgmentReason}</p>
+                <AiInsight
+                  judgmentReason={caseData.judgmentReason}
+                  caseStatus={caseData.status}
+                  judgedAtLabel={caseData.judgedAt ? formatDateTime(caseData.judgedAt) : null}
+                />
               </div>
             )}
 
