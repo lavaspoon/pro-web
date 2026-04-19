@@ -1,15 +1,10 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Calendar, CheckCircle2, Lock, Upload, X } from 'lucide-react';
-import {
-  fetchCsSatisfactionTargetsUnified,
-  saveCsSatisfactionTargetsUnified,
-  uploadCsSatisfactionExcel,
-} from '../../api/adminApi';
+import { Calendar, CheckCircle2, X } from 'lucide-react';
+import { fetchCsSatisfactionTargetsUnified, saveCsSatisfactionTargetsUnified } from '../../api/adminApi';
 import './DashboardPage.css';
 import './PendingCasesPage.css';
 import './AdminSatisfactionSetupPage.css';
-import { getBusinessDaysInMonth, getPublicHolidaysInMonth } from '../../utils/krBusinessCalendar';
 
 function localYearMonth() {
   const d = new Date();
@@ -29,27 +24,17 @@ function formatYearMonthLabel(ym) {
 }
 
 /**
- * 목표 설정 · 만족도 엑셀 업로드 (모달)
+ * 목표 설정 모달
  * @param {boolean} open
  * @param {() => void} onClose
- * @param {'targets' | 'upload'} [initialTab] — 기본: 만족도업로드
  */
-export default function AdminSatisfactionSetupModal({ open, onClose, initialTab = 'upload' }) {
-  const fileRef = useRef(null);
+export default function AdminSatisfactionSetupModal({ open, onClose }) {
   const queryClient = useQueryClient();
   const [targetMonthStr, setTargetMonthStr] = useState(localYearMonth);
-  const [pickedName, setPickedName] = useState('');
-  const [activeTab, setActiveTab] = useState(initialTab);
 
   const [deptInputs, setDeptInputs] = useState({});
   const [skillInputs, setSkillInputs] = useState({});
   const [annualInputs, setAnnualInputs] = useState({});
-
-  useEffect(() => {
-    if (open) {
-      setActiveTab(initialTab);
-    }
-  }, [open, initialTab]);
 
   useEffect(() => {
     if (!open) return;
@@ -118,30 +103,8 @@ export default function AdminSatisfactionSetupModal({ open, onClose, initialTab 
     saveTargetsMutation.reset();
   }, [targetMonthStr]);
 
-  const uploadMutation = useMutation({
-    mutationFn: (file) => uploadCsSatisfactionExcel(file),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cs-satisfaction-summary'] });
-      queryClient.invalidateQueries({ queryKey: ['cs-satisfaction-center-month-detail'] });
-      queryClient.invalidateQueries({ queryKey: ['cs-satisfaction-monthly-overview'] });
-      queryClient.invalidateQueries({ queryKey: ['cs-satisfaction-ranking'] });
-      setPickedName('');
-      if (fileRef.current) fileRef.current.value = '';
-    },
-  });
-
   const data = targetsQuery.data;
   const targetsReady = data?.allTargetsSet === true;
-
-  const { year: ribbonYear, month: ribbonMonth } = parseYearMonth(targetMonthStr);
-  const businessDaysInRibbonMonth = useMemo(
-    () => (ribbonYear && ribbonMonth ? getBusinessDaysInMonth(ribbonYear, ribbonMonth) : []),
-    [ribbonYear, ribbonMonth],
-  );
-  const publicHolidaysInRibbonMonth = useMemo(
-    () => (ribbonYear && ribbonMonth ? getPublicHolidaysInMonth(ribbonYear, ribbonMonth) : []),
-    [ribbonYear, ribbonMonth],
-  );
 
   const deptTargets = data?.deptTargets || [];
   const deptValid =
@@ -197,17 +160,6 @@ export default function AdminSatisfactionSetupModal({ open, onClose, initialTab 
     saveTargetsMutation.mutate(payload);
   };
 
-  const onPickFile = (e) => {
-    const f = e.target.files?.[0];
-    setPickedName(f ? f.name : '');
-  };
-
-  const onUpload = () => {
-    const f = fileRef.current?.files?.[0];
-    if (!f || !targetsReady) return;
-    uploadMutation.mutate(f);
-  };
-
   if (!open) return null;
 
   return (
@@ -228,12 +180,10 @@ export default function AdminSatisfactionSetupModal({ open, onClose, initialTab 
         <div className="sat-setup-modal-header">
           <div className="sat-setup-modal-header-text">
             <h2 id="sat-setup-modal-title" className="sat-setup-modal-title">
-              목표 · 엑셀 반영
+              목표 설정
             </h2>
             <p className="sat-setup-modal-lead">
-              {activeTab === 'upload'
-                ? '엑셀 파일을 올려 만족도 데이터를 반영합니다. (목표를 먼저 저장해야 업로드할 수 있어요)'
-                : '총 9개 항목에 목표 %를 입력하고 저장하세요. 월간 6개 · 연간 3개입니다.'}
+              총 9개 항목에 목표 %를 입력하고 저장하세요. 월간 6개 · 연간 3개입니다.
             </p>
           </div>
           <button
@@ -259,159 +209,13 @@ export default function AdminSatisfactionSetupModal({ open, onClose, initialTab 
                 </div>
                 <label className="sat-setup-ribbon-month">
                   <span className="visually-hidden">연·월 변경</span>
-                  <input
-                    type="month"
-                    value={targetMonthStr}
-                    onChange={(e) => setTargetMonthStr(e.target.value)}
-                    aria-label="목표 및 업로드에 적용할 연도와 월"
-                  />
+                  <input type="month" value={targetMonthStr} onChange={(e) => setTargetMonthStr(e.target.value)} aria-label="목표에 적용할 연도와 월" />
                 </label>
               </div>
             </div>
 
-            {ribbonYear && ribbonMonth ? (
-              <div className="sat-setup-bizdays" aria-label="선택한 달의 영업일">
-                <div className="sat-setup-bizdays-head">
-                  <span className="sat-setup-bizdays-title">이달 영업일</span>
-                  <span className="sat-setup-bizdays-count">{businessDaysInRibbonMonth.length}일</span>
-                </div>
-                <div className="sat-setup-bizdays-chips">
-                  {businessDaysInRibbonMonth.map((b) => (
-                    <span
-                      key={`${b.year}-${b.month}-${b.day}`}
-                      className="sat-setup-bizday-chip"
-                      title={`${b.year}년 ${b.month}월 ${b.day}일 (${b.weekdayShort})`}
-                    >
-                      <span className="sat-setup-bizday-num">{b.day}</span>
-                      <span className="sat-setup-bizday-wd">{b.weekdayShort}</span>
-                    </span>
-                  ))}
-                </div>
-                {publicHolidaysInRibbonMonth.length > 0 ? (
-                  <p className="sat-setup-bizdays-hol">
-                    <span className="sat-setup-bizdays-hol-label">공휴일</span>
-                    <span className="sat-setup-bizdays-hol-text">
-                      {publicHolidaysInRibbonMonth
-                        .map((h) => `${ribbonMonth}월 ${h.day}일 ${h.name}`)
-                        .join(' · ')}
-                    </span>
-                  </p>
-                ) : ribbonYear !== 2026 ? (
-                  <p className="sat-setup-bizdays-note">
-                    공휴일 명칭은 2026년 기준입니다. 다른 연도는 주말만 제외한 영업일입니다.
-                  </p>
-                ) : null}
-              </div>
-            ) : null}
-
-            <div className="sat-setup-modal-tabs" role="tablist" aria-label="목표 및 업로드 구분">
-              <button
-                type="button"
-                role="tab"
-                id="sat-tab-upload"
-                aria-selected={activeTab === 'upload'}
-                aria-controls="sat-panel-upload"
-                className={`sat-setup-modal-tab ${activeTab === 'upload' ? 'is-active' : ''}`}
-                onClick={() => setActiveTab('upload')}
-              >
-                만족도업로드
-              </button>
-              <button
-                type="button"
-                role="tab"
-                id="sat-tab-targets"
-                aria-selected={activeTab === 'targets'}
-                aria-controls="sat-panel-targets"
-                className={`sat-setup-modal-tab ${activeTab === 'targets' ? 'is-active' : ''}`}
-                onClick={() => setActiveTab('targets')}
-              >
-                목표설정
-              </button>
-            </div>
-
-            <div
-              id="sat-panel-upload"
-              role="tabpanel"
-              aria-labelledby="sat-tab-upload"
-              hidden={activeTab !== 'upload'}
-              className="sat-setup-modal-panel"
-            >
-              <section className="sat-setup-pane sat-setup-pane--upload sat-setup-pane--modal" aria-labelledby="sat-setup-upload-title">
-                <div className="sat-setup-pane-head sat-setup-pane-head--minimal">
-                  <div>
-                    <h3 id="sat-setup-upload-title" className="sat-setup-pane-title">
-                      엑셀 업로드
-                    </h3>
-                    <p className="sat-setup-pane-sub">같은 연·월 기준으로 파일을 반영합니다.</p>
-                  </div>
-                </div>
-                <div className="sat-setup-pane-body sat-setup-pane-body--upload">
-                  <input
-                    ref={fileRef}
-                    type="file"
-                    accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                    className="sat-setup-file-input"
-                    onChange={onPickFile}
-                    aria-label="만족도 엑셀 파일"
-                    disabled={!targetsReady}
-                  />
-
-                  {!targetsReady ? (
-                    <div className="sat-setup-drop sat-setup-drop--locked" role="status">
-                      <Lock size={20} strokeWidth={2.1} className="sat-setup-drop-lock-ico" aria-hidden />
-                      <p className="sat-setup-drop-locked-text">
-                        「목표설정」에서 9개 항목을 모두 입력한 뒤 저장하면 업로드할 수 있어요.
-                      </p>
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      className="sat-setup-drop sat-setup-drop--active"
-                      onClick={() => fileRef.current?.click()}
-                    >
-                      <Upload size={22} strokeWidth={2.1} className="sat-setup-drop-ico" aria-hidden />
-                      <span className="sat-setup-drop-title">파일 선택</span>
-                      <span className="sat-setup-drop-hint">.xlsx</span>
-                    </button>
-                  )}
-
-                  <div className="sat-setup-upload-actions">
-                    <button
-                      type="button"
-                      className="btn btn-primary btn-sm sat-setup-btn-primary"
-                      disabled={!targetsReady || !pickedName || uploadMutation.isPending}
-                      onClick={onUpload}
-                    >
-                      {uploadMutation.isPending ? '업로드 중…' : '업로드 실행'}
-                    </button>
-                  </div>
-
-                  {pickedName && targetsReady ? (
-                    <p className="sat-setup-picked">
-                      <span className="sat-setup-picked-label">선택됨</span>
-                      {pickedName}
-                    </p>
-                  ) : null}
-                  {uploadMutation.isError ? (
-                    <p className="pending-inline-error sat-setup-inline-msg">{uploadMutation.error?.message}</p>
-                  ) : null}
-                  {uploadMutation.isSuccess ? (
-                    <p className="sat-setup-ok sat-setup-inline-msg">
-                      반영 {uploadMutation.data?.inserted ?? 0} · 스킵 {uploadMutation.data?.skipped ?? 0}
-                      {(uploadMutation.data?.warnings?.length ?? 0) > 0
-                        ? ` · 경고 ${uploadMutation.data.warnings.length}`
-                        : ''}
-                    </p>
-                  ) : null}
-                </div>
-              </section>
-            </div>
-
             <div
               id="sat-panel-targets"
-              role="tabpanel"
-              aria-labelledby="sat-tab-targets"
-              hidden={activeTab !== 'targets'}
               className="sat-setup-modal-panel"
             >
               <section className="sat-setup-pane sat-setup-pane--targets sat-setup-pane--modal" aria-labelledby="sat-setup-targets-title">

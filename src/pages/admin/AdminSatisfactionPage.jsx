@@ -3,19 +3,15 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
   RefreshCw,
-  Upload,
   X,
   MapPinned,
   UserCircle2,
   CheckCircle2,
   Trophy,
   Building2,
-  Percent,
-  TrendingUp,
-  TrendingDown,
-  Minus,
 } from 'lucide-react';
 import AdminSatisfactionSetupModal from './AdminSatisfactionSetupModal';
+import AdminTargetMembersUploadModal from './AdminTargetMembersUploadModal';
 import {
   fetchCsSatisfactionCenterMonthDetail,
   fetchCsSatisfactionDashboardKpis,
@@ -38,41 +34,74 @@ function num(v) {
   return Number(v).toLocaleString('ko-KR');
 }
 
-/** KPI 카드 등에서 센터명이 잘리지 않도록 앞 2글자만 표시 (전체는 title로) */
-function centerShortLabel(name) {
-  const s = String(name ?? '').trim();
-  if (!s) return '—';
-  return [...s].slice(0, 2).join('');
-}
+function KpiScopeListCard({ title, icon: Icon, rows = [] }) {
+  const shortDeptLabel = (name) => {
+    const s = String(name ?? '').trim();
+    if (!s) return '—';
+    if (s === '종합') return s;
+    return [...s].slice(0, 2).join('');
+  };
+  const toRow = (r) => ({
+    scopeKey: r?.scopeKey ?? r?.secondDepthDeptId ?? r?.taskCode ?? 'UNKNOWN',
+    scopeName: r?.scopeName ?? r?.centerName ?? '종합',
+    achievementRate: r?.achievementRate ?? null,
+    targetMet:
+      typeof r?.targetMet === 'boolean'
+        ? r.targetMet
+        : r?.achievementRate != null
+          ? Number(r.achievementRate) >= 100
+          : null,
+  });
 
-/** 전일 대비 퍼센트포인트 표시용 (API: achievementRateDayOverDayPp 등) */
-function formatDayOverDayPp(pp) {
-  if (pp == null || Number.isNaN(Number(pp))) return null;
-  const n = Math.round(Number(pp) * 10) / 10;
-  const sign = n > 0 ? '+' : '';
-  return `${sign}${n.toFixed(1)}%`;
-}
+  const sourceRows = Array.isArray(rows)
+    ? rows.map(toRow)
+    : rows && typeof rows === 'object'
+      ? [toRow(rows)]
+      : [];
 
-function KpiDayOverDayBadge({ pp }) {
-  const label = formatDayOverDayPp(pp);
-  if (label == null) return null;
-  const n = Number(pp);
-  const up = n > 0;
-  const flat = n === 0;
+  const pickByName = (keyword) =>
+    sourceRows.find((r) => String(r.scopeName ?? '').includes(keyword));
+  const overallRow =
+    sourceRows.find((r) => String(r.scopeName ?? '').trim() === '종합' || String(r.scopeKey) === 'OVERALL') ??
+    { scopeKey: 'OVERALL', scopeName: '종합', achievementRate: null, targetMet: null };
+  const busanRow =
+    pickByName('부산') ?? { scopeKey: 'BUSAN', scopeName: '부산', achievementRate: null, targetMet: null };
+  const seobuRow =
+    pickByName('서부') ?? { scopeKey: 'SEOBU', scopeName: '서부', achievementRate: null, targetMet: null };
+  const renderFixedRow = (r) => (
+    <div key={`${title}-${r.scopeKey}`} className="adm-sat-kpi-center-row">
+      <span className="adm-sat-kpi-center-name" title={r.scopeName}>
+        {shortDeptLabel(r.scopeName)}
+      </span>
+      <span className="adm-sat-kpi-center-pct">{pct(r.achievementRate)}</span>
+      <span
+        className={
+          r.targetMet == null
+            ? 'adm-sat-kpi-badge adm-sat-kpi-badge--no'
+            : r.targetMet
+              ? 'adm-sat-kpi-badge adm-sat-kpi-badge--ok'
+              : 'adm-sat-kpi-badge adm-sat-kpi-badge--no'
+        }
+      >
+        {r.targetMet == null ? '—' : r.targetMet ? '달성' : '미달성'}
+      </span>
+    </div>
+  );
+
   return (
-    <span
-      className={`adm-sat-kpi-dod adm-sat-kpi-dod--${flat ? 'flat' : up ? 'up' : 'down'}`}
-      title="전일 대비(어제까지 월 누적 대비 오늘까지)"
-    >
-      {flat ? (
-        <Minus className="adm-sat-kpi-dod-ico" size={13} strokeWidth={2.5} aria-hidden />
-      ) : up ? (
-        <TrendingUp className="adm-sat-kpi-dod-ico" size={13} strokeWidth={2.5} aria-hidden />
-      ) : (
-        <TrendingDown className="adm-sat-kpi-dod-ico" size={13} strokeWidth={2.5} aria-hidden />
-      )}
-      <span className="adm-sat-kpi-dod-txt">{label}</span>
-    </span>
+    <div className="adm-kpi-card adm-kpi-card--tone-files adm-sat-kpi-card--centers">
+      <div className="adm-kpi-head">
+        <span className="adm-kpi-icon-wrap" aria-hidden>
+          <Icon className="adm-kpi-ico" size={18} strokeWidth={2.25} />
+        </span>
+        <span className="adm-kpi-title">{title}</span>
+      </div>
+      <div className="adm-sat-kpi-center-list" aria-label={`${title} 종합/센터 달성률`}>
+        {renderFixedRow(overallRow)}
+        {renderFixedRow(busanRow)}
+        {renderFixedRow(seobuRow)}
+      </div>
+    </div>
   );
 }
 
@@ -119,7 +148,14 @@ function computeSummaryTotals(list) {
   if (avgTarget != null && avgTarget > 0 && satRatePct != null) {
     achievement = Math.round((100 * satRatePct) / avgTarget * 10) / 10;
   }
-  return { evalSum, satSum, dissSum, evalTargetMemberSum, avgTarget, achievement };
+  return {
+    evalSum,
+    satSum,
+    dissSum,
+    evalTargetMemberSum,
+    avgTarget,
+    achievement,
+  };
 }
 
 export default function AdminSatisfactionPage() {
@@ -129,6 +165,7 @@ export default function AdminSatisfactionPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [setupModalOpen, setSetupModalOpen] = useState(false);
+  const [targetUploadModalOpen, setTargetUploadModalOpen] = useState(false);
 
   /** null = 미적용, 문자열(빈 문자열 포함) = 해당 값과 일치하는 행만 — Dashboard와 동일 */
   const [filterCenter, setFilterCenter] = useState(null);
@@ -270,10 +307,16 @@ export default function AdminSatisfactionPage() {
             <button
               type="button"
               className="btn btn-secondary btn-sm adm-sat-upload-entry"
+              onClick={() => setTargetUploadModalOpen(true)}
+            >
+              평가 대상자
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm adm-sat-upload-entry"
               onClick={() => setSetupModalOpen(true)}
             >
-              <Upload size={15} strokeWidth={2.25} aria-hidden />
-              목표 · 엑셀
+              목표 설정
             </button>
           </div>
         </div>
@@ -287,14 +330,16 @@ export default function AdminSatisfactionPage() {
               전체 센터 현황
             </h2>
             <p className="adm-section-hint">
-              <strong>{secondDepthLabelHint}</strong> · 센터 KPI는 {year}년 연간 · 스킬·중점 지표는{' '}
+              <strong>{secondDepthLabelHint}</strong> · 기준:{' '}
               {kpiData?.kpiMonth != null ? (
                 <>
-                  {kpiData.kpiYear}년 {kpiData.kpiMonth}월(당월)
+                  {kpiData.kpiYear}년 {kpiData.kpiMonth}월
                 </>
               ) : (
                 '당월'
               )}
+              {' · '}
+              중점 추진은 연간 목표 기준
             </p>
           </div>
         </div>
@@ -307,89 +352,11 @@ export default function AdminSatisfactionPage() {
           ) : overviewError ? (
             <p className="adm-sat-chart-error">{overviewError?.message ?? '지표를 불러오지 못했습니다.'}</p>
           ) : (
-            <div className="adm-overview-grid adm-sat-kpi-grid adm-sat-kpi-grid--five">
-              <div className="adm-kpi-card adm-kpi-card--tone-files adm-sat-kpi-card--centers">
-                <div className="adm-kpi-head">
-                  <span className="adm-kpi-icon-wrap" aria-hidden>
-                    <Building2 className="adm-kpi-ico" size={18} strokeWidth={2.25} />
-                  </span>
-                  <span className="adm-kpi-title">센터 목표 달성률</span>
-                </div>
-                <div className="adm-sat-kpi-center-list" aria-label={`${year}년 센터별 목표 대비 달성`}>
-                  {(kpiData?.centerAchievements ?? []).length === 0 ? (
-                    <p className="adm-sat-kpi-empty">—</p>
-                  ) : (
-                    (kpiData?.centerAchievements ?? []).map((c) => (
-                      <div key={c.secondDepthDeptId} className="adm-sat-kpi-center-row">
-                        <span className="adm-sat-kpi-center-name" title={c.centerName}>
-                          {centerShortLabel(c.centerName)}
-                        </span>
-                        <span className="adm-sat-kpi-center-pct">{pct(c.achievementRate)}</span>
-                        <span
-                          className={
-                            c.targetMet
-                              ? 'adm-sat-kpi-badge adm-sat-kpi-badge--ok'
-                              : 'adm-sat-kpi-badge adm-sat-kpi-badge--no'
-                          }
-                        >
-                          {c.targetMet ? '달성' : '미달성'}
-                        </span>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-              <div className="adm-kpi-card adm-kpi-card--tone-chart">
-                <div className="adm-kpi-head">
-                  <span className="adm-kpi-icon-wrap" aria-hidden>
-                    <Percent className="adm-kpi-ico" size={18} strokeWidth={2.25} />
-                  </span>
-                  <span className="adm-kpi-title">전체 평균 달성률</span>
-                </div>
-                <div
-                  className="adm-kpi-value-row adm-kpi-value-row--with-dod"
-                  aria-label={`스킬 목표 대비 평균 달성률 ${kpiData?.overallAvgSkillAchievementRate ?? ''}`}
-                >
-                  <span className="adm-kpi-val">{pct(kpiData?.overallAvgSkillAchievementRate)}</span>
-                  <KpiDayOverDayBadge pp={kpiData?.overallAvgSkillAchievementDayOverDayPp} />
-                </div>
-              </div>
-              <div className="adm-kpi-card adm-kpi-card--tone-chart">
-                <div className="adm-kpi-head">
-                  <span className="adm-kpi-icon-wrap" aria-hidden>
-                    <MapPinned className="adm-kpi-ico" size={18} strokeWidth={2.25} />
-                  </span>
-                  <span className="adm-kpi-title">5대 도시</span>
-                </div>
-                <div className="adm-kpi-value-row adm-kpi-value-row--with-dod" aria-label="5대 도시 목표 대비 달성률">
-                  <span className="adm-kpi-val">{pct(kpiData?.fiveMajorCities?.achievementRate)}</span>
-                  <KpiDayOverDayBadge pp={kpiData?.fiveMajorCities?.achievementRateDayOverDayPp} />
-                </div>
-              </div>
-              <div className="adm-kpi-card adm-kpi-card--tone-award">
-                <div className="adm-kpi-head">
-                  <span className="adm-kpi-icon-wrap" aria-hidden>
-                    <UserCircle2 className="adm-kpi-ico" size={18} strokeWidth={2.25} />
-                  </span>
-                  <span className="adm-kpi-title">5060</span>
-                </div>
-                <div className="adm-kpi-value-row adm-kpi-value-row--with-dod" aria-label="5060 목표 대비 달성률">
-                  <span className="adm-kpi-val">{pct(kpiData?.gen5060?.achievementRate)}</span>
-                  <KpiDayOverDayBadge pp={kpiData?.gen5060?.achievementRateDayOverDayPp} />
-                </div>
-              </div>
-              <div className="adm-kpi-card adm-kpi-card--tone-files">
-                <div className="adm-kpi-head">
-                  <span className="adm-kpi-icon-wrap" aria-hidden>
-                    <CheckCircle2 className="adm-kpi-ico" size={18} strokeWidth={2.25} />
-                  </span>
-                  <span className="adm-kpi-title">문제해결</span>
-                </div>
-                <div className="adm-kpi-value-row adm-kpi-value-row--with-dod" aria-label="문제해결 목표 대비 달성률">
-                  <span className="adm-kpi-val">{pct(kpiData?.problemResolved?.achievementRate)}</span>
-                  <KpiDayOverDayBadge pp={kpiData?.problemResolved?.achievementRateDayOverDayPp} />
-                </div>
-              </div>
+            <div className="adm-overview-grid adm-sat-kpi-grid adm-sat-kpi-grid--four">
+              <KpiScopeListCard title="종합 만족도" icon={Building2} rows={kpiData?.centerAchievements ?? []} />
+              <KpiScopeListCard title="5대 도시" icon={MapPinned} rows={kpiData?.fiveMajorCities ?? []} />
+              <KpiScopeListCard title="5060" icon={UserCircle2} rows={kpiData?.gen5060 ?? []} />
+              <KpiScopeListCard title="문제해결" icon={CheckCircle2} rows={kpiData?.problemResolved ?? []} />
             </div>
           )}
         </div>
@@ -757,6 +724,10 @@ export default function AdminSatisfactionPage() {
       </section>
 
       <AdminSatisfactionSetupModal open={setupModalOpen} onClose={() => setSetupModalOpen(false)} />
+      <AdminTargetMembersUploadModal
+        open={targetUploadModalOpen}
+        onClose={() => setTargetUploadModalOpen(false)}
+      />
     </div>
   );
 }

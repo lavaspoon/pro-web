@@ -380,28 +380,28 @@
   color: var(--text-tertiary);
 }
 
-/* 상단 KPI — 5열 + 센터 2행 */
-.adm-sat-page .adm-sat-kpi-grid--five {
+/* 상단 KPI — 4열 + 각 카드 종합/부산/서부 */
+.adm-sat-page .adm-sat-kpi-grid--four {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 1rem;
   width: 100%;
 }
 
 @media (max-width: 1400px) {
-  .adm-sat-page .adm-sat-kpi-grid--five {
+  .adm-sat-page .adm-sat-kpi-grid--four {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 960px) {
-  .adm-sat-page .adm-sat-kpi-grid--five {
+  .adm-sat-page .adm-sat-kpi-grid--four {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 480px) {
-  .adm-sat-page .adm-sat-kpi-grid--five {
+  .adm-sat-page .adm-sat-kpi-grid--four {
     grid-template-columns: 1fr;
   }
 }
@@ -416,7 +416,7 @@
 
 .adm-sat-kpi-center-row {
   display: grid;
-  grid-template-columns: 2.25rem auto auto;
+  grid-template-columns: 3.5rem auto auto;
   align-items: center;
   gap: 0.45rem 0.5rem;
   font-size: 0.8125rem;
@@ -425,7 +425,7 @@
 .adm-sat-kpi-center-name {
   font-weight: 700;
   color: var(--text-primary);
-  text-align: center;
+  text-align: left;
   letter-spacing: -0.02em;
 }
 

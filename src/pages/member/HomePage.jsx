@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useMemberModalStore } from '../../store/memberModalStore';
-import { Sparkles, ChevronRight, Flame, Zap, Crown, ArrowRight } from 'lucide-react';
+import { Sparkles, ChevronRight, FileText } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
 import { fetchMemberHome, fetchMyCases } from '../../api/memberApi';
 import '../admin/DashboardPage.css';
@@ -16,15 +16,15 @@ const currentMonthNum = now.getMonth() + 1;
 const PROGRAM_END_MONTH = 9;
 
 const TIERS = [
-  { id: 'mangju', name: 'YOU 망주', range: '1~9건', minCases: 1, maxCases: 9, rateWon: 30000, Icon: Flame },
-  { id: 'player', name: 'YOU 플레이어', range: '10~18건', minCases: 10, maxCases: 18, rateWon: 50000, Icon: Zap },
-  { id: 'topia', name: 'YOU 토피아', range: '19건~', minCases: 19, maxCases: Infinity, rateWon: 70000, Icon: Crown },
+  { id: 'mangju', name: 'YOU 망주',     range: '1~9건',  minCases: 1,  rateWon: 30000 },
+  { id: 'player', name: 'YOU 플레이어', range: '10~18건', minCases: 10, rateWon: 50000 },
+  { id: 'topia',  name: 'YOU 토피아',   range: '19건~',  minCases: 19, rateWon: 70000 },
 ];
 
 function getTierIdx(n) {
   if (n >= 19) return 2;
   if (n >= 10) return 1;
-  if (n >= 1) return 0;
+  if (n >= 1)  return 0;
   return -1;
 }
 
@@ -54,13 +54,13 @@ export default function HomePage() {
       else if (c.status === 'pending') pending++;
       else if (c.status === 'rejected') rejected++;
     });
-    return { selected, pending, rejected, total: selected + pending + rejected };
+    return { selected, pending, rejected };
   }, [cases]);
 
   if (isLoading || !data) return (
-    <div className="loading-screen"><div className="spinner" /><p>데이터를 불러오는 중...</p></div>
+    <div className="hp-loading"><div className="hp-spinner" /><p>불러오는 중…</p></div>
   );
-  if (isError) return <div className="home-error">오류: {error?.message}</div>;
+  if (isError) return <div className="hp-error">오류: {error?.message}</div>;
 
   const {
     myTotalSelected = 0,
@@ -71,265 +71,205 @@ export default function HomePage() {
     topSelected = 0,
   } = data;
 
-  const isInProgram = currentMonthNum >= 1 && currentMonthNum <= PROGRAM_END_MONTH;
-  const monthsLeft = isInProgram ? Math.max(0, PROGRAM_END_MONTH - currentMonthNum) : 0;
-  const remainLeft = isInProgram ? Math.max(0, monthlyLimit - monthlySelected) : 0;
-  const maxAdditional = monthsLeft * monthlyLimit + remainLeft;
-
-  const tierIdx = getTierIdx(myTotalSelected);
+  const tierIdx     = getTierIdx(myTotalSelected);
   const currentTier = tierIdx >= 0 ? TIERS[tierIdx] : null;
-  const nextTier = tierIdx < TIERS.length - 1 ? TIERS[tierIdx + 1] : null;
+  const nextTier    = tierIdx < TIERS.length - 1 ? TIERS[tierIdx + 1] : null;
 
   const estimatedWon = currentTier ? myTotalSelected * currentTier.rateWon : 0;
-  const casesToNext = nextTier ? nextTier.minCases - myTotalSelected : 0;
-  const boost = nextTier ? Math.max(0, nextTier.minCases * nextTier.rateWon - estimatedWon) : 0;
-  const isAchievable = nextTier !== null && casesToNext <= maxAdditional;
+  const casesToNext  = nextTier ? nextTier.minCases - myTotalSelected : 0;
+  const boostWon     = nextTier ? (nextTier.minCases * nextTier.rateWon) - estimatedWon : 0;
 
-  const PROG_MAX = PROGRAM_END_MONTH * monthlyLimit;
-  const myPct = PROG_MAX > 0 ? Math.min((myTotalSelected / PROG_MAX) * 100, 100) : 0;
-  const topPct = PROG_MAX > 0 ? Math.min((topSelected / PROG_MAX) * 100, 100) : 0;
-  const monthlyPct = Math.min((monthlySelected / monthlyLimit) * 100, 100);
+  // 프로그레스 스케일 (0 ~ 25건 기준 — 토피아 이상 커버)
+  const SCALE_MAX = 25;
+  const clampPct = (n) => Math.max(0, Math.min(100, (n / SCALE_MAX) * 100));
+  const myPct    = clampPct(myTotalSelected);
+  const topPct   = clampPct(topSelected);
+
+  const tierStops = TIERS.map((t) => ({ ...t, pct: clampPct(t.minCases) }));
+
+  const isInProgram = currentMonthNum >= 1 && currentMonthNum <= PROGRAM_END_MONTH;
+  const remainLeft  = isInProgram ? Math.max(0, monthlyLimit - monthlySelected) : 0;
 
   return (
-    <div className="page-container adm-dashboard adm-dashboard--yp fade-in yp-home">
+    <div className="page-container adm-dashboard adm-dashboard--yp fade-in yp-home hp-home">
 
-      {/* ── 헤더 ──────────────────────────────────────────────── */}
-      <header className="adm-header adm-header--yp">
-        <div className="adm-header-row">
-          <div className="adm-header-text">
-            <h1 className="adm-title">나의 YOU PRO</h1>
-            <p className="adm-sub">{user?.name ?? '구성원'}님 · 선정 건수에 따라 등급과 인센티브 단가가 올라갑니다.</p>
-          </div>
-          <button type="button" className="adm-header-link adm-pending-btn--cute" onClick={openSubmit}>
-            <span className="adm-pending-shine" aria-hidden />
-            <span className="adm-pending-btn__inner">
-              <Sparkles size={16} strokeWidth={2.25} aria-hidden />
-              <span className="adm-pending-btn__label">사례 접수</span>
-            </span>
-            <ChevronRight className="adm-pending-btn__chev" size={16} strokeWidth={2.25} aria-hidden />
+      {/* ── 헤더 ─────────────────────────────────────────────── */}
+      <header className="hp-header">
+        <div className="hp-header-text">
+          <h1 className="hp-header-title">나의 YOU PRO</h1>
+          <p className="hp-header-sub">{user?.name ?? '구성원'}님</p>
+        </div>
+        <div className="hp-header-actions">
+          <Link to="/member/cases" className="hp-btn hp-btn--ghost">
+            <FileText size={15} strokeWidth={2.25} />
+            접수 내역
+          </Link>
+          <button type="button" className="hp-btn hp-btn--primary" onClick={openSubmit}>
+            <Sparkles size={15} strokeWidth={2.25} />
+            사례 접수
           </button>
         </div>
       </header>
 
-      {/* ── ① 인센티브 ────────────────────────────────────────── */}
-      <div className="yp-card yp-inca-card">
-        <div className="yp-inca-row">
-
-          {/* 왼쪽: 예상 인센티브 */}
-          <div className="yp-inca-main">
-            <p className="yp-inca-eyebrow">올해 예상 인센티브</p>
-            <div className="yp-inca-fig">
-              {estimatedWon > 0 ? (
-                <>
-                  <span className="yp-inca-num">{estimatedWon.toLocaleString('ko-KR')}</span>
-                  <span className="yp-inca-won">원</span>
-                </>
-              ) : (
-                <span className="yp-inca-num yp-inca-num--zero">0원</span>
-              )}
-            </div>
-            <p className="yp-inca-formula">
-              {currentTier
-                ? `선정 ${myTotalSelected}건 × ${currentTier.rateWon.toLocaleString('ko-KR')}원/건`
-                : '선정 1건부터 인센티브가 시작됩니다'}
-            </p>
-          </div>
-
-          <div className="yp-inca-divider" />
-
-          {/* 오른쪽: KPI 3개 */}
-          <div className="yp-inca-kpis">
-            <div className="yp-inca-kpi">
-              <span className="yp-inca-kpi-label">연간 선정</span>
-              <div className="yp-inca-kpi-fig">
-                <span className="yp-inca-kpi-num">{myTotalSelected}</span>
-                <span className="yp-inca-kpi-unit">건</span>
-              </div>
-            </div>
-            {myIndividualRank != null && individualRankTotal > 0 && (
-              <div className="yp-inca-kpi">
-                <span className="yp-inca-kpi-label">전체 순위</span>
-                <div className="yp-inca-kpi-fig">
-                  <span className="yp-inca-kpi-num">{myIndividualRank}</span>
-                  <span className="yp-inca-kpi-unit">위</span>
-                </div>
-                <span className="yp-inca-kpi-sub">/ {individualRankTotal}명 중</span>
-              </div>
+      {/* ═══════════════════════════════════════════════════════
+          ① 금액 중심 히어로 — 토스 스타일
+         ═══════════════════════════════════════════════════════ */}
+      <section className="hp-hero">
+        {/* 상단 중앙: 금액 */}
+        <div className="hp-hero-top">
+          <p className="hp-hero-label">올해 예상 인센티브</p>
+          <div className="hp-hero-amount">
+            {estimatedWon > 0 ? (
+              <>
+                <span className="hp-hero-num">{estimatedWon.toLocaleString('ko-KR')}</span>
+                <span className="hp-hero-won">원</span>
+              </>
+            ) : (
+              <span className="hp-hero-num hp-hero-num--zero">0원</span>
             )}
-            <div className="yp-inca-kpi">
-              <span className="yp-inca-kpi-label">이번 달 선정</span>
-              <div className="yp-inca-kpi-fig">
-                <span className="yp-inca-kpi-num">{monthlySelected}</span>
-                <span className="yp-inca-kpi-unit">/ {monthlyLimit}건</span>
-              </div>
-            </div>
           </div>
-
+          {currentTier ? (
+            <p className="hp-hero-sub">
+              <span className="hp-hero-tier">{currentTier.name}</span>
+              <span className="hp-hero-dot" />
+              건당 {currentTier.rateWon.toLocaleString('ko-KR')}원
+            </p>
+          ) : (
+            <p className="hp-hero-sub">선정 1건부터 인센티브가 시작됩니다</p>
+          )}
         </div>
 
-      </div>
-
-      {/* ── ② 등급 현황 ───────────────────────────────────────── */}
-      <div className="yp-card yp-tiers-card">
-
-        <div className="yp-tiers-head">
-          <span className="yp-tiers-title">등급 현황</span>
-          <span className="yp-tiers-meta">{currentYear}년 1~9월 선정 기준</span>
-        </div>
-
-        {/* 등급 업 달성/추가 지급 안내 */}
-        {isInProgram && nextTier && (
-          <div className="yp-tier-upgrade-banner">
-            <span className="yp-tier-upgrade-dot" />
-            <span className="yp-tier-upgrade-text">
-              <strong>{casesToNext}건</strong> 더 달성하면 <strong>{nextTier.name}</strong> 등급 ·{' '}
-              <span className="yp-tier-upgrade-boost">+{boost.toLocaleString('ko-KR')}원</span> 추가 지급
-              {isAchievable && <span className="yp-tier-upgrade-ok">&nbsp;· 달성 가능</span>}
+        {/* 금액 형성 내역 — 영수증 느낌 */}
+        <div className="hp-breakdown">
+          <div className="hp-breakdown-row">
+            <span className="hp-breakdown-label">선정 건수</span>
+            <span className="hp-breakdown-value">
+              <strong>{myTotalSelected}</strong>건
             </span>
           </div>
-        )}
-        {isInProgram && !nextTier && currentTier && (
-          <div className="yp-tier-upgrade-banner yp-tier-upgrade-banner--max">
-            <span className="yp-tier-upgrade-dot" />
-            <span className="yp-tier-upgrade-text">최고 등급 <strong>YOU 토피아</strong> 달성 중 · 건당 70,000원 적용</span>
+          <div className="hp-breakdown-row">
+            <span className="hp-breakdown-label">건당 단가</span>
+            <span className="hp-breakdown-value">
+              {currentTier ? (
+                <><strong>{currentTier.rateWon.toLocaleString('ko-KR')}</strong>원</>
+              ) : (
+                <span className="hp-breakdown-muted">등급 미달</span>
+              )}
+            </span>
           </div>
-        )}
-        {!isInProgram && (
-          <div className="yp-tier-upgrade-banner yp-tier-upgrade-banner--ended">
-            <span className="yp-tier-upgrade-text">{currentYear}년 프로그램 종료 · 9월 말 최종 정산 완료</span>
+          <div className="hp-breakdown-divider" />
+          <div className="hp-breakdown-row hp-breakdown-row--total">
+            <span className="hp-breakdown-label">예상 지급액</span>
+            <span className="hp-breakdown-value">
+              <strong>{estimatedWon.toLocaleString('ko-KR')}</strong>원
+            </span>
           </div>
-        )}
 
-        {/* 등급 3열 */}
-        <div className="yp-tiers-row">
-          {TIERS.map((tier, i) => {
-            const isActive = i === tierIdx;
-            const isDone = i < tierIdx;
-            const isNext = i === tierIdx + 1;
-            return (
-              <div key={tier.id}
-                className={`yp-tier yp-tier--${tier.id}${isActive ? ' is-active' : ''}${isDone ? ' is-done' : ''}${isNext ? ' is-next' : ''}`}>
-                <div className="yp-tier-top">
-                  <span className={`yp-tier-icon yp-tier-icon--${tier.id}`}>
-                    <tier.Icon size={14} strokeWidth={2.5} />
-                  </span>
-                  <div className="yp-tier-badges">
-                    {isActive && <span className="yp-tier-badge yp-tier-badge--now">현재</span>}
-                    {isDone && <span className="yp-tier-badge yp-tier-badge--done">완료</span>}
-                    {isNext && <span className="yp-tier-badge yp-tier-badge--next">목표</span>}
-                  </div>
-                </div>
-                <p className="yp-tier-name">{tier.name}</p>
-                <p className="yp-tier-range">{tier.range}</p>
-                <p className="yp-tier-rate">
-                  {tier.rateWon.toLocaleString('ko-KR')}
-                  <span className="yp-tier-rate-u">원/건</span>
-                </p>
-              </div>
-            );
-          })}
+          {nextTier && isInProgram && (
+            <div className="hp-breakdown-hint">
+              <span className="hp-breakdown-hint-dot" />
+              <strong>{casesToNext}건</strong> 더 선정되면 <strong>{nextTier.name}</strong> 등급으로
+              <span className="hp-breakdown-boost"> +{boostWon.toLocaleString('ko-KR')}원</span>
+            </div>
+          )}
         </div>
 
-        {/* 위치 비교 프로그레스 바 */}
-        <div className="yp-prog-wrap">
-          <div className="yp-prog-track">
+        {/* 이번 달 접수 현황 — 통합 칩 */}
+        <Link to="/member/cases" className="hp-month-strip">
+          <span className="hp-month-strip-title">{currentMonth} 접수</span>
+          <span className="hp-month-chips">
+            <span className="hp-month-chip hp-month-chip--selected">
+              선정 <strong>{monthStats.selected}</strong>
+            </span>
+            <span className="hp-month-chip hp-month-chip--pending">
+              심사 <strong>{monthStats.pending}</strong>
+            </span>
+            <span className="hp-month-chip hp-month-chip--rejected">
+              비선정 <strong>{monthStats.rejected}</strong>
+            </span>
+          </span>
+          <ChevronRight size={15} strokeWidth={2.5} className="hp-month-strip-arrow" />
+        </Link>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════
+          ② 나의 등급 — 심플 버전
+         ═══════════════════════════════════════════════════════ */}
+      <section className="hp-card hp-tier-card">
+        {/* 현재 내 상태 요약 한 줄 */}
+        <div className="hp-tier-now">
+          <div className="hp-tier-now-main">
+            <span className="hp-tier-now-badge">{currentTier?.name ?? '등급 전'}</span>
+            <span className="hp-tier-now-cases">
+              <strong>{myTotalSelected}</strong>건 선정
+            </span>
+          </div>
+          {myIndividualRank != null && individualRankTotal > 0 && (
+            <span className="hp-tier-now-rank">
+              {individualRankTotal}명 중 <strong>{myIndividualRank}위</strong>
+            </span>
+          )}
+        </div>
+
+        {/* 좌: 프로그레스 바 + 마커  |  우: 컴팩트 등급표 */}
+        <div className="hp-tier-body">
+          {/* 좌측 — 프로그레스 */}
+          <div className="hp-prog">
+            <div className="hp-prog-track">
+              <div className="hp-prog-seg hp-prog-seg--1" style={{ left: `${tierStops[0].pct}%`, width: `${tierStops[1].pct - tierStops[0].pct}%` }} />
+              <div className="hp-prog-seg hp-prog-seg--2" style={{ left: `${tierStops[1].pct}%`, width: `${tierStops[2].pct - tierStops[1].pct}%` }} />
+              <div className="hp-prog-seg hp-prog-seg--3" style={{ left: `${tierStops[2].pct}%`, width: `${100 - tierStops[2].pct}%` }} />
+
+              {topSelected > 0 && (
+                <div className="hp-prog-marker hp-prog-marker--top" style={{ left: `${topPct}%` }}>
+                  <div className="hp-prog-pin hp-prog-pin--top">1위 {topSelected}</div>
+                  <div className="hp-prog-stem hp-prog-stem--top" />
+                  <div className="hp-prog-dot hp-prog-dot--top" />
+                </div>
+              )}
+
+              <div className="hp-prog-marker hp-prog-marker--me" style={{ left: `${myPct}%` }}>
+                <div className="hp-prog-dot hp-prog-dot--me" />
+                <div className="hp-prog-stem hp-prog-stem--me" />
+                <div className="hp-prog-pin hp-prog-pin--me">나 {myTotalSelected}</div>
+              </div>
+            </div>
+
+            {/* 하단 숫자 눈금 */}
+            <div className="hp-prog-scale">
+              <span>0</span>
+              <span>10</span>
+              <span>19</span>
+              <span>{SCALE_MAX}건</span>
+            </div>
+
+            {/* 다음 등급까지 */}
+            {nextTier ? (
+              <div className="hp-tier-next">
+                <strong>{nextTier.name}</strong>까지 <strong>{casesToNext}건</strong>
+              </div>
+            ) : currentTier ? (
+              <div className="hp-tier-next hp-tier-next--max">최고 등급 달성 중</div>
+            ) : null}
+          </div>
+
+          {/* 우측 — 컴팩트 등급표 */}
+          <div className="hp-tier-table">
             {TIERS.map((tier, i) => {
-              const l = i === 0 ? 0 : (tier.minCases / PROG_MAX) * 100;
-              const r = tier.maxCases === Infinity ? 100 : ((tier.maxCases + 1) / PROG_MAX) * 100;
+              const isActive = i === tierIdx;
               return (
                 <div key={tier.id}
-                  className={`yp-prog-seg yp-prog-seg--${tier.id}`}
-                  style={{ left: `${l}%`, width: `${Math.min(r, 100) - l}%` }} />
+                  className={`hp-tier-row hp-tier-row--${tier.id}${isActive ? ' is-active' : ''}`}>
+                  <span className="hp-tier-row-dot" />
+                  <span className="hp-tier-row-name">{tier.name.replace('YOU ', '')}</span>
+                  <span className="hp-tier-row-range">{tier.range}</span>
+                  <span className="hp-tier-row-rate">{tier.rateWon / 10000}만</span>
+                </div>
               );
             })}
-            {TIERS.slice(1).map((tier) => (
-              <div key={`b-${tier.id}`} className="yp-prog-border"
-                style={{ left: `${(tier.minCases / PROG_MAX) * 100}%` }} />
-            ))}
-            {topSelected > 0 && (
-              <div className="yp-prog-pin yp-prog-pin--top" style={{ left: `${topPct}%` }}>
-                <span className="yp-prog-pin-tag">1위 {topSelected}건</span>
-                <span className="yp-prog-pin-line" />
-              </div>
-            )}
-            <div className="yp-prog-pin yp-prog-pin--me" style={{ left: `${myPct}%` }}>
-              <span className="yp-prog-pin-tag">나 {myTotalSelected}건</span>
-              <span className="yp-prog-pin-line" />
-            </div>
-          </div>
-          <div className="yp-prog-scale">
-            <span>0건</span>
-            {TIERS.slice(1).map((tier) => (
-              <span key={tier.id} className="yp-prog-scale-mid"
-                style={{ left: `${(tier.minCases / PROG_MAX) * 100}%` }}>
-                {tier.minCases}건
-              </span>
-            ))}
-            <span>{PROG_MAX}건</span>
           </div>
         </div>
-
-      </div>
-
-      {/* ── ③ 접수 현황 ───────────────────────────────────────── */}
-      <Link className="yp-card yp-cases-card" to="/member/cases">
-
-        <div className="yp-cases-head">
-          <div className="yp-cases-head-left">
-            <span className="yp-cases-title">{currentMonth} 접수 현황</span>
-            {isInProgram && (
-              <span className="yp-cases-period-chip">
-                {monthsLeft > 0 ? `${monthsLeft}개월 남음` : '이번 달 마감'}
-              </span>
-            )}
-          </div>
-          <span className="yp-cases-link">
-            전체 내역 <ArrowRight size={13} strokeWidth={2.5} />
-          </span>
-        </div>
-
-        {/* 상태 행 */}
-        <div className="yp-cases-stats">
-          <div className="yp-cases-stat yp-cases-stat--selected">
-            <span className="yp-cases-stat-val">{monthStats.selected}</span>
-            <span className="yp-cases-stat-label">선정</span>
-          </div>
-          <div className="yp-cases-sep" />
-          <div className="yp-cases-stat yp-cases-stat--pending">
-            <span className="yp-cases-stat-val">{monthStats.pending}</span>
-            <span className="yp-cases-stat-label">심사 중</span>
-          </div>
-          <div className="yp-cases-sep" />
-          <div className="yp-cases-stat yp-cases-stat--rejected">
-            <span className="yp-cases-stat-val">{monthStats.rejected}</span>
-            <span className="yp-cases-stat-label">비선정</span>
-          </div>
-          <div className="yp-cases-sep" />
-          <div className="yp-cases-stat yp-cases-stat--total">
-            <span className="yp-cases-stat-val">{monthStats.total}</span>
-            <span className="yp-cases-stat-label">총 접수</span>
-          </div>
-        </div>
-
-        {/* 한도 프로그레스 */}
-        <div className="yp-cases-quota">
-          <div className="yp-cases-quota-top">
-            <span className="yp-cases-quota-label">이번 달 선정 한도</span>
-            <span className="yp-cases-quota-count">
-              <strong>{monthlySelected}</strong> / {monthlyLimit}건
-            </span>
-          </div>
-          <div className="yp-cases-quota-track">
-            <div className="yp-cases-quota-fill" style={{ width: `${monthlyPct}%` }} />
-          </div>
-          <p className="yp-cases-quota-note">
-            {remainLeft > 0
-              ? `이번 달 ${remainLeft}건 더 선정 가능합니다`
-              : '이번 달 선정 한도를 모두 채웠습니다'}
-          </p>
-        </div>
-
-      </Link>
+      </section>
 
     </div>
   );

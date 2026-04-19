@@ -167,32 +167,6 @@ export const fetchCsSatisfactionCenterMonthDetail = async (secondDepthDeptId, ye
 };
 
 /**
- * CS 만족도 엑셀 업로드 (.xlsx) — multipart 필드명 file
- * (FormData 사용 시 기본 JSON Content-Type을 쓰지 않도록 fetch 사용)
- */
-export const uploadCsSatisfactionExcel = async (file) => {
-  const baseURL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080';
-  const formData = new FormData();
-  formData.append('file', file);
-  const res = await fetch(`${baseURL}/api/admin/cs-satisfaction/upload`, {
-    method: 'POST',
-    body: formData,
-  });
-  const text = await res.text();
-  if (!res.ok) {
-    let msg = text || res.statusText;
-    try {
-      const j = JSON.parse(text);
-      msg = j.message || j.error || msg;
-    } catch {
-      /* ignore */
-    }
-    throw new Error(msg);
-  }
-  return text ? JSON.parse(text) : {};
-};
-
-/**
  * CS 만족도 — 해당 연·월의 센터별 목표% 조회 (월 1회 설정, DB는 그 달 1일 키)
  * GET /api/admin/cs-satisfaction/monthly-targets?year=&month=
  */
@@ -236,4 +210,30 @@ export const fetchCsSatisfactionTargetsUnified = async (year, month) => {
  */
 export const saveCsSatisfactionTargetsUnified = async (body) => {
   await axiosInstance.post('/api/admin/cs-satisfaction/targets-unified', body);
+};
+
+/**
+ * 평가 대상자 엑셀 업로드 (.xlsx)
+ * POST /api/admin/target-members/upload
+ */
+export const uploadTargetMembersExcel = async (file) => {
+  const baseURL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080';
+  const formData = new FormData();
+  formData.append('file', file);
+  const res = await fetch(`${baseURL}/api/admin/target-members/upload`, {
+    method: 'POST',
+    body: formData,
+  });
+  const text = await res.text();
+  if (!res.ok) {
+    let msg = text || res.statusText;
+    try {
+      const j = JSON.parse(text);
+      msg = j.message || j.error || msg;
+    } catch {
+      /* ignore */
+    }
+    throw new Error(msg);
+  }
+  return text ? JSON.parse(text) : {};
 };
