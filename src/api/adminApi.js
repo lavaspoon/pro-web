@@ -133,6 +133,28 @@ export const fetchCsSatisfactionMonthlyOverview = async (year) => {
 };
 
 /**
+ * CS 만족도 — 관리자 상단 KPI(센터 연간 달성·스킬 평균·중점 3종 당월)
+ * GET /api/admin/cs-satisfaction/dashboard-kpis?year=
+ */
+export const fetchCsSatisfactionDashboardKpis = async (year) => {
+  const params = {};
+  if (year != null) params.year = year;
+  const { data } = await axiosInstance.get('/api/admin/cs-satisfaction/dashboard-kpis', { params });
+  return data;
+};
+
+/**
+ * CS 만족도 — 연간 구성원 랭킹(만족·5대도시·5060·문제해결 각 상위 N명)
+ * GET /api/admin/cs-satisfaction/ranking?year=&topN=3
+ */
+export const fetchCsSatisfactionRanking = async (year, topN = 3) => {
+  const params = { topN };
+  if (year != null) params.year = year;
+  const { data } = await axiosInstance.get('/api/admin/cs-satisfaction/ranking', { params });
+  return data;
+};
+
+/**
  * 선택 팀/센터 — 구성원별 만족도 (month 생략 시 해당 연도 전체, 지정 시 해당 월만)
  * GET /api/admin/cs-satisfaction/center-month-detail?secondDepthDeptId=&year=&month=
  */

@@ -129,7 +129,8 @@
 
 /* ── 접수 모달 ─────────────────────────────────────────────── */
 .member-submit-modal {
-  max-height: min(94vh, 880px);
+  max-width: min(94vw, 680px);
+  max-height: min(96vh, 760px);
 }
 
 .member-submit-modal-head {
@@ -137,7 +138,7 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  padding: 22px 20px 8px 20px;
+  padding: 16px 20px 6px 20px;
 }
 
 .member-submit-modal-head-text {

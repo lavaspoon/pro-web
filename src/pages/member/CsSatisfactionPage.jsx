@@ -766,11 +766,10 @@ function UnsatisfiedCategoriesPanel({
                         ) : null}
                       </span>
                       <span
-                        className={`cs-ucat-detail-sat-badge${
-                          String(rec.satisfiedYn).toUpperCase() === 'N'
+                        className={`cs-ucat-detail-sat-badge${String(rec.satisfiedYn).toUpperCase() === 'N'
                             ? ' cs-ucat-detail-sat-badge--neg'
                             : ''
-                        }`}
+                          }`}
                       >
                         만족 {ynLabel(rec.satisfiedYn)}
                       </span>
@@ -843,11 +842,11 @@ function UnsatisfiedCategoriesPanel({
    AI Insight 데이터 헬퍼
    ════════════════════════════════════════════════════════════ */
 const FEEDBACK_MAP = {
-  '서비스 지식부족':         '최신 상품 정보를 주기적으로 학습하고 FAQ를 미리 숙지하세요.',
-  '성의 없는 태도':          '공감 표현("잘 이해했습니다")을 적극 활용해 보세요.',
+  '서비스 지식부족': '최신 상품 정보를 주기적으로 학습하고 FAQ를 미리 숙지하세요.',
+  '성의 없는 태도': '공감 표현("잘 이해했습니다")을 적극 활용해 보세요.',
   '적절하지 않는 혜택 안내': '상담 전 고객 이용 내역을 확인 후 맞춤 옵션을 제안하세요.',
-  '알아듣기 어려운 설명':    '전문 용어 대신 쉬운 표현으로 단계별 설명을 시도하세요.',
-  '문의내용 이해 못함':      '"말씀하신 내용이 ~이 맞나요?" 재확인으로 오해를 예방하세요.',
+  '알아듣기 어려운 설명': '전문 용어 대신 쉬운 표현으로 단계별 설명을 시도하세요.',
+  '문의내용 이해 못함': '"말씀하신 내용이 ~이 맞나요?" 재확인으로 오해를 예방하세요.',
 };
 
 const AI_INSIGHT_ICONS = {
@@ -864,11 +863,11 @@ function buildFeed(categories = []) {
     unsatTotal === 0
       ? null
       : issues.map((c, idx) => ({
-          key: `${c.label}-${idx}`,
-          label: c.label,
-          count: c.count,
-          hint: FEEDBACK_MAP[c.label] ?? '한 번 상담 흐름을 점검해 보시면 어떨까요?',
-        }));
+        key: `${c.label}-${idx}`,
+        label: c.label,
+        count: c.count,
+        hint: FEEDBACK_MAP[c.label] ?? '한 번 상담 흐름을 점검해 보시면 어떨까요?',
+      }));
 
   return [
     {

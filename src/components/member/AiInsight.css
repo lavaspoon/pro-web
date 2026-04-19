@@ -1,275 +1,128 @@
-/* ── 사례 상세 · 선정 여부 / 선정·비선정 사유 ───────── */
-
-.ai-insight-stack {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.ai-result {
-  border-radius: var(--r-xl);
-  border: 1px solid var(--border);
-  background: linear-gradient(180deg, #fafbfc 0%, #ffffff 48%);
-  box-shadow: var(--shadow-xs);
-  overflow: hidden;
-}
-
-.ai-result__ribbon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 10px 14px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: #0e7490;
-  background: linear-gradient(90deg, rgba(14, 116, 144, 0.1), rgba(13, 148, 136, 0.08), rgba(14, 116, 144, 0.1));
-  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
-}
-
-.ai-result__ribbon svg {
-  color: #0d9488;
-}
-
-/* 선정·비선정 사유 카드 리본 (한글 라벨 — uppercase 제거) */
-.ai-result__ribbon--judgment {
-  text-transform: none;
-  letter-spacing: -0.03em;
-  font-size: 12px;
-  font-weight: 800;
-}
-
-.ai-result__ribbon--judgment-selected {
-  color: #047857;
-  background: linear-gradient(
-    90deg,
-    rgba(16, 185, 129, 0.12),
-    rgba(52, 211, 153, 0.08),
-    rgba(16, 185, 129, 0.12)
-  );
-}
-
-.ai-result__ribbon--judgment-selected svg {
-  color: #059669;
-}
-
-.ai-result__ribbon--judgment-rejected {
-  color: #991b1b;
-  background: linear-gradient(
-    90deg,
-    rgba(248, 113, 113, 0.12),
-    rgba(252, 165, 165, 0.08),
-    rgba(248, 113, 113, 0.12)
-  );
-}
-
-.ai-result__ribbon--judgment-rejected svg {
-  color: #dc2626;
-}
-
-/* 선정 여부 카드 리본 (한글 — uppercase 제거, 중립 톤) */
-.ai-result__ribbon--status {
-  text-transform: none;
-  letter-spacing: -0.03em;
-  font-size: 12px;
-  font-weight: 800;
-  color: #334155;
-  background: linear-gradient(
-    90deg,
-    rgba(148, 163, 184, 0.12),
-    rgba(226, 232, 240, 0.35),
-    rgba(148, 163, 184, 0.12)
-  );
-}
-
-.ai-result__block {
-  padding: 18px 18px 20px;
-  border-bottom: 1px solid var(--border);
-}
-
-.ai-result__block:last-child {
-  border-bottom: none;
-}
-
-.ai-result__block--verdict {
-  padding-top: 20px;
-  background: linear-gradient(180deg, rgba(240, 253, 250, 0.35) 0%, transparent 100%);
-}
-
-.ai-result__heading {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0 0 12px;
-  font-size: 14px;
-  font-weight: 800;
-  color: var(--yp-ink, #0f172a);
-  letter-spacing: -0.04em;
-}
-
-.ai-result__heading svg {
-  color: var(--accent);
-  flex-shrink: 0;
-}
-
-.ai-result__heading-mark {
-  width: 4px;
-  height: 18px;
-  border-radius: 3px;
-  background: linear-gradient(180deg, #0ea5e9, #0d9488);
-  flex-shrink: 0;
-}
-
-.ai-result__lede {
-  margin: -4px 0 12px;
-  font-size: 12px;
-  line-height: 1.45;
-  color: var(--text-secondary);
-  letter-spacing: -0.02em;
-}
-
-/* ── 1. 선정 여부 카드 ─────────────────────────────────────── */
-.ai-verdict-card {
-  display: flex;
-  gap: 16px;
-  align-items: flex-start;
-  padding: 16px 18px;
-  border-radius: var(--r-lg);
-  border: 1px solid var(--border);
-  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.06);
-}
-
-.ai-verdict-card--yes {
-  background: linear-gradient(135deg, rgba(236, 253, 245, 0.95) 0%, rgba(240, 253, 250, 0.6) 100%);
-  border-color: rgba(16, 185, 129, 0.35);
-}
-
-.ai-verdict-card--no {
-  background: linear-gradient(135deg, rgba(254, 242, 242, 0.9) 0%, rgba(255, 247, 237, 0.5) 100%);
-  border-color: rgba(248, 113, 113, 0.35);
-}
-
-.ai-verdict-card--neutral {
-  background: linear-gradient(135deg, rgba(255, 251, 235, 0.95) 0%, rgba(254, 252, 232, 0.6) 100%);
-  border-color: rgba(245, 158, 11, 0.35);
-}
-
-.ai-verdict-card__icon {
-  flex-shrink: 0;
-  width: 52px;
-  height: 52px;
+/* ── 선정 여부 + 사유 통합 카드 ───────────────────────────────── */
+.ai-unified-card {
   border-radius: 14px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.06);
+}
+
+/* 색상 테마 */
+.ai-unified-card--yes {
+  border-color: rgba(16, 185, 129, 0.35);
+  background: linear-gradient(160deg, rgba(236, 253, 245, 0.95) 0%, rgba(255, 255, 255, 0.85) 100%);
+}
+
+.ai-unified-card--no {
+  border-color: rgba(248, 113, 113, 0.35);
+  background: linear-gradient(160deg, rgba(254, 242, 242, 0.9) 0%, rgba(255, 255, 255, 0.85) 100%);
+}
+
+.ai-unified-card--neutral {
+  border-color: rgba(245, 158, 11, 0.35);
+  background: linear-gradient(160deg, rgba(255, 251, 235, 0.95) 0%, rgba(255, 255, 255, 0.85) 100%);
+}
+
+/* ── 헤더 행 ────────────────────────────────────────────────── */
+.ai-unified-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+}
+
+/* 아이콘 */
+.ai-unified-icon {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.ai-verdict-card--yes .ai-verdict-card__icon {
-  background: rgba(16, 185, 129, 0.18);
+.ai-unified-card--yes .ai-unified-icon {
+  background: rgba(16, 185, 129, 0.15);
   color: #047857;
 }
 
-.ai-verdict-card--no .ai-verdict-card__icon {
-  background: rgba(248, 113, 113, 0.18);
+.ai-unified-card--no .ai-unified-icon {
+  background: rgba(248, 113, 113, 0.15);
   color: #b91c1c;
 }
 
-.ai-verdict-card--neutral .ai-verdict-card__icon {
-  background: rgba(245, 158, 11, 0.2);
+.ai-unified-card--neutral .ai-unified-icon {
+  background: rgba(245, 158, 11, 0.18);
   color: #b45309;
 }
 
-.ai-verdict-card__body {
-  min-width: 0;
+/* 라벨 + 결과 텍스트 */
+.ai-unified-header-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   flex: 1;
+  min-width: 0;
 }
 
-.ai-verdict-card__label {
-  margin: 0 0 4px;
+.ai-unified-label {
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--text-tertiary);
 }
 
-.ai-verdict-card__value {
-  margin: 0 0 6px;
-  font-size: 22px;
+.ai-unified-verdict {
+  font-size: 20px;
   font-weight: 800;
-  letter-spacing: -0.05em;
-  line-height: 1.15;
+  letter-spacing: -0.04em;
+  line-height: 1.2;
   color: var(--yp-ink, #0f172a);
 }
 
-.ai-verdict-card__value--solo {
-  margin-bottom: 0;
-}
-
-.ai-verdict-card__hint {
-  margin: 0 0 10px;
-  font-size: 13px;
-  line-height: 1.45;
-  color: var(--text-secondary);
-  letter-spacing: -0.02em;
-}
-
-.ai-verdict-card__scores {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.ai-verdict-chip {
-  font-size: 11px;
-  font-weight: 600;
-  padding: 5px 10px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.75);
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  color: var(--text-secondary);
-}
-
-/* ── 선정·비선정 사유 카드 ─────────────────────────────────── */
-.ai-result--judgment-card--selected {
-  border-color: rgba(52, 199, 89, 0.22);
-}
-
-.ai-result--judgment-card--rejected {
-  border-color: var(--border-strong);
-}
-
-.ai-result__block--judgment-reason {
-  padding-top: 14px;
-  background: linear-gradient(180deg, rgba(241, 245, 249, 0.35) 0%, transparent 100%);
-}
-
-.ai-judgment-meta {
-  margin: 0 0 10px;
-  font-size: 12px;
+/* 판정일 */
+.ai-unified-date {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  font-size: 11.5px;
   font-weight: 500;
   color: var(--text-tertiary);
   letter-spacing: -0.02em;
+  white-space: nowrap;
 }
 
-.ai-judgment-reason-panel {
-  padding: 12px 14px;
-  border-radius: var(--r-md);
-  background: var(--surface-inset);
-  border: 1px solid var(--border);
+/* ── 사유 영역 ──────────────────────────────────────────────── */
+.ai-unified-reason {
+  padding: 12px 16px 14px;
+  border-top: 1px solid rgba(15, 23, 42, 0.07);
 }
 
-.ai-result--judgment-card--selected .ai-judgment-reason-panel {
-  background: rgba(240, 253, 244, 0.45);
-  border-color: rgba(52, 199, 89, 0.2);
+.ai-unified-card--yes .ai-unified-reason {
+  background: rgba(236, 253, 245, 0.5);
 }
 
-.ai-judgment-reason-text {
+.ai-unified-card--no .ai-unified-reason {
+  background: rgba(254, 242, 242, 0.45);
+}
+
+.ai-unified-reason-label {
+  margin: 0 0 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.ai-unified-reason-text {
   margin: 0;
-  font-size: 14px;
-  line-height: 1.6;
+  font-size: 13.5px;
+  line-height: 1.65;
   color: var(--text-secondary);
   letter-spacing: -0.02em;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }

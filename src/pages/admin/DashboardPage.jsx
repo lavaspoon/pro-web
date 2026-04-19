@@ -3,13 +3,13 @@ import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
   Users,
-  Award,
-  BarChart2,
   FileText,
   Trophy,
   Clock,
   ChevronRight,
   X,
+  Calendar,
+  BadgeCheck,
 } from 'lucide-react';
 import {
   fetchAdminDashboard,
@@ -54,6 +54,19 @@ function normFilterKey(v) {
   return String(v ?? '').trim();
 }
 
+/** 동차 시 항상 센터 → 그룹 → 실명(팀명) 오름차순 */
+function localeKo(a, b) {
+  return String(a ?? '').trim().localeCompare(String(b ?? '').trim(), 'ko');
+}
+
+function deptHierarchyTiebreak(a, b) {
+  let d = localeKo(a.centerName, b.centerName);
+  if (d !== 0) return d;
+  d = localeKo(a.groupName, b.groupName);
+  if (d !== 0) return d;
+  return localeKo(a.name, b.name);
+}
+
 function SortTh({ label, sortKey, sortConfig, onSort }) {
   const active = sortConfig.key === sortKey;
   return (
@@ -80,8 +93,8 @@ export default function DashboardPage() {
   const [filterCenter, setFilterCenter] = useState(null);
   const [filterGroup, setFilterGroup] = useState(null);
   const [sortConfig, setSortConfig] = useState({
-    key: 'totalSubmitted',
-    direction: 'desc',
+    key: 'centerName',
+    direction: 'asc',
   });
 
   const { data, isLoading, isError, error } = useQuery({
@@ -138,12 +151,16 @@ export default function DashboardPage() {
     const { key, direction } = sortConfig;
     const dir = direction === 'asc' ? 1 : -1;
     const compare = (a, b) => {
+      let primary;
       if (key === 'name' || key === 'centerName' || key === 'groupName') {
-        return String(a[key] ?? '').localeCompare(String(b[key] ?? ''), 'ko') * dir;
+        primary = localeKo(a[key], b[key]) * dir;
+      } else {
+        const va = Number(a[key] ?? 0);
+        const vb = Number(b[key] ?? 0);
+        primary = (va - vb) * dir;
       }
-      const va = Number(a[key] ?? 0);
-      const vb = Number(b[key] ?? 0);
-      return (va - vb) * dir;
+      if (primary !== 0) return primary;
+      return deptHierarchyTiebreak(a, b);
     };
     return list.sort(compare);
   }, [teamsFiltered, sortConfig]);
@@ -235,10 +252,13 @@ export default function DashboardPage() {
 
   const {
     year,
-    centerAvg = 0,
     totalSubmitted = 0,
     totalSelected = 0,
     memberCount = 0,
+    currentMonth = new Date().getMonth() + 1,
+    monthlySubmitted = 0,
+    monthlySelected = 0,
+    monthlyCertificationRate = null,
   } = data;
   const selectedTeam = teamsFiltered.find((t) => Number(t.id) === Number(selectedTeamId));
 
@@ -286,57 +306,6 @@ export default function DashboardPage() {
         </div>
         <div className="adm-overview-shell">
           <div className="adm-overview-grid adm-overview-grid--four">
-            <div className="adm-kpi-card adm-kpi-card--tone-files">
-              <div className="adm-kpi-head">
-                <span className="adm-kpi-icon-wrap" aria-hidden>
-                  <FileText className="adm-kpi-ico" size={18} strokeWidth={2.25} />
-                </span>
-                <span className="adm-kpi-title">전체 신청 건수</span>
-              </div>
-              <div className="adm-kpi-value-row" aria-label={`전체 신청 ${totalSubmitted}건`}>
-                <span className="adm-kpi-val">{totalSubmitted}</span>
-                <span className="adm-kpi-suffix">건</span>
-              </div>
-              <div className="adm-kpi-unit">
-                <span className="adm-kpi-unit-line" />
-                해당 연도 접수
-              </div>
-            </div>
-            <div className="adm-kpi-card adm-kpi-card--tone-award">
-              <div className="adm-kpi-head">
-                <span className="adm-kpi-icon-wrap" aria-hidden>
-                  <Award className="adm-kpi-ico" size={18} strokeWidth={2.25} />
-                </span>
-                <span className="adm-kpi-title">전체 선정 건수</span>
-              </div>
-              <div className="adm-kpi-value-row" aria-label={`전체 선정 ${totalSelected}건`}>
-                <span className="adm-kpi-val">{totalSelected}</span>
-                <span className="adm-kpi-suffix">건</span>
-              </div>
-              <div className="adm-kpi-unit">
-                <span className="adm-kpi-unit-line" />
-                해당 연도 선정
-              </div>
-            </div>
-            <div className="adm-kpi-card adm-kpi-card--tone-chart">
-              <div className="adm-kpi-head">
-                <span className="adm-kpi-icon-wrap" aria-hidden>
-                  <BarChart2 className="adm-kpi-ico" size={18} strokeWidth={2.25} />
-                </span>
-                <span className="adm-kpi-title">목표 달성률</span>
-              </div>
-              <div
-                className="adm-kpi-value-row"
-                aria-label={`목표 달성률 ${((centerAvg / 36) * 100).toFixed(0)}%`}
-              >
-                <span className="adm-kpi-val">{((centerAvg / 36) * 100).toFixed(0)}</span>
-                <span className="adm-kpi-suffix">%</span>
-              </div>
-              <div className="adm-kpi-unit">
-                <span className="adm-kpi-unit-line" />
-                인당 연간 선정 한도(36회) 대비 평균
-              </div>
-            </div>
             <div className="adm-kpi-card adm-kpi-card--tone-users">
               <div className="adm-kpi-head">
                 <span className="adm-kpi-icon-wrap" aria-hidden>
@@ -350,7 +319,84 @@ export default function DashboardPage() {
               </div>
               <div className="adm-kpi-unit">
                 <span className="adm-kpi-unit-line" />
-                등록 구성원
+                현재 평가대상자
+              </div>
+            </div>
+            <div className="adm-kpi-card adm-kpi-card--tone-files">
+              <div className="adm-kpi-head">
+                <span className="adm-kpi-icon-wrap" aria-hidden>
+                  <FileText className="adm-kpi-ico" size={18} strokeWidth={2.25} />
+                </span>
+                <span className="adm-kpi-title">연간 선정</span>
+              </div>
+              <div
+                className="adm-kpi-value-row adm-kpi-value-row--with-aside"
+                aria-label={`연간 선정 ${totalSelected}건, 전체 접수 ${totalSubmitted}건`}
+              >
+                <div className="adm-kpi-value-main">
+                  <span className="adm-kpi-val">{totalSelected}</span>
+                  <span className="adm-kpi-suffix">건</span>
+                </div>
+                <div className="adm-kpi-value-aside">
+                  <span className="adm-kpi-aside-label">전체 접수</span>
+                  <span className="adm-kpi-aside-val">{totalSubmitted}</span>
+                  <span className="adm-kpi-aside-unit">건</span>
+                </div>
+              </div>
+              <div className="adm-kpi-unit">
+                <span className="adm-kpi-unit-line" />
+                {year}년 누적
+              </div>
+            </div>
+            <div className="adm-kpi-card adm-kpi-card--tone-award">
+              <div className="adm-kpi-head">
+                <span className="adm-kpi-icon-wrap" aria-hidden>
+                  <Calendar className="adm-kpi-ico" size={18} strokeWidth={2.25} />
+                </span>
+                <span className="adm-kpi-title">{currentMonth}월 선정</span>
+              </div>
+              <div
+                className="adm-kpi-value-row adm-kpi-value-row--with-aside"
+                aria-label={`${currentMonth}월 선정 ${monthlySelected}건, 전체 접수 ${monthlySubmitted}건`}
+              >
+                <div className="adm-kpi-value-main">
+                  <span className="adm-kpi-val">{monthlySelected}</span>
+                  <span className="adm-kpi-suffix">건</span>
+                </div>
+                <div className="adm-kpi-value-aside">
+                  <span className="adm-kpi-aside-label">전체 접수</span>
+                  <span className="adm-kpi-aside-val">{monthlySubmitted}</span>
+                  <span className="adm-kpi-aside-unit">건</span>
+                </div>
+              </div>
+              <div className="adm-kpi-unit">
+                <span className="adm-kpi-unit-line" />
+                {year}년 {currentMonth}월
+              </div>
+            </div>
+            <div className="adm-kpi-card adm-kpi-card--tone-chart">
+              <div className="adm-kpi-head">
+                <span className="adm-kpi-icon-wrap" aria-hidden>
+                  <BadgeCheck className="adm-kpi-ico" size={18} strokeWidth={2.25} />
+                </span>
+                <span className="adm-kpi-title">{currentMonth}월 인증율</span>
+              </div>
+              <div
+                className="adm-kpi-value-row"
+                aria-label={
+                  monthlyCertificationRate != null
+                    ? `${currentMonth}월 인증율 ${monthlyCertificationRate}%`
+                    : `${currentMonth}월 인증율 해당 없음`
+                }
+              >
+                <span className="adm-kpi-val">
+                  {monthlyCertificationRate != null ? monthlyCertificationRate.toFixed(1) : '—'}
+                </span>
+                <span className="adm-kpi-suffix">%</span>
+              </div>
+              <div className="adm-kpi-unit">
+                <span className="adm-kpi-unit-line" />
+                해당 월 접수 대비 선정(인증) 건수 비율
               </div>
             </div>
           </div>
@@ -504,7 +550,7 @@ export default function DashboardPage() {
                   onSort={handleSort}
                 />
                 <SortTh
-                  label="실명"
+                  label="팀명"
                   sortKey="name"
                   sortConfig={sortConfig}
                   onSort={handleSort}

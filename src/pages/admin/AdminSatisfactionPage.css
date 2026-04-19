@@ -96,6 +96,11 @@
   }
 }
 
+/* 실(부서)별 만족도: 센터·그룹·팀명 헤더 가운데 (adm-th-cell:first-child 좌측 규칙 덮어씀) */
+.adm-sat-page .adm-sat-summary-table thead th.adm-th-cell:nth-child(-n + 3) {
+  text-align: center;
+}
+
 .adm-sat-trend-section {
   margin-bottom: 0;
 }
@@ -265,55 +270,240 @@
   letter-spacing: -0.02em;
 }
 
-/* 헤더 2행: 제목 행 + 센터·그룹 필터 행 (스프레드시트형) */
-.adm-sat-page .adm-sat-thead-filter-row .adm-th-cell--filter {
-  padding: 0.35rem 0.5rem 0.45rem;
-  vertical-align: middle;
-  background: rgba(248, 250, 252, 0.95);
-  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+.adm-sat-kpi-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  min-height: 8rem;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
 }
 
-.adm-sat-page .adm-sat-thead-filter-row .adm-th-cell--filter-spacer {
-  padding: 0.25rem 0.5rem;
-  background: rgba(248, 250, 252, 0.95);
-  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+/* 연간 랭킹 — 3열 × 상위 3위 */
+.adm-sat-ranking-section {
+  margin-top: 0.25rem;
 }
 
-.adm-sat-page .adm-sat-th-filter {
-  display: block;
-  width: 100%;
-  min-width: 0;
-  padding: 0.28rem 0.4rem;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  color: #0f172a;
-  background: #fff;
-  border: 1px solid rgba(15, 23, 42, 0.1);
-  border-radius: 6px;
-  cursor: pointer;
-  box-sizing: border-box;
-  line-height: 1.35;
+.adm-sat-rank-quad {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  align-items: start;
 }
 
-.adm-sat-page .adm-sat-th-filter:hover {
-  border-color: rgba(10, 126, 164, 0.35);
+@media (max-width: 900px) {
+  .adm-sat-rank-quad {
+    grid-template-columns: 1fr;
+  }
 }
 
-.adm-sat-page .adm-sat-th-filter:focus {
-  outline: none;
-  border-color: var(--accent, #0a7ea4);
-  box-shadow: 0 0 0 2px rgba(10, 126, 164, 0.18);
-}
-
-.adm-sat-page .sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
+.adm-sat-rank-col {
+  border: 1px solid var(--adm-hairline, rgba(60, 60, 67, 0.12));
+  border-radius: 14px;
+  background: var(--surface, #fff);
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(15, 23, 42, 0.06));
   overflow: hidden;
-  clip: rect(0, 0, 0, 0);
+}
+
+.adm-sat-rank-col__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.5rem;
+  padding: 0.65rem 0.85rem;
+  background: linear-gradient(168deg, rgba(255, 255, 255, 0.99) 0%, rgba(248, 252, 255, 0.96) 100%);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.adm-sat-rank-col__ico {
+  color: var(--accent, #0a7ea4);
+  flex-shrink: 0;
+}
+
+.adm-sat-rank-col__title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+}
+
+.adm-sat-rank-col__sub {
+  margin-left: auto;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--text-tertiary);
+}
+
+.adm-sat-rank-mini {
+  margin: 0;
+  font-size: 0.8125rem;
+}
+
+.adm-sat-rank-mini thead th {
+  font-size: 0.6875rem;
+  text-transform: none;
+  letter-spacing: -0.02em;
+}
+
+.adm-sat-rank-mini td {
+  vertical-align: middle;
+}
+
+.adm-sat-rank-mini__name {
+  font-weight: 600;
+  color: var(--text-primary);
+  max-width: 7rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
-  border: 0;
+}
+
+.adm-sat-rank-mini__team {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  max-width: 6rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.adm-sat-rank-mini__num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.adm-sat-rank-mini__tr--empty .adm-sat-rank-mini__name,
+.adm-sat-rank-mini__tr--empty .adm-sat-rank-mini__team {
+  color: var(--text-tertiary);
+}
+
+/* 상단 KPI — 5열 + 센터 2행 */
+.adm-sat-page .adm-sat-kpi-grid--five {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 1rem;
+  width: 100%;
+}
+
+@media (max-width: 1400px) {
+  .adm-sat-page .adm-sat-kpi-grid--five {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 960px) {
+  .adm-sat-page .adm-sat-kpi-grid--five {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  .adm-sat-page .adm-sat-kpi-grid--five {
+    grid-template-columns: 1fr;
+  }
+}
+
+.adm-sat-kpi-center-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  min-height: 3.25rem;
+  margin-top: 0.15rem;
+}
+
+.adm-sat-kpi-center-row {
+  display: grid;
+  grid-template-columns: 2.25rem auto auto;
+  align-items: center;
+  gap: 0.45rem 0.5rem;
+  font-size: 0.8125rem;
+}
+
+.adm-sat-kpi-center-name {
+  font-weight: 700;
+  color: var(--text-primary);
+  text-align: center;
+  letter-spacing: -0.02em;
+}
+
+.adm-sat-kpi-center-pct {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: var(--accent, #0a7ea4);
+}
+
+.adm-sat-kpi-badge {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  padding: 0.15rem 0.4rem;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.adm-sat-kpi-badge--ok {
+  color: #0f766e;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.adm-sat-kpi-badge--no {
+  color: #b45309;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.28);
+}
+
+.adm-sat-kpi-empty {
+  margin: 0;
+  color: var(--text-tertiary);
+  font-size: 0.875rem;
+}
+
+/* KPI 주요 수치 + 전일 대비 배지 */
+.adm-sat-page .adm-kpi-value-row--with-dod {
+  align-items: center;
+  gap: 0.45rem 0.65rem;
+  flex-wrap: wrap;
+}
+
+.adm-sat-kpi-dod {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.2rem 0.45rem 0.22rem;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  border: 1px solid transparent;
+  flex-shrink: 0;
+}
+
+.adm-sat-kpi-dod-ico {
+  flex-shrink: 0;
+}
+
+.adm-sat-kpi-dod-txt {
+  line-height: 1;
+}
+
+.adm-sat-kpi-dod--up {
+  color: #047857;
+  background: rgba(16, 185, 129, 0.14);
+  border-color: rgba(16, 185, 129, 0.28);
+}
+
+.adm-sat-kpi-dod--down {
+  color: #b91c1c;
+  background: rgba(248, 113, 113, 0.12);
+  border-color: rgba(248, 113, 113, 0.28);
+}
+
+.adm-sat-kpi-dod--flat {
+  color: var(--text-secondary, #64748b);
+  background: rgba(100, 116, 139, 0.1);
+  border-color: rgba(100, 116, 139, 0.18);
 }

@@ -46,7 +46,7 @@ export default function MemberCaseDetailModal() {
         aria-label="닫기"
         onClick={closeCaseDetail}
       />
-      <div className="member-modal-panel member-case-detail-panel">
+      <div className="member-modal-panel member-case-detail-panel member-case-detail-modal-box">
         <MemberCaseDetailPanel embedded={false} />
       </div>
     </div>

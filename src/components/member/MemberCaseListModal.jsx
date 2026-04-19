@@ -12,7 +12,6 @@ import useAuthStore from '../../store/authStore';
 import { fetchMyCases } from '../../api/memberApi';
 import StatusBadge from '../common/StatusBadge';
 import { useMemberModalStore } from '../../store/memberModalStore';
-import { formatCaseCallDateTime } from '../../utils/caseDisplay';
 import MemberCaseDetailPanel from './MemberCaseDetailPanel';
 import '../../pages/member/CaseListPage.css';
 import './MemberSubmitModal.css';
@@ -238,78 +237,40 @@ export default function MemberCaseListModal() {
                   </button>
                 </div>
               ) : (
-                <div className="case-list case-list--compact member-case-list-scroll">
-                  {filtered.map((c, i) => (
-                    <button
-                      key={c.id}
-                      type="button"
-                      className="case-item case-item--compact fade-in-up"
-                      style={{ animationDelay: `${i * 0.04}s` }}
-                      onClick={() => goDetail(c.id)}
-                    >
-                      <div className="case-item-status">
-                        <StatusBadge status={c.status} size="sm" />
-                      </div>
-                      <div className="case-item-body">
-                        <h3 className="case-item-title">{c.title}</h3>
-                        <div className="case-item-meta">
-                            <span className="case-meta-line">
-                              <span className="case-meta-tag">접수 일자</span>
-                              <span className="case-meta-val">{formatDate(c.submittedAt)}</span>
-                            </span>
-                            {c.callDate && (
-                              <>
-                                <span className="case-meta-sep" aria-hidden>
-                                  ·
-                                </span>
-                                <span className="case-meta-line">
-                                  <span className="case-meta-tag">통화 일자</span>
-                                  <span className="case-meta-val">
-                                    {formatCaseCallDateTime(c.callDate)}
-                                  </span>
-                                </span>
-                              </>
-                            )}
-                            {!c.callDate && c.customerType && (
-                              <>
-                                <span className="case-meta-sep" aria-hidden>
-                                  ·
-                                </span>
-                                <span className="case-meta-line">
-                                  <span className="case-meta-tag">구분</span>
-                                  <span className="case-meta-val">{c.customerType}</span>
-                                </span>
-                              </>
-                            )}
-                            {c.callDuration && (
-                              <>
-                                <span className="case-meta-sep" aria-hidden>
-                                  ·
-                                </span>
-                                <span className="case-meta-line">
-                                  <span className="case-meta-tag">통화 시간</span>
-                                  <span className="case-meta-val">{c.callDuration}</span>
-                                </span>
-                              </>
-                            )}
-                            {c.judgedAt && (
-                              <>
-                                <span className="case-meta-sep" aria-hidden>
-                                  ·
-                                </span>
-                                <span className="case-meta-line">
-                                  <span className="case-meta-tag">판정</span>
-                                  <span className="case-meta-val">{formatDate(c.judgedAt)}</span>
-                                </span>
-                              </>
-                            )}
-                        </div>
-                      </div>
-                      <div className="case-item-right">
-                        <ChevronRight size={14} strokeWidth={2} className="case-arrow" />
-                      </div>
-                    </button>
-                  ))}
+                <div className="member-case-table-wrap member-case-list-scroll">
+                  <table className="member-case-table">
+                    <thead>
+                      <tr>
+                        <th className="mct-col-no">#</th>
+                        <th className="mct-col-status">상태</th>
+                        <th className="mct-col-title">사례 제목</th>
+                        <th className="mct-col-date">접수일</th>
+                        <th className="mct-col-action" aria-hidden />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filtered.map((c, i) => (
+                        <tr
+                          key={c.id}
+                          className="mct-row fade-in-up"
+                          style={{ animationDelay: `${i * 0.04}s` }}
+                          onClick={() => goDetail(c.id)}
+                          tabIndex={0}
+                          onKeyDown={(e) => e.key === 'Enter' && goDetail(c.id)}
+                        >
+                          <td className="mct-no">{i + 1}</td>
+                          <td className="mct-status">
+                            <StatusBadge status={c.status} size="sm" />
+                          </td>
+                          <td className="mct-title">{c.title}</td>
+                          <td className="mct-date">{formatDate(c.submittedAt)}</td>
+                          <td className="mct-action" aria-hidden>
+                            <ChevronRight size={14} strokeWidth={2} />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               )}
             </div>

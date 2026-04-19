@@ -947,6 +947,53 @@
   line-height: 1;
 }
 
+.adm-kpi-value-row--with-aside {
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 0.5rem 0.75rem;
+  flex-wrap: nowrap;
+}
+
+.adm-kpi-value-main {
+  display: flex;
+  align-items: baseline;
+  gap: 0.2rem;
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+.adm-kpi-value-aside {
+  display: inline-flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.12rem 0.2rem;
+  max-width: 11rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  line-height: 1.2;
+  text-align: right;
+}
+
+.adm-kpi-aside-label {
+  letter-spacing: -0.02em;
+}
+
+.adm-kpi-aside-val {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.adm-kpi-aside-unit {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  opacity: 0.9;
+}
+
 .adm-kpi-val {
   font-size: 2rem;
   font-weight: 700;
@@ -1243,14 +1290,22 @@
   text-align: left;
 }
 
-/* 실(부서)별 성과: 센터·그룹·실명 좌측 정렬 */
-.adm-table--dept-performance tbody td:nth-child(2),
-.adm-table--dept-performance tbody td:nth-child(3) {
-  text-align: left;
+/* 실(부서)별 성과/만족도: 센터·그룹·실명(팀명) — 헤더·본문 가운데 (일반 tbody td:first-child 규칙보다 구체성 높음) */
+.adm-table--dept-performance thead th.adm-th-cell:nth-child(-n + 3),
+.adm-table--dept-performance thead th:nth-child(-n + 3) {
+  text-align: center;
 }
 
 .adm-table--dept-performance thead th:nth-child(-n + 3) .adm-th-btn {
-  justify-content: flex-start;
+  justify-content: center;
+}
+
+.adm-table--dept-performance tbody td:nth-child(-n + 3) {
+  text-align: center;
+}
+
+.adm-table--dept-performance tbody td:nth-child(-n + 3) .adm-dept-filter-btn {
+  text-align: center;
 }
 
 .adm-tr {

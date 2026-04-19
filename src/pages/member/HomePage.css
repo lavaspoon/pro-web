@@ -611,6 +611,819 @@
   color: var(--text-secondary);
 }
 
+/* ── Incentive Hero ─────────────────────────────────────────── */
+.yp-incentive-hero {
+  position: relative;
+  border-radius: 20px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #0b1829 0%, #0f3460 42%, #0a566e 76%, #064558 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow:
+    0 12px 48px rgba(6, 74, 90, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.06) inset;
+}
+
+.yp-incentive-hero-gfx {
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 80% 15%, rgba(14, 165, 233, 0.28) 0%, transparent 48%),
+    radial-gradient(circle at 15% 85%, rgba(45, 212, 191, 0.18) 0%, transparent 42%);
+  pointer-events: none;
+}
+
+.yp-incentive-inner {
+  position: relative;
+  z-index: 1;
+  padding: 20px 24px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.yp-incentive-head-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.yp-incentive-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.yp-incentive-brand-ico {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #7dd3fc;
+  flex-shrink: 0;
+}
+
+.yp-incentive-brand-name {
+  font-size: 16px;
+  font-weight: 800;
+  color: #f8fafc;
+  letter-spacing: -0.03em;
+}
+
+.yp-incentive-year-chip {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(186, 230, 253, 0.9);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+
+.yp-incentive-rule-badge {
+  font-size: 13px;
+  font-weight: 600;
+  color: #fde68a;
+  background: rgba(253, 224, 138, 0.12);
+  border: 1px solid rgba(253, 224, 138, 0.28);
+  border-radius: 999px;
+  padding: 5px 14px;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.yp-incentive-rule-badge strong {
+  font-weight: 800;
+}
+
+.yp-incentive-body {
+  display: grid;
+  grid-template-columns: minmax(200px, auto) 1fr;
+  gap: 28px;
+  align-items: start;
+}
+
+@media (max-width: 760px) {
+  .yp-incentive-body {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+}
+
+.yp-incentive-balance-col {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding-right: 32px;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  min-width: 210px;
+}
+
+@media (max-width: 760px) {
+  .yp-incentive-balance-col {
+    padding-right: 0;
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 16px;
+    min-width: 0;
+  }
+}
+
+.yp-incentive-balance-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(148, 163, 184, 0.9);
+}
+
+.yp-incentive-amount-row {
+  display: flex;
+  align-items: baseline;
+  gap: 1px;
+  margin-top: 4px;
+}
+
+.yp-incentive-tilde {
+  font-size: 26px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1;
+}
+
+.yp-incentive-amount {
+  font-size: clamp(38px, 6vw, 54px);
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.05em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.yp-incentive-won {
+  font-size: 22px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.8);
+  margin-left: 3px;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.yp-incentive-formula-note {
+  font-size: 13px;
+  color: rgba(186, 230, 253, 0.85);
+  margin-top: 4px;
+  letter-spacing: -0.02em;
+}
+
+.yp-incentive-formula-note strong {
+  font-weight: 700;
+  color: #7dd3fc;
+}
+
+.yp-incentive-progress-col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 2px;
+}
+
+.yp-incentive-progress-hd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(203, 213, 225, 0.9);
+  letter-spacing: -0.02em;
+}
+
+.yp-incentive-pct-chip {
+  font-size: 13px;
+  font-weight: 800;
+  color: #e0f2fe;
+  background: rgba(14, 165, 233, 0.22);
+  border: 1px solid rgba(14, 165, 233, 0.38);
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.yp-incentive-track {
+  height: 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+
+.yp-incentive-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #38bdf8 0%, #2dd4bf 100%);
+  transition: width var(--duration-slow, 0.5s) ease;
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.55);
+  min-width: 6px;
+}
+
+.yp-incentive-scale {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(148, 163, 184, 0.75);
+  margin-top: -2px;
+}
+
+/* 인센티브 히어로 — 하단 수치 스트립 */
+.yp-incentive-strip {
+  display: flex;
+  align-items: stretch;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.yp-incentive-strip-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 8px;
+}
+
+.yp-incentive-strip-sep {
+  width: 1px;
+  background: rgba(255, 255, 255, 0.1);
+  align-self: stretch;
+  flex-shrink: 0;
+}
+
+.yp-incentive-strip-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(148, 163, 184, 0.9);
+  letter-spacing: -0.01em;
+  text-align: center;
+}
+
+.yp-incentive-strip-val {
+  font-size: 20px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.yp-incentive-strip-unit {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(203, 213, 225, 0.75);
+  letter-spacing: -0.01em;
+}
+
+/* ── Incentive hero: program chips ──────────────────────────── */
+.yp-incentive-program-chip {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: rgba(186, 230, 253, 0.95);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+  padding: 3px 10px;
+  white-space: nowrap;
+}
+
+.yp-incentive-remain-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fde68a;
+  background: rgba(253, 224, 138, 0.12);
+  border: 1px solid rgba(253, 224, 138, 0.3);
+  border-radius: 999px;
+  padding: 3px 10px;
+  white-space: nowrap;
+}
+
+.yp-incentive-remain-chip--last {
+  color: #fca5a5;
+  background: rgba(252, 165, 165, 0.12);
+  border-color: rgba(252, 165, 165, 0.3);
+}
+
+.yp-incentive-settle-note {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(148, 163, 184, 0.85);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+/* ── Tier badge (현재 등급 표시) ─────────────────────────────── */
+.yp-tier-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  margin-bottom: 10px;
+  width: fit-content;
+  border-width: 1px;
+  border-style: solid;
+}
+
+.yp-tier-badge--none {
+  color: rgba(148, 163, 184, 0.9);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.yp-tier-badge--mangju {
+  color: #fde68a;
+  background: rgba(253, 230, 138, 0.15);
+  border-color: rgba(253, 230, 138, 0.35);
+}
+
+.yp-tier-badge--player {
+  color: #93c5fd;
+  background: rgba(147, 197, 253, 0.15);
+  border-color: rgba(147, 197, 253, 0.35);
+}
+
+.yp-tier-badge--topia {
+  color: #6ee7b7;
+  background: rgba(110, 231, 183, 0.15);
+  border-color: rgba(110, 231, 183, 0.35);
+  box-shadow: 0 0 12px rgba(110, 231, 183, 0.2);
+}
+
+/* ── Tier internal progress (등급 내 진행) ──────────────────── */
+.yp-tier-internal-progress {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.yp-tier-internal-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(148, 163, 184, 0.85);
+  letter-spacing: -0.01em;
+}
+
+.yp-tier-internal-track {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+
+.yp-tier-internal-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #fbbf24, #f59e0b);
+  transition: width 0.5s ease;
+  min-width: 4px;
+}
+
+/* ── Tier ladder (등급 사다리) ──────────────────────────────── */
+.yp-tier-ladder {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  padding-top: 2px;
+}
+
+.yp-tier-ladder-caption {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(100, 116, 139, 0.75);
+  margin-bottom: 4px;
+}
+
+.yp-tier-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.04);
+  transition: background 0.15s ease;
+}
+
+.yp-tier-step--active {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.yp-tier-step--done {
+  opacity: 0.55;
+}
+
+/* 점 */
+.yp-tier-dot {
+  flex-shrink: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.25);
+}
+
+.yp-tier-dot--done {
+  background: #5eead4;
+  border-color: #2dd4bf;
+}
+
+.yp-tier-dot--active.yp-tier-step--active,
+.yp-tier-step--active .yp-tier-dot--active {
+  background: #fbbf24;
+  border-color: #f59e0b;
+  box-shadow: 0 0 6px rgba(251, 191, 36, 0.6);
+}
+
+/* 망주-active dot */
+.yp-tier-step--mangju.yp-tier-step--active .yp-tier-dot {
+  background: #fbbf24;
+  border-color: #f59e0b;
+  box-shadow: 0 0 6px rgba(251, 191, 36, 0.6);
+}
+
+/* 플레이어-active dot */
+.yp-tier-step--player.yp-tier-step--active .yp-tier-dot {
+  background: #60a5fa;
+  border-color: #3b82f6;
+  box-shadow: 0 0 6px rgba(96, 165, 250, 0.6);
+}
+
+/* 토피아-active dot */
+.yp-tier-step--topia.yp-tier-step--active .yp-tier-dot {
+  background: #34d399;
+  border-color: #10b981;
+  box-shadow: 0 0 8px rgba(52, 211, 153, 0.7);
+}
+
+.yp-tier-step-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.yp-tier-step-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #f1f5f9;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.yp-tier-step--done .yp-tier-step-name {
+  color: rgba(241, 245, 249, 0.6);
+}
+
+.yp-tier-step-range {
+  font-size: 10px;
+  font-weight: 500;
+  color: rgba(148, 163, 184, 0.8);
+  letter-spacing: -0.01em;
+}
+
+.yp-tier-step-rate {
+  font-size: 13px;
+  font-weight: 800;
+  color: rgba(226, 232, 240, 0.9);
+  letter-spacing: -0.03em;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.yp-tier-step--active .yp-tier-step-rate {
+  color: #ffffff;
+}
+
+.yp-tier-step-per {
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(148, 163, 184, 0.8);
+  margin-left: 1px;
+}
+
+.yp-tier-tag {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  padding: 2px 7px;
+  border-radius: 999px;
+  border-width: 1px;
+  border-style: solid;
+}
+
+.yp-tier-tag--current {
+  color: #fde68a;
+  background: rgba(253, 230, 138, 0.15);
+  border-color: rgba(253, 230, 138, 0.3);
+}
+
+.yp-tier-tag--next {
+  color: #bfdbfe;
+  background: rgba(191, 219, 254, 0.1);
+  border-color: rgba(191, 219, 254, 0.25);
+}
+
+/* ── Upgrade strip (등급 업 계산기) ─────────────────────────── */
+.yp-upgrade-strip {
+  display: flex;
+  align-items: stretch;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.yp-upgrade-item {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 12px 14px;
+}
+
+.yp-upgrade-sep {
+  width: 1px;
+  background: rgba(255, 255, 255, 0.1);
+  align-self: stretch;
+  flex-shrink: 0;
+}
+
+.yp-upgrade-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(100, 116, 139, 0.85);
+}
+
+.yp-upgrade-val-row {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+  margin-top: 1px;
+}
+
+.yp-upgrade-count {
+  font-size: 28px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.yp-upgrade-unit {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(203, 213, 225, 0.85);
+  letter-spacing: -0.02em;
+}
+
+.yp-upgrade-reward {
+  font-size: 22px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.yp-upgrade-boost {
+  font-size: 12px;
+  font-weight: 700;
+  color: #6ee7b7;
+  letter-spacing: -0.01em;
+}
+
+.yp-upgrade-verdict {
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.yp-upgrade-item--ok .yp-upgrade-verdict {
+  color: #6ee7b7;
+}
+
+.yp-upgrade-item--warn .yp-upgrade-verdict {
+  color: #fca5a5;
+}
+
+.yp-upgrade-hint {
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(148, 163, 184, 0.8);
+  letter-spacing: -0.01em;
+  margin-top: 1px;
+}
+
+/* 최고 등급 / 종료 strip 변형 */
+.yp-upgrade-strip--max {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 16px;
+}
+
+.yp-upgrade-max-ico {
+  font-size: 20px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.yp-upgrade-max-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.yp-upgrade-max-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: #6ee7b7;
+  letter-spacing: -0.02em;
+}
+
+.yp-upgrade-max-sub {
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(148, 163, 184, 0.85);
+  letter-spacing: -0.01em;
+}
+
+.yp-upgrade-strip--ended {
+  padding: 12px 16px;
+  justify-content: center;
+}
+
+.yp-upgrade-ended-msg {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(148, 163, 184, 0.85);
+  letter-spacing: -0.01em;
+}
+
+@media (max-width: 640px) {
+  .yp-upgrade-strip:not(.yp-upgrade-strip--max):not(.yp-upgrade-strip--ended) {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .yp-upgrade-sep {
+    width: auto;
+    height: 1px;
+  }
+}
+
+/* ── Cases nav tile ──────────────────────────────────────────── */
+.yp-cases-nav-tile {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 18px 18px 18px 16px;
+  background:
+    radial-gradient(125% 90% at 0% 0%, rgba(224, 242, 254, 0.65) 0%, transparent 52%),
+    radial-gradient(100% 70% at 100% 0%, rgba(204, 251, 241, 0.45) 0%, transparent 48%),
+    linear-gradient(168deg, #f8fafc 0%, #f1f5f9 42%, #ecfeff 100%);
+  border: 1px solid rgba(8, 145, 178, 0.22);
+  border-radius: 18px;
+  text-decoration: none;
+  color: inherit;
+  position: relative;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.92) inset,
+    0 4px 22px rgba(8, 145, 178, 0.07),
+    0 0 0 1px rgba(255, 255, 255, 0.45) inset;
+  transition: border-color var(--duration-fast, 0.12s), box-shadow var(--duration-fast, 0.12s);
+  min-height: 110px;
+}
+
+.yp-cases-nav-tile::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 12px;
+  bottom: 12px;
+  width: 4px;
+  border-radius: 0 5px 5px 0;
+  background: linear-gradient(180deg, #0891b2 0%, #0ea5e9 45%, #22d3ee 100%);
+  box-shadow: 2px 0 14px rgba(8, 145, 178, 0.35);
+}
+
+.yp-cases-nav-tile:hover {
+  border-color: rgba(8, 145, 178, 0.38);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.98) inset,
+    0 8px 30px rgba(8, 145, 178, 0.12);
+}
+
+.yp-cases-nav-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+  flex: 1;
+  min-width: 0;
+}
+
+.yp-cases-nav-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  padding-top: 2px;
+}
+
+.yp-cases-nav-title {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  color: #0f172a;
+}
+
+.yp-cases-nav-sub {
+  font-size: 12px;
+  line-height: 1.4;
+  color: #475569;
+  font-weight: 400;
+}
+
+.yp-cases-nav-meta {
+  font-size: 12px;
+  font-weight: 500;
+  color: #64748b;
+  margin-top: 4px;
+  letter-spacing: -0.01em;
+}
+
+.yp-cases-nav-meta strong {
+  font-weight: 700;
+  color: #0c4a6e;
+  font-variant-numeric: tabular-nums;
+}
+
+.yp-cases-nav-arrow {
+  flex-shrink: 0;
+  color: #94a3b8;
+  transition: transform 0.15s ease, color 0.15s ease;
+}
+
+.yp-cases-nav-tile:hover .yp-cases-nav-arrow {
+  transform: translateX(3px);
+  color: #0369a1;
+}
+
+/* quick strip — compact variant (inside KPI card) */
+.yp-quick-strip--sm .yp-quick-strip-value {
+  font-size: 14px;
+}
+
+.yp-quick-strip--sm .yp-quick-strip-item {
+  padding: 5px 3px 4px;
+}
+
+.yp-quick-strip--sm .yp-quick-strip-label {
+  font-size: 10px;
+}
+
+.yp-quick-strip--sm .yp-quick-strip-unit {
+  font-size: 10px;
+}
+
 /* 홈 — 대시보드형 헤더: 사례 접수는 button (관리 대시보드는 Link) */
 .yp-home .adm-header-link.adm-pending-btn--cute {
   font: inherit;
@@ -672,38 +1485,118 @@
 }
 
 .yp-mini-chart-card {
-  background: var(--surface);
-  border: 1px solid var(--yp-hairline);
-  border-radius: 16px;
-  padding: 10px 12px 9px;
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.9) inset,
-    0 1px 2px rgba(15, 23, 42, 0.04);
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 20px;
+  padding: 18px 18px 14px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   min-width: 0;
-  flex: 1 1 auto;
-  min-height: 0;
   display: flex;
   flex-direction: column;
 }
 
 .yp-mini-chart-head {
-  margin-bottom: 4px;
+  margin-bottom: 10px;
 }
 
 .yp-mini-chart-title {
-  font-size: 13px;
+  font-size: 16px;
   font-weight: 700;
-  letter-spacing: -0.02em;
-  color: var(--yp-ink);
+  letter-spacing: -0.03em;
+  color: #1d1d1f;
   margin: 0;
   line-height: 1.25;
 }
 
 .yp-mini-chart-sub {
-  font-size: 11px;
-  color: var(--text-tertiary);
-  margin: 2px 0 0;
+  font-size: 12px;
+  color: #aeaeb2;
+  margin: 3px 0 0;
+  font-weight: 400;
   line-height: 1.3;
+}
+
+.yp-mini-chart-stats {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  background: rgba(0, 0, 0, 0.025);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 14px;
+}
+
+.yp-mini-stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.yp-mini-stat-div {
+  width: 1px;
+  background: rgba(0, 0, 0, 0.07);
+  margin: 0 14px;
+  align-self: stretch;
+}
+
+.yp-mini-stat-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: #8e8e93;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.yp-mini-stat-val-row {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+}
+
+.yp-mini-stat-num {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1d1d1f;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.yp-mini-stat-num--green {
+  color: #1a7f3c;
+}
+
+.yp-mini-stat-num--rank {
+  color: #bf5a00;
+}
+
+.yp-mini-stat-unit--rank {
+  color: #bf5a00;
+}
+
+.yp-mini-stat-unit {
+  font-size: 12px;
+  font-weight: 600;
+  color: #3d3d3f;
+  opacity: 0.7;
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+
+.yp-mini-stat-unit--green {
+  color: #1a7f3c;
+}
+
+.yp-mini-stat-sub {
+  font-size: 11px;
+  font-weight: 400;
+  color: #aeaeb2;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .yp-mini-chart-wrap {
@@ -1810,6 +2703,909 @@
   letter-spacing: -0.02em;
 }
 
+/* ── Incentive Apple White ──────────────────────────────────── */
+.yp-inca {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 20px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+}
+
+/* 헤더 */
+.yp-inca-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px 13px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  background: #fafafa;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.yp-inca-header-left {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.yp-inca-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1d1d1f;
+  letter-spacing: -0.02em;
+}
+
+.yp-inca-chip {
+  font-size: 11px;
+  font-weight: 500;
+  color: #6e6e73;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 999px;
+  padding: 2px 9px;
+  white-space: nowrap;
+}
+
+.yp-inca-chip--blue {
+  color: #0071e3;
+  background: rgba(0, 113, 227, 0.08);
+}
+
+.yp-inca-chip--amber {
+  color: #c45100;
+  background: rgba(255, 149, 0, 0.1);
+}
+
+.yp-inca-settle {
+  font-size: 11px;
+  color: #aeaeb2;
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+/* 바디 */
+.yp-inca-body {
+  display: grid;
+  grid-template-columns: auto 1px 1fr;
+  align-items: center;
+}
+
+@media (max-width: 620px) {
+  .yp-inca-body {
+    grid-template-columns: 1fr;
+  }
+
+  .yp-inca-sep {
+    width: auto !important;
+    height: 1px !important;
+    margin: 0 18px !important;
+    align-self: auto !important;
+  }
+}
+
+/* 왼쪽: 금액 */
+.yp-inca-left {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 20px 24px;
+  min-width: 210px;
+  background: rgba(0, 113, 227, 0.035);
+  border-radius: 14px;
+  margin: 14px 0 14px 14px;
+  border: 1px solid rgba(0, 113, 227, 0.1);
+}
+
+.yp-inca-tier-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  width: fit-content;
+  margin-bottom: 2px;
+}
+
+.yp-inca-tier-badge--none   { color: #aeaeb2; background: rgba(0,0,0,0.05); }
+.yp-inca-tier-badge--mangju { color: #c45100; background: rgba(255,149,0,0.1); }
+.yp-inca-tier-badge--player { color: #0055b3; background: rgba(0,113,227,0.09); }
+.yp-inca-tier-badge--topia  { color: #1a7f3c; background: rgba(48,209,88,0.1); }
+
+.yp-inca-amount-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #8e8e93;
+  margin-bottom: -2px;
+}
+
+.yp-inca-amount-block {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 14px 16px;
+  background: rgba(0, 0, 0, 0.028);
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  margin-top: 2px;
+}
+
+.yp-inca-amount-row {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+}
+
+.yp-inca-tilde {
+  font-size: 22px;
+  font-weight: 300;
+  color: #c7c7cc;
+  line-height: 1;
+}
+
+.yp-inca-amount {
+  font-size: clamp(36px, 5vw, 52px);
+  font-weight: 800;
+  color: #1d1d1f;
+  letter-spacing: -0.05em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.yp-inca-won {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1d1d1f;
+  opacity: 0.65;
+  margin-left: 1px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.yp-inca-count-row {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  margin: 4px 0 -2px;
+}
+
+.yp-inca-count-prefix {
+  font-size: 13px;
+  font-weight: 600;
+  color: #8e8e93;
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+
+.yp-inca-count-num {
+  font-size: clamp(36px, 5vw, 52px);
+  font-weight: 700;
+  color: #0071e3;
+  letter-spacing: -0.05em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.yp-inca-count-unit {
+  font-size: 16px;
+  font-weight: 600;
+  color: #0071e3;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  opacity: 0.75;
+}
+
+.yp-inca-formula {
+  font-size: 12px;
+  color: #8e8e93;
+  letter-spacing: -0.01em;
+  line-height: 1.4;
+}
+
+/* 구분선 */
+.yp-inca-sep {
+  width: 1px;
+  align-self: stretch;
+  background: rgba(0, 0, 0, 0.06);
+  margin: 16px 0;
+}
+
+/* 오른쪽: 등급표 + CTA */
+.yp-inca-right {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px 20px;
+}
+
+.yp-inca-tiers {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.yp-inca-tier-head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 0 10px 6px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.07);
+  margin-bottom: 2px;
+}
+
+.yp-inca-tier-head span {
+  font-size: 10px;
+  font-weight: 600;
+  color: #aeaeb2;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.yp-inca-tier-head span:nth-child(1) { width: 26px; flex-shrink: 0; }
+.yp-inca-tier-head span:nth-child(2) { width: 90px; flex-shrink: 0; }
+.yp-inca-tier-head span:nth-child(3) { flex: 1; }
+.yp-inca-tier-head span:nth-child(4) { white-space: nowrap; }
+
+.yp-inca-tier-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 10px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  transition: background 0.1s;
+}
+
+.yp-inca-tier-row.is-active {
+  border-color: transparent;
+}
+
+.yp-inca-tier-row--mangju.is-active {
+  background: rgba(255, 149, 0, 0.08);
+  border-color: rgba(255, 149, 0, 0.25);
+}
+
+.yp-inca-tier-row--player.is-active {
+  background: rgba(0, 113, 227, 0.07);
+  border-color: rgba(0, 113, 227, 0.2);
+}
+
+.yp-inca-tier-row--topia.is-active {
+  background: rgba(48, 209, 88, 0.08);
+  border-color: rgba(48, 209, 88, 0.25);
+}
+
+.yp-inca-tier-here {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 999px;
+  letter-spacing: 0.01em;
+}
+
+.yp-inca-tier-row--mangju.is-active .yp-inca-tier-here {
+  color: #c45100;
+  background: rgba(255, 149, 0, 0.15);
+}
+
+.yp-inca-tier-row--player.is-active .yp-inca-tier-here {
+  color: #0055b3;
+  background: rgba(0, 113, 227, 0.12);
+}
+
+.yp-inca-tier-row--topia.is-active .yp-inca-tier-here {
+  color: #1a7f3c;
+  background: rgba(48, 209, 88, 0.15);
+}
+
+.yp-inca-tier-row.is-done {
+  opacity: 0.35;
+}
+
+.yp-inca-tier-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  color: #c7c7cc;
+  background: rgba(0, 0, 0, 0.04);
+  transition: background 0.15s, color 0.15s;
+}
+
+.yp-inca-tier-row--mangju .yp-inca-tier-icon--mangju { color: #d97706; background: rgba(255,149,0,0.1); }
+.yp-inca-tier-row--player .yp-inca-tier-icon--player { color: #0071e3; background: rgba(0,113,227,0.1); }
+.yp-inca-tier-row--topia  .yp-inca-tier-icon--topia  { color: #1a7f3c; background: rgba(48,209,88,0.1); }
+
+.yp-inca-tier-row.is-done .yp-inca-tier-icon {
+  opacity: 0.4;
+}
+
+.yp-inca-tier-row.is-active .yp-inca-tier-icon--mangju { color: #c45100; background: rgba(255,149,0,0.15); }
+.yp-inca-tier-row.is-active .yp-inca-tier-icon--player { color: #0055b3; background: rgba(0,113,227,0.14); }
+.yp-inca-tier-row.is-active .yp-inca-tier-icon--topia  { color: #1a7f3c; background: rgba(48,209,88,0.15); }
+
+.yp-inca-tier-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1d1d1f;
+  letter-spacing: -0.02em;
+  flex-shrink: 0;
+  width: 90px;
+}
+
+.yp-inca-tier-row.is-done .yp-inca-tier-name {
+  color: #aeaeb2;
+}
+
+.yp-inca-tier-range {
+  font-size: 12px;
+  color: #aeaeb2;
+  flex: 1;
+}
+
+.yp-inca-tier-rate {
+  font-size: 13px;
+  font-weight: 600;
+  color: #3d3d3f;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.yp-inca-tier-row.is-active .yp-inca-tier-rate {
+  color: #1d1d1f;
+  font-weight: 700;
+}
+
+.yp-inca-tier-per {
+  font-size: 11px;
+  font-weight: 400;
+  color: #aeaeb2;
+  margin-left: 1px;
+}
+
+/* 다음 등급 CTA */
+.yp-inca-cta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 13px;
+  border-radius: 12px;
+  background: rgba(0, 113, 227, 0.05);
+  border: 1px solid rgba(0, 113, 227, 0.14);
+  margin-top: 2px;
+}
+
+.yp-inca-cta-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #0071e3;
+}
+
+.yp-inca-cta-count-row {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.yp-inca-cta-count {
+  font-size: 22px;
+  font-weight: 700;
+  color: #0071e3;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.yp-inca-cta-unit {
+  font-size: 12px;
+  font-weight: 500;
+  color: #0071e3;
+  letter-spacing: -0.01em;
+}
+
+.yp-inca-cta--max {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: rgba(48, 209, 88, 0.06);
+  border-color: rgba(48, 209, 88, 0.2);
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a7f3c;
+}
+
+.yp-inca-cta-maxsub {
+  font-size: 11px;
+  font-weight: 400;
+  color: #8e8e93;
+}
+
+.yp-inca-cta--ended {
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.03);
+  border-color: rgba(0, 0, 0, 0.06);
+  font-size: 12px;
+  font-weight: 500;
+  color: #aeaeb2;
+}
+
+/* ── 동기부여 AI 메시지 ──────────────────────────────────────── */
+.yp-inca-msg {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: rgba(0, 113, 227, 0.05);
+  border: 1px solid rgba(0, 113, 227, 0.13);
+  margin-top: 4px;
+}
+
+.yp-inca-msg-ico {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: rgba(0, 113, 227, 0.1);
+  color: #0071e3;
+  flex-shrink: 0;
+  font-style: normal;
+}
+
+.yp-inca-msg--max {
+  background: rgba(48, 209, 88, 0.05);
+  border-color: rgba(48, 209, 88, 0.18);
+}
+
+.yp-inca-msg-ico--green {
+  background: transparent;
+  font-size: 18px;
+  width: 28px;
+  height: 28px;
+}
+
+.yp-inca-msg--ended {
+  background: rgba(0, 0, 0, 0.025);
+  border-color: rgba(0, 0, 0, 0.07);
+}
+
+.yp-inca-msg-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.yp-inca-msg-primary {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1d1d1f;
+  margin: 0;
+  letter-spacing: -0.02em;
+  line-height: 1.5;
+}
+
+.yp-inca-msg-primary strong {
+  font-weight: 700;
+  color: #0071e3;
+}
+
+.yp-inca-msg-highlight {
+  color: #1a7f3c !important;
+}
+
+.yp-inca-msg-primary--green strong {
+  color: #1a7f3c;
+}
+
+.yp-inca-msg-primary--green {
+  color: #1a7f3c;
+}
+
+.yp-inca-msg-secondary {
+  font-size: 12px;
+  font-weight: 400;
+  color: #8e8e93;
+  margin: 0;
+  letter-spacing: -0.01em;
+  line-height: 1.5;
+}
+
+.yp-inca-msg-secondary strong {
+  font-weight: 600;
+  color: #3d3d3f;
+}
+
+/* ── 하단 2열 그리드 ─────────────────────────────────────────── */
+.yp-bottom-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  align-items: stretch;
+}
+
+@media (max-width: 760px) {
+  .yp-bottom-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── 내 사례 목록 통합 카드 ──────────────────────────────────── */
+.yp-casesm {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.yp-casesm:hover {
+  border-color: rgba(0, 113, 227, 0.22);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.09);
+}
+
+.yp-casesm-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.yp-casesm-header-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.yp-casesm-ico {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(0, 113, 227, 0.08);
+  color: #0071e3;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.yp-casesm-title {
+  display: block;
+  font-size: 16px;
+  font-weight: 700;
+  color: #1d1d1f;
+  letter-spacing: -0.03em;
+  line-height: 1.25;
+}
+
+.yp-casesm-sub {
+  display: block;
+  font-size: 12px;
+  color: #aeaeb2;
+  font-weight: 400;
+  margin-top: 2px;
+}
+
+.yp-casesm-arrow {
+  color: #c7c7cc;
+  flex-shrink: 0;
+  margin-top: 3px;
+  transition: transform 0.12s, color 0.12s;
+}
+
+.yp-casesm:hover .yp-casesm-arrow {
+  transform: translateX(2px);
+  color: #0071e3;
+}
+
+/* ── 새 본문: 링 + 사이드 ─────────────────────────────────── */
+.yp-casesm-content {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+/* 링 차트 컬럼 */
+.yp-casesm-ring-col {
+  position: relative;
+  flex-shrink: 0;
+  width: 120px;
+  height: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.yp-casesm-ring-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.yp-casesm-ring-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  pointer-events: none;
+  padding: 0 10px;
+}
+
+.yp-casesm-ring-num {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+  white-space: nowrap;
+}
+
+.yp-casesm-ring-val {
+  font-size: 22px;
+  font-weight: 800;
+  color: #1d1d1f;
+  letter-spacing: -0.05em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.yp-casesm-ring-slash {
+  font-size: 14px;
+  font-weight: 400;
+  color: #c7c7cc;
+  line-height: 1;
+  margin: 0 1px;
+}
+
+.yp-casesm-ring-max-inline {
+  font-size: 14px;
+  font-weight: 600;
+  color: #aeaeb2;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.yp-casesm-ring-desc {
+  font-size: 12px;
+  font-weight: 600;
+  color: #8e8e93;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  margin-top: 6px;
+  line-height: 1;
+}
+
+/* 사이드 컬럼 */
+.yp-casesm-side {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.yp-casesm-month-chip {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #6e6e73;
+  background: #f5f5f7;
+  border-radius: 999px;
+  padding: 3px 10px;
+  width: fit-content;
+}
+
+.yp-casesm-chips {
+  display: flex;
+  gap: 6px;
+}
+
+.yp-casesm-chip {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 4px 7px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+}
+
+.yp-casesm-chip-val {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.yp-casesm-chip-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.yp-casesm-chip--selected {
+  background: rgba(48, 209, 88, 0.07);
+  border-color: rgba(48, 209, 88, 0.2);
+}
+
+.yp-casesm-chip--selected .yp-casesm-chip-val {
+  color: #1a7f3c;
+}
+
+.yp-casesm-chip--selected .yp-casesm-chip-label {
+  color: #2d9e52;
+}
+
+.yp-casesm-chip--pending {
+  background: rgba(255, 149, 0, 0.07);
+  border-color: rgba(255, 149, 0, 0.2);
+}
+
+.yp-casesm-chip--pending .yp-casesm-chip-val {
+  color: #c45100;
+}
+
+.yp-casesm-chip--pending .yp-casesm-chip-label {
+  color: #b45309;
+}
+
+.yp-casesm-chip--rejected {
+  background: rgba(255, 69, 58, 0.06);
+  border-color: rgba(255, 69, 58, 0.16);
+}
+
+.yp-casesm-chip--rejected .yp-casesm-chip-val {
+  color: #c8102e;
+}
+
+.yp-casesm-chip--rejected .yp-casesm-chip-label {
+  color: #be123c;
+}
+
+.yp-casesm-limit-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 500;
+  color: #8e8e93;
+}
+
+.yp-casesm-limit-count {
+  font-weight: 700;
+  color: #3d3d3f;
+  font-variant-numeric: tabular-nums;
+}
+
+.yp-casesm-track {
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+  margin-top: -4px;
+}
+
+.yp-casesm-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #0071e3, #34aadc);
+  transition: width 0.5s ease;
+  min-width: 4px;
+}
+
+.yp-casesm-recent {
+  background: rgba(0, 0, 0, 0.025);
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.yp-casesm-recent-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #aeaeb2;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.yp-casesm-recent-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.yp-casesm-recent-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.yp-casesm-recent-badge {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 999px;
+  line-height: 1.5;
+}
+
+.yp-casesm-recent-badge--selected {
+  color: #1a7f3c;
+  background: rgba(48, 209, 88, 0.1);
+}
+
+.yp-casesm-recent-badge--pending {
+  color: #0055b3;
+  background: rgba(0, 113, 227, 0.09);
+}
+
+.yp-casesm-recent-badge--rejected {
+  color: #8e8e93;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.yp-casesm-recent-title {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 500;
+  color: #1d1d1f;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: -0.01em;
+}
+
+.yp-casesm-recent-date {
+  flex-shrink: 0;
+  font-size: 11px;
+  color: #c7c7cc;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+@media (max-width: 480px) {
+  .yp-casesm-content {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .yp-casesm-ring-col {
+    width: 100px;
+    height: 100px;
+    align-self: center;
+  }
+}
+
 /* ── Chart ─────────────────────────────────────────────────── */
 .yp-chart-card {
   background: var(--surface);
@@ -1842,18 +3638,20 @@
 }
 
 .yp-chart-tooltip {
-  background: #fff;
-  border: 1px solid var(--border);
-  border-radius: var(--r-sm);
-  padding: 10px 12px;
-  box-shadow: var(--shadow-md);
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  padding: 10px 13px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
   font-size: 12px;
+  backdrop-filter: blur(8px);
 }
 
 .yp-chart-tooltip-label {
   font-weight: 600;
   margin-bottom: 6px;
-  color: var(--yp-ink);
+  color: #1d1d1f;
+  letter-spacing: -0.01em;
 }
 
 .yp-chart-tooltip-item {

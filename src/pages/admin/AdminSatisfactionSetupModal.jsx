@@ -103,6 +103,7 @@ export default function AdminSatisfactionSetupModal({ open, onClose, initialTab 
       queryClient.invalidateQueries({ queryKey: ['cs-satisfaction-targets-unified'] });
       queryClient.invalidateQueries({ queryKey: ['cs-satisfaction-summary'] });
       queryClient.invalidateQueries({ queryKey: ['cs-satisfaction-monthly-overview'] });
+      queryClient.invalidateQueries({ queryKey: ['cs-satisfaction-ranking'] });
     },
   });
 
@@ -123,6 +124,7 @@ export default function AdminSatisfactionSetupModal({ open, onClose, initialTab 
       queryClient.invalidateQueries({ queryKey: ['cs-satisfaction-summary'] });
       queryClient.invalidateQueries({ queryKey: ['cs-satisfaction-center-month-detail'] });
       queryClient.invalidateQueries({ queryKey: ['cs-satisfaction-monthly-overview'] });
+      queryClient.invalidateQueries({ queryKey: ['cs-satisfaction-ranking'] });
       setPickedName('');
       if (fileRef.current) fileRef.current.value = '';
     },

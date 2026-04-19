@@ -53,13 +53,9 @@ export default function MemberSubmitModal() {
 
         <div className="member-submit-modal-head">
           <div className="member-submit-modal-head-text">
-            <p className="member-cute-kicker">YOU PRO</p>
             <h2 id="member-submit-title" className="member-cute-title">
               사례 접수
             </h2>
-            <p className="member-cute-sub">
-              아래에서 <strong>사례 내용</strong>과 <strong>통화 일시</strong>만 입력하면 접수가 완료됩니다.
-            </p>
           </div>
           <button type="button" className="member-modal-close" onClick={closeSubmit} aria-label="닫기">
             <X size={20} strokeWidth={2.25} />

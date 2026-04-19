@@ -2,10 +2,10 @@
 .member-case-list-root .member-modal-panel {
   display: flex;
   flex-direction: column;
-  max-width: min(92vw, 520px);
-  width: 100%;
+  max-width: min(96vw, 800px);
+  width: min(96vw, 800px);
   min-height: 0;
-  max-height: min(86vh, 580px);
+  max-height: min(90vh, 760px);
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
@@ -53,7 +53,7 @@
 
 .member-case-list-title {
   margin: 0;
-  font-size: 1.0625rem;
+  font-size: 1.25rem;
   font-weight: 700;
   letter-spacing: -0.04em;
   line-height: 1.25;
@@ -62,7 +62,7 @@
 
 .member-case-list-lede {
   margin: 4px 0 0;
-  font-size: 12px;
+  font-size: 13.5px;
   font-weight: 500;
   line-height: 1.4;
   color: var(--text-secondary);
@@ -167,7 +167,7 @@
 }
 
 .member-case-month-label {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 700;
   color: var(--yp-ink, var(--text-primary));
   letter-spacing: -0.03em;
@@ -209,7 +209,7 @@
 
 .member-case-list-meta {
   padding: 0 14px 8px;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 500;
   letter-spacing: -0.02em;
   color: var(--text-secondary);
@@ -240,9 +240,9 @@
 }
 
 .member-case-list-modal .filter-tab {
-  padding: 4px 8px;
+  padding: 5px 10px;
   border-radius: 8px;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
   letter-spacing: -0.02em;
   border: 1px solid transparent;
@@ -264,7 +264,7 @@
 
 /* ── 목록 슬롯 ───────────────────────────────────────────── */
 .member-case-list-body {
-  --member-list-slot-h: min(42vh, 300px);
+  --member-list-slot-h: min(46vh, 390px);
   flex: 1;
   min-height: var(--member-list-slot-h);
   height: var(--member-list-slot-h);
@@ -299,17 +299,137 @@
   -webkit-overflow-scrolling: touch;
 }
 
-.member-case-list-modal .case-item--compact {
-  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
-  transition: background 0.15s ease;
+/* ── 데이터 테이블 ────────────────────────────────────────── */
+.member-case-table-wrap {
+  width: 100%;
 }
 
-.member-case-list-modal .case-item--compact:hover {
-  background: rgba(15, 23, 42, 0.03);
+.member-case-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
 }
 
-.member-case-list-modal .case-item--compact:last-child {
+/* 헤더 */
+.member-case-table thead tr {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: rgba(248, 250, 252, 0.97);
+  backdrop-filter: blur(4px);
+  border-bottom: 2px solid rgba(15, 23, 42, 0.08);
+}
+
+.member-case-table th {
+  padding: 10px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-align: center;
+  white-space: nowrap;
+  user-select: none;
+}
+
+/* 열 너비 */
+.mct-col-no     { width: 36px; }
+.mct-col-status { width: 68px; }
+.mct-col-title  { width: auto; }
+.mct-col-date   { width: 84px; }
+.mct-col-action { width: 28px; }
+
+/* 데이터 행 */
+.mct-row {
+  cursor: pointer;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.055);
+  transition: background 0.14s ease;
+}
+
+.mct-row:last-child {
   border-bottom: none;
+}
+
+.mct-row:hover {
+  background: rgba(14, 116, 144, 0.04);
+}
+
+.mct-row:focus {
+  outline: none;
+}
+
+.mct-row:focus-visible {
+  background: rgba(14, 116, 144, 0.07);
+  outline: 2px solid rgba(14, 116, 144, 0.4);
+  outline-offset: -2px;
+}
+
+.mct-row:active {
+  background: rgba(14, 116, 144, 0.09);
+}
+
+/* 짝수 행 줄무늬 */
+.mct-row:nth-child(even) {
+  background: rgba(15, 23, 42, 0.018);
+}
+
+.mct-row:nth-child(even):hover {
+  background: rgba(14, 116, 144, 0.05);
+}
+
+/* 셀 공통 */
+.member-case-table td {
+  padding: 11px 12px;
+  vertical-align: middle;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+/* 번호 열 */
+.mct-no {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  padding-right: 4px;
+}
+
+/* 상태 열 */
+.mct-status {
+  padding-left: 8px;
+}
+
+/* 제목 열 */
+.mct-title {
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 0;
+}
+
+/* 날짜 열 */
+.mct-date {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  text-align: right;
+  padding-right: 6px;
+}
+
+/* 화살표 열 */
+.mct-action {
+  text-align: center;
+  padding-left: 2px;
+  padding-right: 8px;
+  color: var(--text-tertiary);
+  opacity: 0.45;
 }
 
 .member-case-list-loading {
@@ -343,6 +463,12 @@
 }
 
 @media (max-width: 480px) {
+  .mct-col-date,
+  .mct-date { display: none; }
+
+  .mct-col-no { width: 28px; }
+  .mct-col-status { width: 60px; }
+
   .member-case-list-head {
     padding: 18px 16px 14px;
   }

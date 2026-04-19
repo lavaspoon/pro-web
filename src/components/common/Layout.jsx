@@ -26,9 +26,6 @@ function MemberLayout({ children }) {
           <div className="member-topbar-row">
             <div className="admin-topbar-left">
               <div className="member-topbar-catblock">
-                <span className="member-topbar-catblock-label" id="member-cat-label">
-                  카테고리
-                </span>
                 <nav className="member-topbar-cats" aria-labelledby="member-cat-label">
                   <Link
                     to="/member"

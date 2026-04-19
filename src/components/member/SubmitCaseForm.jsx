@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { CheckCircle, AlertCircle, Send, Info, Lightbulb } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
@@ -11,20 +11,6 @@ function buildCallDateTimeForApi(datePart, timePart) {
   return `${datePart} ${timePart}:00`;
 }
 
-/** API 호환용 제목: 우수 상담내용 앞부분에서 자동 생성 */
-function deriveTitleFromExcellentContent(text) {
-  const t = String(text || '')
-    .trim()
-    .replace(/\s+/g, ' ');
-  if (!t) return 'YOU PRO 우수사례';
-  const firstSentence = t.split(/[.!?。\n]/)[0].trim() || t;
-  const maxLen = 58;
-  if (firstSentence.length > maxLen) {
-    return `${firstSentence.slice(0, maxLen)}…`;
-  }
-  return firstSentence.slice(0, 60);
-}
-
 /**
  * @param {{ className?: string, onGoToCaseList?: () => void, compact?: boolean }} props
  */
@@ -33,12 +19,14 @@ export default function SubmitCaseForm({ className = '', onGoToCaseList, compact
   const queryClient = useQueryClient();
 
   const [form, setForm] = useState({
+    title: '',
     excellentContent: '',
     callDatePart: '',
     callTimePart: '',
   });
   const [submitted, setSubmitted] = useState(false);
   const [clientError, setClientError] = useState('');
+  const errorBannerRef = useRef(null);
 
   const mutation = useMutation({
     mutationFn: (data) => {
@@ -55,6 +43,17 @@ export default function SubmitCaseForm({ className = '', onGoToCaseList, compact
     },
   });
 
+  const hasVisibleError = Boolean(clientError) || mutation.isError;
+  useEffect(() => {
+    if (!hasVisibleError) return;
+    const el = errorBannerRef.current;
+    if (!el) return;
+    const id = requestAnimationFrame(() => {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    return () => cancelAnimationFrame(id);
+  }, [hasVisibleError, clientError, mutation.isError, mutation.error]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setClientError('');
@@ -68,6 +67,11 @@ export default function SubmitCaseForm({ className = '', onGoToCaseList, compact
     e.preventDefault();
     setClientError('');
     if (mutation.isPending) return;
+    const titleTrimmed = form.title.trim();
+    if (titleTrimmed.length < 2) {
+      setClientError('사례 제목을 2자 이상 입력해 주세요.');
+      return;
+    }
     const body = form.excellentContent.trim();
     if (body.length < 30) {
       setClientError('우수 상담내용을 최소 30자 이상 입력해 주세요.');
@@ -86,22 +90,24 @@ export default function SubmitCaseForm({ className = '', onGoToCaseList, compact
       setClientError('상담 일시 형식을 확인해 주세요.');
       return;
     }
-    const title = deriveTitleFromExcellentContent(body);
     mutation.mutate({
-      title,
+      title: titleTrimmed,
       description: body,
       callDate,
     });
   };
 
   const resetForm = () => {
-    setForm({ excellentContent: '', callDatePart: '', callTimePart: '' });
+    setForm({ title: '', excellentContent: '', callDatePart: '', callTimePart: '' });
     setSubmitted(false);
     setClientError('');
   };
 
   const canSubmit =
-    form.excellentContent.trim().length >= 30 && form.callDatePart && form.callTimePart;
+    form.title.trim().length >= 2 &&
+    form.excellentContent.trim().length >= 30 &&
+    form.callDatePart &&
+    form.callTimePart;
 
   if (submitted) {
     return (
@@ -132,7 +138,12 @@ export default function SubmitCaseForm({ className = '', onGoToCaseList, compact
       <div className={compact ? 'submit-layout submit-layout-modal' : 'submit-layout'}>
         <form className="submit-form" onSubmit={handleSubmit} noValidate>
           {(mutation.isError || clientError) && (
-            <div className="error-banner">
+            <div
+              ref={errorBannerRef}
+              className="error-banner"
+              role="alert"
+              aria-live="polite"
+            >
               <AlertCircle size={16} />
               {clientError || mutation.error?.message}
             </div>
@@ -140,23 +151,48 @@ export default function SubmitCaseForm({ className = '', onGoToCaseList, compact
 
           {!compact && (
             <p className="submit-form-overview">
-              <strong>① 사례 내용</strong>을 작성한 뒤, <strong>② 통화 일시</strong>를 입력하고 접수합니다.
+              <strong>① 제목</strong>을 입력한 뒤, <strong>② 사례 내용</strong>과 <strong>③ 통화 일시</strong>를 입력하고 접수합니다.
             </p>
           )}
 
-          <section className="submit-section" aria-labelledby="submit-section-story-title">
+          <section className="submit-section" aria-labelledby="submit-section-title-label">
             <header className="submit-section-head">
               <span className="submit-step-badge" aria-hidden>
                 1
               </span>
               <div className="submit-section-head-text">
+                <h3 id="submit-section-title-label" className="submit-section-title">
+                  제목 <span className="required">*</span>
+                </h3>
+              </div>
+            </header>
+            <div className="submit-section-body">
+              <label className="sr-only" htmlFor="submit-title">제목</label>
+              <input
+                id="submit-title"
+                type="text"
+                name="title"
+                className="form-input"
+                placeholder="예: 불만 고객 공감 후 단계별 해결 안내"
+                value={form.title}
+                onChange={handleChange}
+                maxLength={60}
+              />
+              <div className="submit-field-meta">
+                <span className="input-hint">{form.title.trim().length} / 60자</span>
+              </div>
+            </div>
+          </section>
+
+          <section className="submit-section" aria-labelledby="submit-section-story-title">
+            <header className="submit-section-head">
+              <span className="submit-step-badge" aria-hidden>
+                2
+              </span>
+              <div className="submit-section-head-text">
                 <h3 id="submit-section-story-title" className="submit-section-title">
                   사례 내용 <span className="required">*</span>
                 </h3>
-                <p className="submit-section-lead">
-                  우수 상담으로 제출할 내용입니다. 상황·응대·결과를 구체적으로 적어 주세요. STT와 비교·AI 분석에
-                  쓰입니다.
-                </p>
               </div>
             </header>
             <div className="submit-section-body">
@@ -181,15 +217,12 @@ export default function SubmitCaseForm({ className = '', onGoToCaseList, compact
           <section className="submit-section" aria-labelledby="submit-section-when-title">
             <header className="submit-section-head">
               <span className="submit-step-badge" aria-hidden>
-                2
+                3
               </span>
               <div className="submit-section-head-text">
                 <h3 id="submit-section-when-title" className="submit-section-title">
                   통화 일시 <span className="required">*</span>
                 </h3>
-                <p className="submit-section-lead">
-                  녹취(STT)에 기록된 통화 <strong>시작</strong> 시각과 같게 맞춰 주세요. (날짜 + 24시간제 시·분)
-                </p>
               </div>
             </header>
             <div className="submit-section-body">

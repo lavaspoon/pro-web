@@ -1,25 +1,32 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { RefreshCw, Upload } from 'lucide-react';
+import {
+  RefreshCw,
+  Upload,
+  X,
+  MapPinned,
+  UserCircle2,
+  CheckCircle2,
+  Trophy,
+  Building2,
+  Percent,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+} from 'lucide-react';
 import AdminSatisfactionSetupModal from './AdminSatisfactionSetupModal';
 import {
-  CartesianGrid,
-  Legend,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
-import {
   fetchCsSatisfactionCenterMonthDetail,
-  fetchCsSatisfactionMonthlyOverview,
+  fetchCsSatisfactionDashboardKpis,
+  fetchCsSatisfactionRanking,
   fetchCsSatisfactionSummary,
 } from '../../api/adminApi';
+import { mergeSecondDepthOptions } from '../../utils/adminSecondDepth';
 import './DashboardPage.css';
 import './AdminSatisfactionPage.css';
+
+const SAT_RANK_TOP_N = 3;
 
 function pct(v) {
   if (v == null || Number.isNaN(Number(v))) return '—';
@@ -31,17 +38,58 @@ function num(v) {
   return Number(v).toLocaleString('ko-KR');
 }
 
+/** KPI 카드 등에서 센터명이 잘리지 않도록 앞 2글자만 표시 (전체는 title로) */
+function centerShortLabel(name) {
+  const s = String(name ?? '').trim();
+  if (!s) return '—';
+  return [...s].slice(0, 2).join('');
+}
+
+/** 전일 대비 퍼센트포인트 표시용 (API: achievementRateDayOverDayPp 등) */
+function formatDayOverDayPp(pp) {
+  if (pp == null || Number.isNaN(Number(pp))) return null;
+  const n = Math.round(Number(pp) * 10) / 10;
+  const sign = n > 0 ? '+' : '';
+  return `${sign}${n.toFixed(1)}%`;
+}
+
+function KpiDayOverDayBadge({ pp }) {
+  const label = formatDayOverDayPp(pp);
+  if (label == null) return null;
+  const n = Number(pp);
+  const up = n > 0;
+  const flat = n === 0;
+  return (
+    <span
+      className={`adm-sat-kpi-dod adm-sat-kpi-dod--${flat ? 'flat' : up ? 'up' : 'down'}`}
+      title="전일 대비(어제까지 월 누적 대비 오늘까지)"
+    >
+      {flat ? (
+        <Minus className="adm-sat-kpi-dod-ico" size={13} strokeWidth={2.5} aria-hidden />
+      ) : up ? (
+        <TrendingUp className="adm-sat-kpi-dod-ico" size={13} strokeWidth={2.5} aria-hidden />
+      ) : (
+        <TrendingDown className="adm-sat-kpi-dod-ico" size={13} strokeWidth={2.5} aria-hidden />
+      )}
+      <span className="adm-sat-kpi-dod-txt">{label}</span>
+    </span>
+  );
+}
+
 function isSatisfactionRowSelectable(r) {
   const id = r?.secondDepthDeptId;
   return typeof id === 'number' && id > 0;
 }
 
-function centerLabel(r) {
-  return (r.centerName && String(r.centerName).trim()) || '—';
+/** 센터·그룹 필터용 정규화 (빈 값은 '') — Dashboard 실(부서)별 성과와 동일 */
+function normFilterKey(v) {
+  return String(v ?? '').trim();
 }
 
-function groupLabel(r) {
-  return (r.groupName && String(r.groupName).trim()) || '—';
+function localeKoTrim(a, b) {
+  return String(a ?? '')
+    .trim()
+    .localeCompare(String(b ?? '').trim(), 'ko');
 }
 
 /** 필터된 행 기준 합계·가중 평균 목표%·통합 달성률 */
@@ -49,6 +97,7 @@ function computeSummaryTotals(list) {
   let evalSum = 0;
   let satSum = 0;
   let dissSum = 0;
+  let evalTargetMemberSum = 0;
   let targetWeightedNum = 0;
   let targetWeightedDen = 0;
   for (const r of list) {
@@ -56,6 +105,7 @@ function computeSummaryTotals(list) {
     evalSum += e;
     satSum += Number(r.satisfiedCount) || 0;
     dissSum += Number(r.dissatisfiedCount) || 0;
+    evalTargetMemberSum += Number(r.evalTargetMemberCount) || 0;
     const tp = r.targetPercent;
     if (tp != null && !Number.isNaN(Number(tp)) && e > 0) {
       targetWeightedNum += Number(tp) * e;
@@ -69,7 +119,7 @@ function computeSummaryTotals(list) {
   if (avgTarget != null && avgTarget > 0 && satRatePct != null) {
     achievement = Math.round((100 * satRatePct) / avgTarget * 10) / 10;
   }
-  return { evalSum, satSum, dissSum, avgTarget, achievement };
+  return { evalSum, satSum, dissSum, evalTargetMemberSum, avgTarget, achievement };
 }
 
 export default function AdminSatisfactionPage() {
@@ -80,8 +130,9 @@ export default function AdminSatisfactionPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [setupModalOpen, setSetupModalOpen] = useState(false);
 
-  const [centerFilter, setCenterFilter] = useState('all');
-  const [groupFilter, setGroupFilter] = useState('all');
+  /** null = 미적용, 문자열(빈 문자열 포함) = 해당 값과 일치하는 행만 — Dashboard와 동일 */
+  const [filterCenter, setFilterCenter] = useState(null);
+  const [filterGroup, setFilterGroup] = useState(null);
   const [selectedSecondDepthId, setSelectedSecondDepthId] = useState(null);
 
   const summaryQuery = useQuery({
@@ -89,41 +140,29 @@ export default function AdminSatisfactionPage() {
     queryFn: () => fetchCsSatisfactionSummary(year, undefined),
   });
 
-  const monthlyOverviewQuery = useQuery({
-    queryKey: ['cs-satisfaction-monthly-overview', year],
-    queryFn: () => fetchCsSatisfactionMonthlyOverview(year),
+  const dashboardKpisQuery = useQuery({
+    queryKey: ['cs-satisfaction-dashboard-kpis', year],
+    queryFn: () => fetchCsSatisfactionDashboardKpis(year),
   });
 
-  const unifiedChartPoints = useMemo(() => {
-    const u = monthlyOverviewQuery.data?.unified ?? [];
-    return Array.from({ length: 12 }, (_, i) => {
-      const month = i + 1;
-      const row = u.find((x) => x.month === month);
-      return {
-        label: `${month}월`,
-        evalCount: Number(row?.evalCount ?? 0),
-        satisfiedCount: Number(row?.satisfiedCount ?? 0),
-        dissatisfiedCount: Number(row?.dissatisfiedCount ?? 0),
-      };
-    });
-  }, [monthlyOverviewQuery.data]);
+  const rankingQuery = useQuery({
+    queryKey: ['cs-satisfaction-ranking', year, SAT_RANK_TOP_N],
+    queryFn: () => fetchCsSatisfactionRanking(year, SAT_RANK_TOP_N),
+  });
 
-  const focusChartPoints = useMemo(() => {
-    const f = monthlyOverviewQuery.data?.focusTasks ?? [];
-    return Array.from({ length: 12 }, (_, i) => {
-      const month = i + 1;
-      const row = f.find((x) => x.month === month);
-      return {
-        label: `${month}월`,
-        fiveMajorCitiesCount: Number(row?.fiveMajorCitiesCount ?? 0),
-        gen5060Count: Number(row?.gen5060Count ?? 0),
-        problemResolvedCount: Number(row?.problemResolvedCount ?? 0),
-      };
-    });
-  }, [monthlyOverviewQuery.data]);
+  const filterMeta = summaryQuery.data?.filterMeta;
+  const secondDepthOptions = useMemo(
+    () => mergeSecondDepthOptions(filterMeta?.secondDepthDepts),
+    [filterMeta?.secondDepthDepts],
+  );
+  const secondDepthLabelHint =
+    secondDepthOptions.length > 0
+      ? secondDepthOptions.map((o) => o.name).join(' · ')
+      : '—';
 
-  const overviewLoading = monthlyOverviewQuery.isPending;
-  const overviewError = monthlyOverviewQuery.error;
+  const kpiData = dashboardKpisQuery.data;
+  const overviewLoading = dashboardKpisQuery.isPending;
+  const overviewError = dashboardKpisQuery.error;
 
   const centerDetailEnabled =
     selectedSecondDepthId != null &&
@@ -139,30 +178,34 @@ export default function AdminSatisfactionPage() {
 
   const rows = useMemo(() => summaryQuery.data?.rows ?? [], [summaryQuery.data]);
 
-  const centerOptions = useMemo(() => {
-    const set = new Set();
-    rows.forEach((r) => set.add(centerLabel(r)));
-    return Array.from(set).sort((a, b) => a.localeCompare(b, 'ko'));
-  }, [rows]);
-
-  const groupOptions = useMemo(() => {
-    const set = new Set();
-    rows.forEach((r) => {
-      if (centerFilter !== 'all' && centerLabel(r) !== centerFilter) return;
-      set.add(groupLabel(r));
-    });
-    return Array.from(set).sort((a, b) => a.localeCompare(b, 'ko'));
-  }, [rows, centerFilter]);
-
   const filteredRows = useMemo(
     () =>
       rows.filter((r) => {
-        if (centerFilter !== 'all' && centerLabel(r) !== centerFilter) return false;
-        if (groupFilter !== 'all' && groupLabel(r) !== groupFilter) return false;
+        if (filterCenter !== null) {
+          const c = normFilterKey(r.centerName);
+          if (filterCenter === '' ? c !== '' : c !== filterCenter) return false;
+        }
+        if (filterGroup !== null) {
+          const g = normFilterKey(r.groupName);
+          if (filterGroup === '' ? g !== '' : g !== filterGroup) return false;
+        }
         return true;
       }),
-    [rows, centerFilter, groupFilter],
+    [rows, filterCenter, filterGroup],
   );
+
+  /** 기본: 센터 → 그룹 → 실명(팀명) 오름차순 — 관리 대시보드 실(부서)별 성과와 동일 계층 */
+  const sortedRows = useMemo(() => {
+    const list = [...filteredRows];
+    list.sort((a, b) => {
+      const c = localeKoTrim(a.centerName, b.centerName);
+      if (c !== 0) return c;
+      const g = localeKoTrim(a.groupName, b.groupName);
+      if (g !== 0) return g;
+      return localeKoTrim(a.secondDepthName, b.secondDepthName);
+    });
+    return list;
+  }, [filteredRows]);
 
   const summaryTotals = useMemo(() => computeSummaryTotals(filteredRows), [filteredRows]);
 
@@ -179,13 +222,6 @@ export default function AdminSatisfactionPage() {
   }, [searchParams, navigate]);
 
   useEffect(() => {
-    if (groupFilter === 'all') return;
-    if (!groupOptions.includes(groupFilter)) {
-      setGroupFilter('all');
-    }
-  }, [groupOptions, groupFilter]);
-
-  useEffect(() => {
     if (selectedSecondDepthId == null) return;
     const still = rows.some(
       (r) => r.secondDepthDeptId === selectedSecondDepthId && isSatisfactionRowSelectable(r),
@@ -200,6 +236,23 @@ export default function AdminSatisfactionPage() {
     if (!visible) setSelectedSecondDepthId(null);
   }, [rows, filteredRows, selectedSecondDepthId]);
 
+  const handleCenterFilterClick = (e, r) => {
+    e.stopPropagation();
+    const key = normFilterKey(r.centerName);
+    setFilterCenter((prev) => (prev === key ? null : key));
+  };
+
+  const handleGroupFilterClick = (e, r) => {
+    e.stopPropagation();
+    const key = normFilterKey(r.groupName);
+    setFilterGroup((prev) => (prev === key ? null : key));
+  };
+
+  const clearDeptFilters = () => {
+    setFilterCenter(null);
+    setFilterGroup(null);
+  };
+
   return (
     <div className="page-container adm-dashboard adm-dashboard--yp fade-in adm-sat-page">
       <header className="adm-header adm-header--yp">
@@ -208,7 +261,7 @@ export default function AdminSatisfactionPage() {
             <p className="yadm-identity-kicker">YOU PRO · 관리</p>
             <h1 className="adm-title">CS 만족도 대시보드</h1>
             <p className="adm-sub">
-              {year}년 기준 통합 월별 추이와 실(부서)별 만족도를
+              {year}년 기준 전체 센터 만족도와 실(부서)별 현황을
               <br />
               확인하세요.
             </p>
@@ -226,173 +279,204 @@ export default function AdminSatisfactionPage() {
         </div>
       </header>
 
-      <section className="adm-section adm-sat-trend-section" aria-labelledby="adm-sat-trend-title">
+      <section className="adm-section adm-section--center-overview" aria-labelledby="adm-sat-overview-title">
         <div className="adm-section-title">
           <span className="adm-title-bar" />
           <div>
-            <h2 id="adm-sat-trend-title" className="adm-section-heading">
-              월별 만족도 추이
+            <h2 id="adm-sat-overview-title" className="adm-section-heading">
+              전체 센터 현황
             </h2>
             <p className="adm-section-hint">
-              {year}년 · 설정된 상위 실(서부·부산 등) 소속을 통합한 월별 건수와 중점추진과제(Y) 건수입니다.
+              <strong>{secondDepthLabelHint}</strong> · 센터 KPI는 {year}년 연간 · 스킬·중점 지표는{' '}
+              {kpiData?.kpiMonth != null ? (
+                <>
+                  {kpiData.kpiYear}년 {kpiData.kpiMonth}월(당월)
+                </>
+              ) : (
+                '당월'
+              )}
             </p>
           </div>
         </div>
-        <div className="adm-sat-charts-stack adm-sat-charts-stack--two">
+        <div className="adm-overview-shell">
           {overviewLoading ? (
-            <div className="adm-sat-chart-shell adm-sat-chart-shell--full">
-              <div className="adm-sat-chart-loading">
-                <div className="spinner" />
-                <p>차트 불러오는 중…</p>
-              </div>
+            <div className="adm-sat-kpi-loading">
+              <div className="spinner" />
+              <p>지표 불러오는 중…</p>
             </div>
           ) : overviewError ? (
-            <div className="adm-sat-chart-shell adm-sat-chart-shell--full">
-              <p className="adm-sat-chart-error">
-                {overviewError?.message ?? '차트를 불러오지 못했습니다.'}
-              </p>
-            </div>
+            <p className="adm-sat-chart-error">{overviewError?.message ?? '지표를 불러오지 못했습니다.'}</p>
           ) : (
-            <>
-              <div className="adm-sat-chart-shell">
-                <h3 className="adm-sat-trend-chart-caption">월별 평가·만족·불만족</h3>
-                <ResponsiveContainer width="100%" height={280} minWidth={0}>
-                  <LineChart
-                    data={unifiedChartPoints}
-                    margin={{ top: 10, right: 12, left: -4, bottom: 4 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(15,23,42,0.06)" vertical={false} />
-                    <XAxis
-                      dataKey="label"
-                      tick={{ fontSize: 11, fill: '#64748b' }}
-                      tickLine={false}
-                      axisLine={{ stroke: 'rgba(15,23,42,0.1)' }}
-                    />
-                    <YAxis
-                      allowDecimals={false}
-                      tick={{ fontSize: 11, fill: '#64748b' }}
-                      width={38}
-                      tickLine={false}
-                      axisLine={false}
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        borderRadius: 12,
-                        border: '1px solid rgba(15,23,42,0.08)',
-                        boxShadow: '0 8px 24px rgba(15,23,42,0.08)',
-                        fontSize: 12,
-                      }}
-                      labelStyle={{ fontWeight: 700, marginBottom: 6, color: '#0f172a' }}
-                      formatter={(value, name) => [`${Number(value).toLocaleString('ko-KR')}건`, name]}
-                      labelFormatter={(label) => `${year}년 ${label}`}
-                    />
-                    <Legend
-                      wrapperStyle={{ paddingTop: 8, fontSize: 12 }}
-                      formatter={(value) => (
-                        <span style={{ color: '#334155', fontWeight: 600 }}>{value}</span>
-                      )}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="evalCount"
-                      name="평가건"
-                      stroke="#0a7ea4"
-                      strokeWidth={2.75}
-                      dot={{ r: 3.5, strokeWidth: 2, stroke: '#fff', fill: '#0a7ea4' }}
-                      activeDot={{ r: 6, strokeWidth: 2, stroke: '#fff' }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="satisfiedCount"
-                      name="만족건"
-                      stroke="#059669"
-                      strokeWidth={2.75}
-                      dot={{ r: 3.5, strokeWidth: 2, stroke: '#fff', fill: '#059669' }}
-                      activeDot={{ r: 6, strokeWidth: 2, stroke: '#fff' }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="dissatisfiedCount"
-                      name="불만족건"
-                      stroke="#c2410c"
-                      strokeWidth={2.75}
-                      dot={{ r: 3.5, strokeWidth: 2, stroke: '#fff', fill: '#c2410c' }}
-                      activeDot={{ r: 6, strokeWidth: 2, stroke: '#fff' }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
+            <div className="adm-overview-grid adm-sat-kpi-grid adm-sat-kpi-grid--five">
+              <div className="adm-kpi-card adm-kpi-card--tone-files adm-sat-kpi-card--centers">
+                <div className="adm-kpi-head">
+                  <span className="adm-kpi-icon-wrap" aria-hidden>
+                    <Building2 className="adm-kpi-ico" size={18} strokeWidth={2.25} />
+                  </span>
+                  <span className="adm-kpi-title">센터 목표 달성률</span>
+                </div>
+                <div className="adm-sat-kpi-center-list" aria-label={`${year}년 센터별 목표 대비 달성`}>
+                  {(kpiData?.centerAchievements ?? []).length === 0 ? (
+                    <p className="adm-sat-kpi-empty">—</p>
+                  ) : (
+                    (kpiData?.centerAchievements ?? []).map((c) => (
+                      <div key={c.secondDepthDeptId} className="adm-sat-kpi-center-row">
+                        <span className="adm-sat-kpi-center-name" title={c.centerName}>
+                          {centerShortLabel(c.centerName)}
+                        </span>
+                        <span className="adm-sat-kpi-center-pct">{pct(c.achievementRate)}</span>
+                        <span
+                          className={
+                            c.targetMet
+                              ? 'adm-sat-kpi-badge adm-sat-kpi-badge--ok'
+                              : 'adm-sat-kpi-badge adm-sat-kpi-badge--no'
+                          }
+                        >
+                          {c.targetMet ? '달성' : '미달성'}
+                        </span>
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
-              <div className="adm-sat-chart-shell">
-                <h3 className="adm-sat-trend-chart-caption">중점추진과제 (5대도시 · 5060 · 문제해결)</h3>
-                <ResponsiveContainer width="100%" height={280} minWidth={0}>
-                  <LineChart
-                    data={focusChartPoints}
-                    margin={{ top: 10, right: 12, left: -4, bottom: 4 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(15,23,42,0.06)" vertical={false} />
-                    <XAxis
-                      dataKey="label"
-                      tick={{ fontSize: 11, fill: '#64748b' }}
-                      tickLine={false}
-                      axisLine={{ stroke: 'rgba(15,23,42,0.1)' }}
-                    />
-                    <YAxis
-                      allowDecimals={false}
-                      tick={{ fontSize: 11, fill: '#64748b' }}
-                      width={38}
-                      tickLine={false}
-                      axisLine={false}
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        borderRadius: 12,
-                        border: '1px solid rgba(15,23,42,0.08)',
-                        boxShadow: '0 8px 24px rgba(15,23,42,0.08)',
-                        fontSize: 12,
-                      }}
-                      labelStyle={{ fontWeight: 700, marginBottom: 6, color: '#0f172a' }}
-                      formatter={(value, name) => [`${Number(value).toLocaleString('ko-KR')}건`, name]}
-                      labelFormatter={(label) => `${year}년 ${label}`}
-                    />
-                    <Legend
-                      wrapperStyle={{ paddingTop: 8, fontSize: 12 }}
-                      formatter={(value) => (
-                        <span style={{ color: '#334155', fontWeight: 600 }}>{value}</span>
-                      )}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="fiveMajorCitiesCount"
-                      name="5대 도시"
-                      stroke="#4f46e5"
-                      strokeWidth={2.75}
-                      dot={{ r: 3.5, strokeWidth: 2, stroke: '#fff', fill: '#4f46e5' }}
-                      activeDot={{ r: 6, strokeWidth: 2, stroke: '#fff' }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="gen5060Count"
-                      name="5060"
-                      stroke="#d97706"
-                      strokeWidth={2.75}
-                      dot={{ r: 3.5, strokeWidth: 2, stroke: '#fff', fill: '#d97706' }}
-                      activeDot={{ r: 6, strokeWidth: 2, stroke: '#fff' }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="problemResolvedCount"
-                      name="문제해결"
-                      stroke="#db2777"
-                      strokeWidth={2.75}
-                      dot={{ r: 3.5, strokeWidth: 2, stroke: '#fff', fill: '#db2777' }}
-                      activeDot={{ r: 6, strokeWidth: 2, stroke: '#fff' }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
+              <div className="adm-kpi-card adm-kpi-card--tone-chart">
+                <div className="adm-kpi-head">
+                  <span className="adm-kpi-icon-wrap" aria-hidden>
+                    <Percent className="adm-kpi-ico" size={18} strokeWidth={2.25} />
+                  </span>
+                  <span className="adm-kpi-title">전체 평균 달성률</span>
+                </div>
+                <div
+                  className="adm-kpi-value-row adm-kpi-value-row--with-dod"
+                  aria-label={`스킬 목표 대비 평균 달성률 ${kpiData?.overallAvgSkillAchievementRate ?? ''}`}
+                >
+                  <span className="adm-kpi-val">{pct(kpiData?.overallAvgSkillAchievementRate)}</span>
+                  <KpiDayOverDayBadge pp={kpiData?.overallAvgSkillAchievementDayOverDayPp} />
+                </div>
               </div>
-            </>
+              <div className="adm-kpi-card adm-kpi-card--tone-chart">
+                <div className="adm-kpi-head">
+                  <span className="adm-kpi-icon-wrap" aria-hidden>
+                    <MapPinned className="adm-kpi-ico" size={18} strokeWidth={2.25} />
+                  </span>
+                  <span className="adm-kpi-title">5대 도시</span>
+                </div>
+                <div className="adm-kpi-value-row adm-kpi-value-row--with-dod" aria-label="5대 도시 목표 대비 달성률">
+                  <span className="adm-kpi-val">{pct(kpiData?.fiveMajorCities?.achievementRate)}</span>
+                  <KpiDayOverDayBadge pp={kpiData?.fiveMajorCities?.achievementRateDayOverDayPp} />
+                </div>
+              </div>
+              <div className="adm-kpi-card adm-kpi-card--tone-award">
+                <div className="adm-kpi-head">
+                  <span className="adm-kpi-icon-wrap" aria-hidden>
+                    <UserCircle2 className="adm-kpi-ico" size={18} strokeWidth={2.25} />
+                  </span>
+                  <span className="adm-kpi-title">5060</span>
+                </div>
+                <div className="adm-kpi-value-row adm-kpi-value-row--with-dod" aria-label="5060 목표 대비 달성률">
+                  <span className="adm-kpi-val">{pct(kpiData?.gen5060?.achievementRate)}</span>
+                  <KpiDayOverDayBadge pp={kpiData?.gen5060?.achievementRateDayOverDayPp} />
+                </div>
+              </div>
+              <div className="adm-kpi-card adm-kpi-card--tone-files">
+                <div className="adm-kpi-head">
+                  <span className="adm-kpi-icon-wrap" aria-hidden>
+                    <CheckCircle2 className="adm-kpi-ico" size={18} strokeWidth={2.25} />
+                  </span>
+                  <span className="adm-kpi-title">문제해결</span>
+                </div>
+                <div className="adm-kpi-value-row adm-kpi-value-row--with-dod" aria-label="문제해결 목표 대비 달성률">
+                  <span className="adm-kpi-val">{pct(kpiData?.problemResolved?.achievementRate)}</span>
+                  <KpiDayOverDayBadge pp={kpiData?.problemResolved?.achievementRateDayOverDayPp} />
+                </div>
+              </div>
+            </div>
           )}
         </div>
+      </section>
+
+      <section className="adm-section adm-section--ranking adm-sat-ranking-section" aria-labelledby="adm-sat-rank-title">
+        <div className="adm-section-title">
+          <span className="adm-title-bar" />
+          <div>
+            <h2 id="adm-sat-rank-title" className="adm-section-heading">
+              연간 랭킹
+            </h2>
+            <p className="adm-section-hint adm-section-hint--ranking">
+              {year}년 · 만족(satisfied) Y이면서 해당 중점지표도 Y인 건수 기준 · 구성원별 상위 {SAT_RANK_TOP_N}
+              위 (전체 센터 통합)
+            </p>
+          </div>
+        </div>
+        {rankingQuery.isPending ? (
+          <div className="adm-sat-kpi-loading">
+            <div className="spinner" />
+            <p>랭킹 불러오는 중…</p>
+          </div>
+        ) : rankingQuery.isError ? (
+          <p className="adm-sat-query-err">{rankingQuery.error?.message ?? '랭킹을 불러오지 못했습니다.'}</p>
+        ) : (
+          <div className="adm-sat-rank-quad">
+            {[
+              {
+                title: '5대도시',
+                entries: rankingQuery.data?.topByFiveMajorCities ?? [],
+                valueLabel: '건수',
+              },
+              { title: '5060', entries: rankingQuery.data?.topByGen5060 ?? [], valueLabel: '건수' },
+              {
+                title: '문제해결',
+                entries: rankingQuery.data?.topByProblemResolved ?? [],
+                valueLabel: '건수',
+              },
+            ].map((col) => (
+              <div key={col.title} className="adm-sat-rank-col">
+                <div className="adm-sat-rank-col__head">
+                  <Trophy className="adm-sat-rank-col__ico" size={17} strokeWidth={2.25} aria-hidden />
+                  <span className="adm-sat-rank-col__title">{col.title}</span>
+                  <span className="adm-sat-rank-col__sub">1 ~ {SAT_RANK_TOP_N}위</span>
+                </div>
+                <table className="adm-table adm-sat-rank-mini" aria-label={`${year}년 ${col.title} 랭킹`}>
+                  <thead>
+                    <tr>
+                      <th scope="col" className="adm-th-cell">
+                        순위
+                      </th>
+                      <th scope="col" className="adm-th-cell">
+                        이름
+                      </th>
+                      <th scope="col" className="adm-th-cell">
+                        소속
+                      </th>
+                      <th scope="col" className="adm-th-cell">
+                        {col.valueLabel}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Array.from({ length: SAT_RANK_TOP_N }, (_, i) => i + 1).map((rank) => {
+                      const row = col.entries[rank - 1];
+                      return (
+                        <tr key={`${col.title}-${rank}`} className={row ? '' : 'adm-sat-rank-mini__tr--empty'}>
+                          <td>
+                            <span className={`adm-rank-pill ${rank <= 3 ? `adm-rank-pill--${rank}` : 'adm-rank-pill--rest'}`}>
+                              {rank}
+                            </span>
+                          </td>
+                          <td className="adm-sat-rank-mini__name">
+                            {row?.memberName?.trim() ? row.memberName : row?.skid ?? '—'}
+                          </td>
+                          <td className="adm-sat-rank-mini__team">{row?.teamName?.trim() ? row.teamName : '—'}</td>
+                          <td className="adm-sat-rank-mini__num">{row ? num(row.count) : '—'}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       <section className="adm-section" aria-labelledby="adm-sat-table-title">
@@ -403,6 +487,11 @@ export default function AdminSatisfactionPage() {
               <h2 id="adm-sat-table-title" className="adm-section-heading">
                 실(부서)별 만족도
               </h2>
+              <p className="adm-section-hint">
+                표 행은 설정(센터별 리프 팀 ID 목록) 순서로 고정됩니다. 평가건·만족건은{' '}
+                <strong>평가대상자(you_yn=Y)</strong>만 집계합니다. 행을 클릭하면 해당 팀 구성원을 아래에 표시 ·{' '}
+                <strong>센터·그룹</strong>을 클릭하면 같은 값만 필터(다시 클릭하면 해제)
+              </p>
             </div>
           </div>
           <div className="adm-dept-filter adm-sat-filters">
@@ -412,20 +501,60 @@ export default function AdminSatisfactionPage() {
               onClick={() => {
                 summaryQuery.refetch();
                 centerMonthDetailQuery.refetch();
-                monthlyOverviewQuery.refetch();
+                dashboardKpisQuery.refetch();
+                rankingQuery.refetch();
               }}
-              disabled={summaryQuery.isFetching}
+              disabled={summaryQuery.isFetching || dashboardKpisQuery.isFetching || rankingQuery.isFetching}
               aria-label="새로고침"
             >
-              <RefreshCw size={14} className={summaryQuery.isFetching ? 'adm-sat-spin' : ''} aria-hidden />
+              <RefreshCw
+                size={14}
+                className={
+                  summaryQuery.isFetching || dashboardKpisQuery.isFetching || rankingQuery.isFetching
+                    ? 'adm-sat-spin'
+                    : ''
+                }
+                aria-hidden
+              />
             </button>
           </div>
         </div>
 
+        {(filterCenter !== null || filterGroup !== null) && (
+          <div className="adm-dept-filter-bar" aria-label="적용 중인 필터">
+            <span className="adm-dept-filter-bar__label">필터</span>
+            {filterCenter !== null && (
+              <button
+                type="button"
+                className="adm-dept-filter-chip"
+                onClick={() => setFilterCenter(null)}
+                aria-label={`센터 필터 해제: ${filterCenter === '' ? '없음' : filterCenter}`}
+              >
+                센터: {filterCenter === '' ? '없음' : filterCenter}
+                <X className="adm-dept-filter-chip__x" size={14} strokeWidth={2.2} aria-hidden />
+              </button>
+            )}
+            {filterGroup !== null && (
+              <button
+                type="button"
+                className="adm-dept-filter-chip"
+                onClick={() => setFilterGroup(null)}
+                aria-label={`그룹 필터 해제: ${filterGroup === '' ? '없음' : filterGroup}`}
+              >
+                그룹: {filterGroup === '' ? '없음' : filterGroup}
+                <X className="adm-dept-filter-chip__x" size={14} strokeWidth={2.2} aria-hidden />
+              </button>
+            )}
+            <button type="button" className="adm-dept-filter-clear" onClick={clearDeptFilters}>
+              전체 해제
+            </button>
+          </div>
+        )}
+
         {err ? <p className="adm-sat-query-err">{err}</p> : null}
 
         <div className="adm-table-wrap">
-          <table className="adm-table adm-sat-summary-table">
+          <table className="adm-table adm-table--dept-performance adm-sat-summary-table">
             <thead>
               <tr>
                 <th scope="col" className="adm-th-cell">
@@ -453,52 +582,6 @@ export default function AdminSatisfactionPage() {
                   달성률%
                 </th>
               </tr>
-              <tr className="adm-sat-thead-filter-row">
-                <th scope="col" className="adm-th-cell adm-th-cell--filter">
-                  <label className="sr-only" htmlFor="adm-sat-filter-center">
-                    센터 필터
-                  </label>
-                  <select
-                    id="adm-sat-filter-center"
-                    className="adm-sat-th-filter"
-                    value={centerFilter}
-                    onChange={(e) => {
-                      setCenterFilter(e.target.value);
-                      setGroupFilter('all');
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                    aria-label="센터로 필터"
-                  >
-                    <option value="all">전체</option>
-                    {centerOptions.map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
-                  </select>
-                </th>
-                <th scope="col" className="adm-th-cell adm-th-cell--filter">
-                  <label className="sr-only" htmlFor="adm-sat-filter-group">
-                    그룹 필터
-                  </label>
-                  <select
-                    id="adm-sat-filter-group"
-                    className="adm-sat-th-filter"
-                    value={groupFilter}
-                    onChange={(e) => setGroupFilter(e.target.value)}
-                    onClick={(e) => e.stopPropagation()}
-                    aria-label="그룹으로 필터"
-                  >
-                    <option value="all">전체</option>
-                    {groupOptions.map((g) => (
-                      <option key={g} value={g}>
-                        {g}
-                      </option>
-                    ))}
-                  </select>
-                </th>
-                <th scope="col" colSpan={6} className="adm-th-cell adm-th-cell--filter-spacer" />
-              </tr>
             </thead>
             <tbody>
               {loading ? (
@@ -516,11 +599,11 @@ export default function AdminSatisfactionPage() {
               ) : filteredRows.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="adm-table-empty">
-                    필터 조건에 맞는 행이 없습니다.
+                    조건에 맞는 실이 없습니다. 필터를 해제하거나 다른 값을 선택해 보세요.
                   </td>
                 </tr>
               ) : (
-                filteredRows.map((r) => {
+                sortedRows.map((r) => {
                   const selectable = isSatisfactionRowSelectable(r);
                   const sid = r.secondDepthDeptId;
                   return (
@@ -534,10 +617,37 @@ export default function AdminSatisfactionPage() {
                           : undefined
                       }
                     >
-                      <td>{(r.centerName && String(r.centerName).trim()) || '—'}</td>
-                      <td>{(r.groupName && String(r.groupName).trim()) || '—'}</td>
+                      <td>
+                        <button
+                          type="button"
+                          className={`adm-dept-filter-btn ${
+                            filterCenter !== null && normFilterKey(r.centerName) === filterCenter
+                              ? 'is-active'
+                              : ''
+                          }`}
+                          onClick={(e) => handleCenterFilterClick(e, r)}
+                          title="이 센터만 보기 (같은 값을 다시 클릭하면 해제)"
+                        >
+                          {(r.centerName && String(r.centerName).trim()) || '—'}
+                        </button>
+                      </td>
+                      <td>
+                        <button
+                          type="button"
+                          className={`adm-dept-filter-btn ${
+                            filterGroup !== null && normFilterKey(r.groupName) === filterGroup
+                              ? 'is-active'
+                              : ''
+                          }`}
+                          onClick={(e) => handleGroupFilterClick(e, r)}
+                          title="이 그룹만 보기 (같은 값을 다시 클릭하면 해제)"
+                        >
+                          {(r.groupName && String(r.groupName).trim()) || '—'}
+                        </button>
+                      </td>
                       <td>
                         <span className="adm-team-name">{r.secondDepthName}</span>
+                        <span className="adm-member-badge">{num(r.evalTargetMemberCount)}명</span>
                       </td>
                       <td>{num(r.evalCount)}</td>
                       <td>{num(r.satisfiedCount)}</td>
@@ -551,9 +661,12 @@ export default function AdminSatisfactionPage() {
             </tbody>
             {!loading && rows.length > 0 && filteredRows.length > 0 ? (
               <tfoot>
-                <tr>
+                <tr className="adm-table-total-row">
                   <td colSpan={3} className="adm-sat-table-tfoot-label">
-                    합계
+                    <span className="adm-table-total-label">합계</span>
+                    <span className="adm-table-total-sublabel">
+                      {sortedRows.length}개 실 · 평가대상 {num(summaryTotals.evalTargetMemberSum)}명
+                    </span>
                   </td>
                   <td>{num(summaryTotals.evalSum)}</td>
                   <td>{num(summaryTotals.satSum)}</td>
@@ -569,7 +682,7 @@ export default function AdminSatisfactionPage() {
         {selectedSecondDepthId != null ? (
           <div className="adm-sat-members-below">
             <p className="adm-sat-members-caption">
-              {year}년 연간 기준 · 구성원별 만족도 건수 (상단 표와 동일 연도 범위)
+              {year}년 연간 기준 · 평가대상자 구성원별 만족도 건수 (상단 표와 동일 연도·집계 기준)
             </p>
             {centerMonthDetailQuery.isLoading ? (
               <div className="adm-team-detail-loading adm-sat-members-loading">
