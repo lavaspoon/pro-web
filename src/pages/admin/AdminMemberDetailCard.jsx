@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDown, ChevronUp, Eye } from 'lucide-react';
-import { fetchCaseForReview } from '../../api/adminApi';
 import StatusBadge from '../../components/common/StatusBadge';
-import CaseReviewModal from './CaseReviewModal';
+import AdminMemberCasesModal from './AdminMemberCasesModal';
 import './TeamDetailPage.css';
 
 function formatDate(dateStr) {
@@ -19,8 +18,7 @@ function formatDate(dateStr) {
  */
 export default function AdminMemberDetailCard({ member, embedReadOnly = false }) {
   const [expanded, setExpanded] = useState(false);
-  const [reviewCase, setReviewCase] = useState(null);
-  const [loadingCaseId, setLoadingCaseId] = useState(null);
+  const [casesModalOpen, setCasesModalOpen] = useState(false);
   const limit = Number(member.monthlyLimit) > 0 ? Number(member.monthlyLimit) : 3;
   const monthPct = Math.min((Number(member.monthlySelected || 0) / limit) * 100, 100);
   const totalSubmitted = Number(member.totalSubmitted ?? 0);
@@ -99,28 +97,13 @@ export default function AdminMemberDetailCard({ member, embedReadOnly = false })
                 <button
                   type="button"
                   className="btn btn-secondary btn-sm review-btn"
-                  onClick={async (e) => {
+                  onClick={(e) => {
                     e.stopPropagation();
-                    setLoadingCaseId(c.id);
-                    try {
-                      const full = await fetchCaseForReview(c.id);
-                      setReviewCase(full);
-                    } catch {
-                      setReviewCase(c);
-                    } finally {
-                      setLoadingCaseId(null);
-                    }
+                    setCasesModalOpen(true);
                   }}
-                  disabled={loadingCaseId === c.id}
                 >
                   <Eye size={14} />
-                  {loadingCaseId === c.id
-                    ? '…'
-                    : embedReadOnly
-                      ? '상세'
-                      : c.status === 'pending'
-                        ? '판정하기'
-                        : '상세'}
+                  {embedReadOnly ? '상세' : c.status === 'pending' ? '판정하기' : '상세'}
                 </button>
               </div>
             ))
@@ -128,17 +111,12 @@ export default function AdminMemberDetailCard({ member, embedReadOnly = false })
         </div>
       )}
 
-      {reviewCase &&
+      {casesModalOpen &&
         createPortal(
-          <CaseReviewModal
-            variant={embedReadOnly ? 'detail' : 'wizard'}
-            caseData={reviewCase}
-            memberName={member.name}
-            onClose={() => setReviewCase(null)}
-            onRefreshCase={async () => {
-              const full = await fetchCaseForReview(reviewCase.id);
-              setReviewCase(full);
-            }}
+          <AdminMemberCasesModal
+            open={casesModalOpen}
+            member={member}
+            onClose={() => setCasesModalOpen(false)}
           />,
           document.body
         )}
