@@ -1,0 +1,56 @@
+/* ═══════════════════════════════════════════════════════════
+   Skeleton — 공통 플레이스홀더
+   ═══════════════════════════════════════════════════════════ */
+
+.sk {
+  display: inline-block;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(
+    90deg,
+    rgba(15, 23, 42, 0.055) 0%,
+    rgba(15, 23, 42, 0.09) 50%,
+    rgba(15, 23, 42, 0.055) 100%
+  );
+  background-size: 200% 100%;
+  animation: sk-shimmer 1.25s ease-in-out infinite;
+}
+
+.sk--rect {
+  border-radius: 8px;
+}
+
+.sk--text {
+  border-radius: 4px;
+  vertical-align: middle;
+}
+
+.sk--circle {
+  border-radius: 9999px;
+}
+
+.sk-lines {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.sk-lines > .sk {
+  display: block;
+}
+
+@keyframes sk-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sk {
+    animation: none;
+    background: rgba(15, 23, 42, 0.08);
+  }
+}

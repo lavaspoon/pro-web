@@ -6,9 +6,12 @@ import {
   ShieldAlert,
   MapPinned,
   UserCircle2,
+  AlertCircle,
+  Inbox,
 } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
 import { fetchMemberSatisfaction, fetchMemberFocusTasks } from '../../api/memberApi';
+import Skeleton from '../../components/common/Skeleton';
 import '../admin/DashboardPage.css';
 import './HomePage.css';
 import './CsSatisfactionPage.css';
@@ -20,65 +23,48 @@ const currentMonth = now.getMonth() + 1;
 /** Good 멘트 티커 — 한 줄씩 자동 순환 */
 const GOOD_TICKER_INTERVAL_MS = 4500;
 
-const MOCK_DATA = {
-  skill: '일반',
-  centerName: '서부',
-  groupName: '고객응대',
-  roomName: '1실',
-  monthlyTargetPct: 94.9,
-  target: 94.9,
-  receivedCount: 47,
-  totalSamples: 47,
-  satisfiedCount: 46,
-  unsatisfiedCount: 1,
-  fiveMajorCitiesCount: 4,
-  gen5060Count: 6,
-  problemResolvedCount: 3,
-  fiveMajorCitiesTargetPct: 30,
-  gen5060TargetPct: 40,
-  problemResolvedTargetPct: 25,
-  goodComments: [
-    {
-      id: 1,
-      date: '2026-04-12',
-      comment: '친절하고 꼼꼼하게 안내해 주셔서 궁금한 점이 모두 해결됐어요. 정말 감사합니다!',
-    },
-    {
-      id: 2,
-      date: '2026-04-10',
-      comment: '빠르게 처리해 주셨고 설명도 이해하기 쉬웠습니다. 덕분에 바로 해결됐어요.',
-    },
-    {
-      id: 3,
-      date: '2026-04-07',
-      comment: '처음 문의했는데 끝까지 친절하게 도와주셨어요. 최고입니다!',
-    },
-  ],
-};
-
 function fmt(v, decimals = 1) {
   if (v == null || Number.isNaN(Number(v))) return '—';
   return Number(v).toFixed(decimals);
 }
 
-function computeMonthlyActualPct(d) {
-  const recv = Number(d.receivedCount ?? d.totalSamples ?? 0);
-  const sat = Number(d.satisfiedCount ?? 0);
-  if (!Number.isFinite(recv) || recv <= 0) return null;
+function toNum(v, fallback = null) {
+  if (v == null || v === '') return fallback;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function computeActualPct(d) {
+  const served = d.monthlyActualPct;
+  if (served != null && Number.isFinite(Number(served))) return Number(served);
+  const recv = toNum(d.receivedCount ?? d.totalSamples, 0);
+  const sat = toNum(d.satisfiedCount, 0);
+  if (!recv || recv <= 0) return null;
   return (sat / recv) * 100;
 }
 
-function computeAchievementVsTargetPct(actual, target) {
-  const t = Number(target ?? 0);
-  if (!Number.isFinite(t) || t <= 0 || actual == null) return null;
-  return (actual / t) * 100;
+function computeAchievementPct(d) {
+  const served = d.monthlyAchievementRate;
+  if (served != null && Number.isFinite(Number(served))) return Number(served);
+  const actual = computeActualPct(d);
+  const target = toNum(d.monthlyTargetPct ?? d.target);
+  if (actual == null || target == null || target <= 0) return null;
+  return (actual / target) * 100;
+}
+
+function computeMet(d) {
+  if (d.monthlyTargetMet === true) return true;
+  if (d.monthlyTargetMet === false) return false;
+  const ach = computeAchievementPct(d);
+  if (ach == null) return null;
+  return ach >= 100;
 }
 
 /* ════════════════════════════════════════════════════════════
-   Good 멘트 티커 — 한 줄씩 자동 순환
+   Good 멘트 티커
    ════════════════════════════════════════════════════════════ */
 function GoodTicker({ comments }) {
-  const list = Array.isArray(comments) && comments.length > 0 ? comments : [];
+  const list = Array.isArray(comments) ? comments : [];
   const [idx, setIdx] = useState(0);
 
   useEffect(() => {
@@ -89,8 +75,22 @@ function GoodTicker({ comments }) {
     return () => clearInterval(t);
   }, [list.length]);
 
-  if (list.length === 0) return null;
+  if (list.length === 0) {
+    return (
+      <div className="csx-ticker csx-ticker--empty">
+        <span className="csx-ticker-icon csx-ticker-icon--muted" aria-hidden>
+          <ThumbsUp size={13} strokeWidth={2.3} />
+        </span>
+        <span className="csx-ticker-tag csx-ticker-tag--muted">Good 멘트</span>
+        <p className="csx-ticker-text csx-ticker-text--muted">
+          아직 기록된 긍정 멘트가 없어요.
+        </p>
+      </div>
+    );
+  }
+
   const current = list[idx] ?? list[0];
+  const text = current?.comment ?? current?.goodMent ?? '';
 
   return (
     <div className="csx-ticker" role="status" aria-live="polite">
@@ -100,7 +100,7 @@ function GoodTicker({ comments }) {
       <span className="csx-ticker-tag">Good 멘트</span>
       <p key={current.id ?? idx} className="csx-ticker-text">
         <span className="csx-ticker-quote" aria-hidden>{'“'}</span>
-        {current.comment}
+        {text}
         <span className="csx-ticker-quote" aria-hidden>{'”'}</span>
       </p>
       {list.length > 1 ? (
@@ -113,29 +113,96 @@ function GoodTicker({ comments }) {
 }
 
 /* ════════════════════════════════════════════════════════════
-   ① 히어로 — 스킬·소속 + 당월 만족도 % + 달성 뱃지 + 영수증 + Good 티커
+   히어로 스켈레톤
+   ════════════════════════════════════════════════════════════ */
+function HeroSkeleton() {
+  return (
+    <section className="csx-hero">
+      <div className="csx-hero-top">
+        <div className="csx-hero-identity">
+          <Skeleton variant="text" width={56} height={10} />
+          <div className="csx-hero-identity-row" style={{ marginTop: 6 }}>
+            <Skeleton width={72} height={26} radius={8} />
+            <Skeleton variant="text" width={160} height={12} />
+          </div>
+        </div>
+        <Skeleton width={86} height={24} radius={999} />
+      </div>
+      <div className="csx-hero-main" style={{ gap: 8 }}>
+        <Skeleton variant="text" width={120} height={12} />
+        <Skeleton width={180} height={44} radius={10} />
+        <Skeleton variant="text" width={200} height={12} />
+      </div>
+      <div className="csx-breakdown">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="csx-breakdown-row">
+            <Skeleton variant="text" width={56} height={12} />
+            <Skeleton variant="text" width={40} height={12} />
+          </div>
+        ))}
+        <div className="csx-breakdown-divider" />
+        <div className="csx-breakdown-row csx-breakdown-row--total">
+          <Skeleton variant="text" width={100} height={13} />
+          <Skeleton variant="text" width={54} height={14} />
+        </div>
+      </div>
+      <Skeleton height={42} radius={12} />
+    </section>
+  );
+}
+
+function FocusSkeleton() {
+  return (
+    <section className="csx-focus">
+      <div className="csx-section-head">
+        <Skeleton variant="text" width={110} height={16} />
+        <Skeleton variant="text" width={180} height={11} />
+      </div>
+      <div className="csx-focus-grid">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="csx-focus-card">
+            <div className="csx-focus-card-head">
+              <Skeleton width={26} height={26} radius={8} />
+              <Skeleton variant="text" width={60} height={12} />
+            </div>
+            <Skeleton variant="text" width={50} height={26} />
+            <Skeleton variant="text" width={80} height={11} />
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════
+   ① 히어로
    ════════════════════════════════════════════════════════════ */
 function HeroPanel({ data, user, year, month }) {
-  const d = data;
-  const actualPct = computeMonthlyActualPct(d);
-  const target = Number(d.monthlyTargetPct ?? d.target ?? 0);
-  const achievementPct = computeAchievementVsTargetPct(actualPct, target);
-  const met = achievementPct != null && achievementPct >= 100;
+  const d = data ?? {};
+  const actualPct = computeActualPct(d);
+  const target = toNum(d.monthlyTargetPct ?? d.target);
+  const achievementPct = computeAchievementPct(d);
+  const met = computeMet(d);
   const gapToTarget =
-    actualPct != null && Number.isFinite(target) && target > 0
+    actualPct != null && target != null && target > 0
       ? Math.round((target - actualPct) * 10) / 10
       : null;
 
-  const skillText = d.skill?.trim() || '—';
-  const affiliation = [d.centerName, d.groupName, d.roomName]
+  const received = toNum(d.receivedCount ?? d.totalSamples, 0) ?? 0;
+  const satisfied = toNum(d.satisfiedCount, 0) ?? 0;
+  const unsatisfied = toNum(d.unsatisfiedCount, 0) ?? 0;
+
+  const skillText = (d.skill ?? user?.skill ?? '').toString().trim();
+  const affiliation = [d.centerName ?? user?.centerName, d.groupName ?? user?.groupName, d.roomName ?? user?.roomName]
     .map((s) => (s == null ? '' : String(s).trim()))
     .filter(Boolean)
     .join(' · ');
 
-  const goodList =
-    Array.isArray(d.goodComments) && d.goodComments.length > 0
-      ? d.goodComments
-      : MOCK_DATA.goodComments;
+  const hasAnySatisfactionData = received > 0 || satisfied > 0 || unsatisfied > 0 || target != null;
+
+  const badgeClass =
+    met === true ? 'csx-hero-badge--met' : met === false ? 'csx-hero-badge--no' : 'csx-hero-badge--none';
+  const badgeText = met === true ? '목표 달성' : met === false ? '목표 미달성' : '집계 전';
 
   return (
     <section className="csx-hero">
@@ -143,30 +210,45 @@ function HeroPanel({ data, user, year, month }) {
         <div className="csx-hero-identity">
           <span className="csx-hero-identity-kicker">{user?.name ?? '구성원'}님</span>
           <div className="csx-hero-identity-row">
-            <span className="csx-hero-identity-skill">{skillText}</span>
+            {skillText ? (
+              <span className="csx-hero-identity-skill">{skillText}</span>
+            ) : (
+              <span className="csx-hero-identity-skill csx-hero-identity-skill--muted">스킬 미지정</span>
+            )}
             {affiliation ? <span className="csx-hero-identity-aff">{affiliation}</span> : null}
           </div>
         </div>
-        <span
-          className={`csx-hero-badge ${met ? 'csx-hero-badge--met' : 'csx-hero-badge--no'}`}
-          aria-label={met ? '이달 목표 달성' : '이달 목표 미달성'}
-        >
-          {met ? <CheckCircle2 size={14} strokeWidth={2.4} /> : <ShieldAlert size={14} strokeWidth={2.4} />}
-          {met ? '목표 달성' : '목표 미달성'}
+        <span className={`csx-hero-badge ${badgeClass}`} aria-label={badgeText}>
+          {met === true ? (
+            <CheckCircle2 size={14} strokeWidth={2.4} />
+          ) : met === false ? (
+            <ShieldAlert size={14} strokeWidth={2.4} />
+          ) : (
+            <AlertCircle size={14} strokeWidth={2.4} />
+          )}
+          {badgeText}
         </span>
       </div>
 
       <div className="csx-hero-main">
         <p className="csx-hero-label">{year}년 {month}월 만족도</p>
         <div className="csx-hero-amount">
-          <span className={`csx-hero-num ${met ? 'csx-hero-num--met' : ''}`}>
+          <span className={`csx-hero-num ${met === true ? 'csx-hero-num--met' : ''}`}>
             {actualPct != null ? fmt(actualPct) : '—'}
           </span>
           <span className="csx-hero-unit">%</span>
         </div>
         <p className="csx-hero-sub">
-          {actualPct == null ? (
+          {!hasAnySatisfactionData ? (
             '이달 집계된 접수가 없습니다'
+          ) : actualPct == null ? (
+            target != null ? (
+              <>목표 <strong>{fmt(target)}%</strong> · 이달 접수 데이터 없음</>
+            ) : (
+              '이달 접수 데이터가 없습니다'
+            )
+          ) : target == null ? (
+            '목표가 아직 설정되지 않았어요'
           ) : met ? (
             <>
               목표 <strong>{fmt(target)}%</strong> 초과 달성 ·{' '}
@@ -185,23 +267,19 @@ function HeroPanel({ data, user, year, month }) {
         <div className="csx-breakdown-row">
           <span className="csx-breakdown-label">접수</span>
           <span className="csx-breakdown-value">
-            <strong>{Number(d.receivedCount ?? d.totalSamples ?? 0)}</strong>건
+            <strong>{received}</strong>건
           </span>
         </div>
         <div className="csx-breakdown-row">
           <span className="csx-breakdown-label">만족</span>
           <span className="csx-breakdown-value csx-breakdown-value--pos">
-            <strong>{Number(d.satisfiedCount ?? 0)}</strong>건
+            <strong>{satisfied}</strong>건
           </span>
         </div>
         <div className="csx-breakdown-row">
           <span className="csx-breakdown-label">불만족</span>
-          <span
-            className={`csx-breakdown-value${
-              Number(d.unsatisfiedCount ?? 0) > 0 ? ' csx-breakdown-value--neg' : ''
-            }`}
-          >
-            <strong>{Number(d.unsatisfiedCount ?? 0)}</strong>건
+          <span className={`csx-breakdown-value${unsatisfied > 0 ? ' csx-breakdown-value--neg' : ''}`}>
+            <strong>{unsatisfied}</strong>건
           </span>
         </div>
         <div className="csx-breakdown-divider" />
@@ -213,7 +291,7 @@ function HeroPanel({ data, user, year, month }) {
         </div>
       </div>
 
-      <GoodTicker comments={goodList} />
+      <GoodTicker comments={d.goodComments} />
     </section>
   );
 }
@@ -221,45 +299,54 @@ function HeroPanel({ data, user, year, month }) {
 /* ════════════════════════════════════════════════════════════
    ② 중점추진과제 3카드
    ════════════════════════════════════════════════════════════ */
-function FocusAchievementCards({ data }) {
+function FocusAchievementCards({ data, focusPending, focusError }) {
   const items = [
     {
       key: 'five',
       title: '5대 도시',
       icon: MapPinned,
-      count: Number(data.fiveMajorCitiesCount ?? 0),
-      target: data.fiveMajorCitiesTargetPct,
+      count: toNum(data?.fiveMajorCitiesCount),
+      target: toNum(data?.fiveMajorCitiesTargetPct),
     },
     {
       key: 'gen',
       title: '5060',
       icon: UserCircle2,
-      count: Number(data.gen5060Count ?? 0),
-      target: data.gen5060TargetPct,
+      count: toNum(data?.gen5060Count),
+      target: toNum(data?.gen5060TargetPct),
     },
     {
       key: 'solve',
       title: '문제해결',
       icon: CheckCircle2,
-      count: Number(data.problemResolvedCount ?? 0),
-      target: data.problemResolvedTargetPct,
+      count: toNum(data?.problemResolvedCount),
+      target: toNum(data?.problemResolvedTargetPct),
     },
   ];
 
-  const total = items.reduce((s, it) => s + it.count, 0);
+  const total = items.reduce((s, it) => s + (it.count ?? 0), 0);
 
   return (
     <section className="csx-focus">
       <div className="csx-section-head">
         <span className="csx-section-title">중점추진과제</span>
         <span className="csx-section-hint">
-          만족(Y)이면서 해당 중점지표도 Y인 건수 · 총 <strong>{total}건</strong>
+          {focusError
+            ? '데이터를 불러오지 못했습니다'
+            : focusPending
+              ? '불러오는 중…'
+              : (
+                <>
+                  만족(Y)이면서 해당 중점지표도 Y인 건수 · 총 <strong>{total}건</strong>
+                </>
+              )}
         </span>
       </div>
       <div className="csx-focus-grid">
         {items.map((it) => {
           const Icon = it.icon;
-          const hasTarget = Number.isFinite(Number(it.target)) && Number(it.target) > 0;
+          const hasCount = it.count != null;
+          const hasTarget = it.target != null && it.target > 0;
           return (
             <div key={it.key} className="csx-focus-card">
               <div className="csx-focus-card-head">
@@ -269,7 +356,7 @@ function FocusAchievementCards({ data }) {
                 <span className="csx-focus-card-title">{it.title}</span>
               </div>
               <div className="csx-focus-card-body">
-                <span className="csx-focus-card-num">{it.count}</span>
+                <span className="csx-focus-card-num">{hasCount ? it.count : '—'}</span>
                 <span className="csx-focus-card-unit">건</span>
               </div>
               <div className="csx-focus-card-foot">
@@ -295,14 +382,14 @@ export default function CsSatisfactionPage() {
   const [year] = useState(currentYear);
   const [month] = useState(currentMonth);
 
-  const { data: satRaw, isError } = useQuery({
+  const satQuery = useQuery({
     queryKey: ['member-satisfaction', user?.skid, year, month],
     queryFn: () => fetchMemberSatisfaction({ skid: user.skid, year, month }),
     enabled: !!user?.skid,
     retry: false,
   });
 
-  const { data: focusRaw } = useQuery({
+  const focusQuery = useQuery({
     queryKey: ['member-focus-tasks', user?.skid, year, month],
     queryFn: () => fetchMemberFocusTasks({ skid: user.skid, year, month }),
     enabled: !!user?.skid,
@@ -310,31 +397,22 @@ export default function CsSatisfactionPage() {
   });
 
   const satData = useMemo(() => {
-    const isMock = isError || !satRaw;
-    const base = isMock ? { ...MOCK_DATA } : satRaw;
-    const f = focusRaw ?? {};
+    const base = satQuery.data ?? null;
+    const f = focusQuery.data ?? null;
+    if (!base && !f) return null;
     return {
-      ...base,
-      skill: base.skill ?? MOCK_DATA.skill,
-      centerName: base.centerName ?? MOCK_DATA.centerName,
-      groupName: base.groupName ?? MOCK_DATA.groupName,
-      roomName: base.roomName ?? MOCK_DATA.roomName,
-      fiveMajorCitiesCount: f.fiveMajorCitiesCount ?? base.fiveMajorCitiesCount ?? 0,
-      gen5060Count: f.gen5060Count ?? base.gen5060Count ?? 0,
-      problemResolvedCount: f.problemResolvedCount ?? base.problemResolvedCount ?? 0,
-      fiveMajorCitiesTargetPct:
-        f.fiveMajorCitiesTargetPct ?? base.fiveMajorCitiesTargetPct ?? MOCK_DATA.fiveMajorCitiesTargetPct,
-      gen5060TargetPct: f.gen5060TargetPct ?? base.gen5060TargetPct ?? MOCK_DATA.gen5060TargetPct,
-      problemResolvedTargetPct:
-        f.problemResolvedTargetPct ?? base.problemResolvedTargetPct ?? MOCK_DATA.problemResolvedTargetPct,
-      monthlyTargetPct: base.monthlyTargetPct ?? base.target,
-      receivedCount: base.receivedCount ?? base.totalSamples,
-      goodComments:
-        Array.isArray(base.goodComments) && base.goodComments.length > 0
-          ? base.goodComments
-          : MOCK_DATA.goodComments,
+      ...(base ?? {}),
+      fiveMajorCitiesCount: f?.fiveMajorCitiesCount ?? base?.fiveMajorCitiesCount,
+      gen5060Count: f?.gen5060Count ?? base?.gen5060Count,
+      problemResolvedCount: f?.problemResolvedCount ?? base?.problemResolvedCount,
+      fiveMajorCitiesTargetPct: base?.fiveMajorCitiesTargetPct,
+      gen5060TargetPct: base?.gen5060TargetPct,
+      problemResolvedTargetPct: base?.problemResolvedTargetPct,
     };
-  }, [satRaw, isError, focusRaw]);
+  }, [satQuery.data, focusQuery.data]);
+
+  const isLoading = satQuery.isPending;
+  const isError = satQuery.isError;
 
   return (
     <div className="page-container adm-dashboard adm-dashboard--yp cs-sat-page yp-home fade-in csx-page">
@@ -345,9 +423,37 @@ export default function CsSatisfactionPage() {
         </div>
       </header>
 
-      <HeroPanel data={satData} user={user} year={year} month={month} />
-
-      <FocusAchievementCards data={satData} />
+      {isLoading ? (
+        <>
+          <HeroSkeleton />
+          <FocusSkeleton />
+        </>
+      ) : isError ? (
+        <div className="csx-error">
+          <AlertCircle size={20} strokeWidth={2.2} />
+          <div>
+            <p className="csx-error-title">데이터를 불러오지 못했습니다</p>
+            <p className="csx-error-sub">
+              {satQuery.error?.message ?? '잠시 후 다시 시도해 주세요.'}
+            </p>
+          </div>
+        </div>
+      ) : !satData ? (
+        <div className="csx-empty">
+          <Inbox size={22} strokeWidth={2.1} />
+          <p className="csx-empty-title">아직 집계된 데이터가 없어요</p>
+          <p className="csx-empty-sub">{year}년 {month}월 기준으로 표시할 만족도 기록이 없습니다.</p>
+        </div>
+      ) : (
+        <>
+          <HeroPanel data={satData} user={user} year={year} month={month} />
+          <FocusAchievementCards
+            data={satData}
+            focusPending={focusQuery.isPending}
+            focusError={focusQuery.isError}
+          />
+        </>
+      )}
     </div>
   );
 }

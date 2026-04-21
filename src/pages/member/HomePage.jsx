@@ -5,6 +5,7 @@ import { useMemberModalStore } from '../../store/memberModalStore';
 import { Sparkles, ChevronRight, FileText } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
 import { fetchMemberHome, fetchMyCases } from '../../api/memberApi';
+import Skeleton from '../../components/common/Skeleton';
 import '../admin/DashboardPage.css';
 import './HomePage.css';
 
@@ -26,6 +27,76 @@ function getTierIdx(n) {
   if (n >= 10) return 1;
   if (n >= 1)  return 0;
   return -1;
+}
+
+function HomeSkeleton({ userName }) {
+  return (
+    <div className="page-container adm-dashboard adm-dashboard--yp fade-in yp-home hp-home">
+      <header className="hp-header">
+        <div className="hp-header-text">
+          <h1 className="hp-header-title">나의 YOU PRO</h1>
+          <p className="hp-header-sub">{userName ?? '구성원'}님</p>
+        </div>
+        <div className="hp-header-actions">
+          <Skeleton width={96} height={34} radius={10} />
+          <Skeleton width={96} height={34} radius={10} />
+        </div>
+      </header>
+
+      <section className="hp-hero">
+        <div className="hp-hero-top" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+          <Skeleton variant="text" width={120} height={12} />
+          <Skeleton width={200} height={40} radius={10} />
+          <Skeleton variant="text" width={160} height={12} />
+        </div>
+        <div className="hp-breakdown">
+          {[0, 1].map((i) => (
+            <div key={i} className="hp-breakdown-row">
+              <Skeleton variant="text" width={70} height={12} />
+              <Skeleton variant="text" width={60} height={12} />
+            </div>
+          ))}
+          <div className="hp-breakdown-divider" />
+          <div className="hp-breakdown-row hp-breakdown-row--total">
+            <Skeleton variant="text" width={90} height={13} />
+            <Skeleton variant="text" width={90} height={14} />
+          </div>
+        </div>
+        <Skeleton height={48} radius={12} />
+      </section>
+
+      <section className="hp-card hp-tier-card">
+        <div className="hp-tier-now">
+          <div className="hp-tier-now-main" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <Skeleton width={74} height={22} radius={999} />
+            <Skeleton variant="text" width={80} height={13} />
+          </div>
+          <Skeleton variant="text" width={110} height={12} />
+        </div>
+        <div className="hp-tier-body">
+          <div className="hp-prog">
+            <Skeleton height={10} radius={999} />
+            <div style={{ marginTop: 10 }}>
+              <Skeleton variant="text" width={'100%'} height={10} />
+            </div>
+            <div style={{ marginTop: 14 }}>
+              <Skeleton variant="text" width={140} height={12} />
+            </div>
+          </div>
+          <div className="hp-tier-table">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="hp-tier-row" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <Skeleton variant="circle" width={8} height={8} />
+                <Skeleton variant="text" width={48} height={12} />
+                <Skeleton variant="text" width={56} height={12} />
+                <Skeleton variant="text" width={40} height={12} />
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    </div>
+  );
 }
 
 export default function HomePage() {
@@ -57,9 +128,7 @@ export default function HomePage() {
     return { selected, pending, rejected };
   }, [cases]);
 
-  if (isLoading || !data) return (
-    <div className="hp-loading"><div className="hp-spinner" /><p>불러오는 중…</p></div>
-  );
+  if (isLoading || !data) return <HomeSkeleton userName={user?.name} />;
   if (isError) return <div className="hp-error">오류: {error?.message}</div>;
 
   const {

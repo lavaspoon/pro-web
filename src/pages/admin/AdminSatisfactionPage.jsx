@@ -19,8 +19,81 @@ import {
   fetchCsSatisfactionSummary,
 } from '../../api/adminApi';
 import { mergeSecondDepthOptions } from '../../utils/adminSecondDepth';
+import Skeleton from '../../components/common/Skeleton';
 import './DashboardPage.css';
 import './AdminSatisfactionPage.css';
+
+function KpiOverviewSkeleton() {
+  return (
+    <div className="adm-overview-grid adm-sat-kpi-grid adm-sat-kpi-grid--four">
+      {[0, 1, 2, 3].map((i) => (
+        <div key={i} className="adm-kpi-card adm-kpi-card--tone-files adm-sat-kpi-card--centers">
+          <div className="adm-kpi-head" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Skeleton width={28} height={28} radius={8} />
+            <Skeleton variant="text" width={90} height={14} />
+          </div>
+          <div className="adm-sat-kpi-center-list" style={{ marginTop: 10 }}>
+            {[0, 1, 2].map((j) => (
+              <div key={j} className="adm-sat-kpi-center-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '6px 0' }}>
+                <Skeleton variant="text" width={28} height={12} />
+                <Skeleton variant="text" width={48} height={12} />
+                <Skeleton width={42} height={20} radius={999} />
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function RankingQuadSkeleton({ topN = 3 }) {
+  return (
+    <div className="adm-sat-rank-quad">
+      {[0, 1, 2].map((c) => (
+        <div key={c} className="adm-sat-rank-col">
+          <div className="adm-sat-rank-col__head" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Skeleton width={18} height={18} radius={6} />
+            <Skeleton variant="text" width={60} height={13} />
+            <Skeleton variant="text" width={48} height={11} />
+          </div>
+          <table className="adm-table adm-sat-rank-mini">
+            <thead>
+              <tr>
+                <th className="adm-th-cell">순위</th>
+                <th className="adm-th-cell">이름</th>
+                <th className="adm-th-cell">소속</th>
+                <th className="adm-th-cell">건수</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Array.from({ length: topN }).map((_, r) => (
+                <tr key={r}>
+                  <td><Skeleton width={22} height={22} radius={999} /></td>
+                  <td><Skeleton variant="text" width={60} height={12} /></td>
+                  <td><Skeleton variant="text" width={70} height={12} /></td>
+                  <td><Skeleton variant="text" width={30} height={12} /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SummaryTableSkeletonRows({ rows = 6, cols = 8 }) {
+  return Array.from({ length: rows }).map((_, r) => (
+    <tr key={`sk-${r}`}>
+      {Array.from({ length: cols }).map((__, c) => (
+        <td key={c}>
+          <Skeleton variant="text" width={c < 3 ? 70 : 44} height={12} />
+        </td>
+      ))}
+    </tr>
+  ));
+}
 
 const SAT_RANK_TOP_N = 3;
 
@@ -345,10 +418,7 @@ export default function AdminSatisfactionPage() {
         </div>
         <div className="adm-overview-shell">
           {overviewLoading ? (
-            <div className="adm-sat-kpi-loading">
-              <div className="spinner" />
-              <p>지표 불러오는 중…</p>
-            </div>
+            <KpiOverviewSkeleton />
           ) : overviewError ? (
             <p className="adm-sat-chart-error">{overviewError?.message ?? '지표를 불러오지 못했습니다.'}</p>
           ) : (
@@ -376,10 +446,7 @@ export default function AdminSatisfactionPage() {
           </div>
         </div>
         {rankingQuery.isPending ? (
-          <div className="adm-sat-kpi-loading">
-            <div className="spinner" />
-            <p>랭킹 불러오는 중…</p>
-          </div>
+          <RankingQuadSkeleton topN={SAT_RANK_TOP_N} />
         ) : rankingQuery.isError ? (
           <p className="adm-sat-query-err">{rankingQuery.error?.message ?? '랭킹을 불러오지 못했습니다.'}</p>
         ) : (
@@ -552,11 +619,7 @@ export default function AdminSatisfactionPage() {
             </thead>
             <tbody>
               {loading ? (
-                <tr>
-                  <td colSpan={8} className="adm-table-empty">
-                    불러오는 중…
-                  </td>
-                </tr>
+                <SummaryTableSkeletonRows rows={6} cols={8} />
               ) : rows.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="adm-table-empty">
@@ -652,9 +715,23 @@ export default function AdminSatisfactionPage() {
               {year}년 연간 기준 · 평가대상자 구성원별 만족도 건수 (상단 표와 동일 연도·집계 기준)
             </p>
             {centerMonthDetailQuery.isLoading ? (
-              <div className="adm-team-detail-loading adm-sat-members-loading">
-                <div className="spinner" />
-                <p>불러오는 중…</p>
+              <div className="adm-table-wrap">
+                <table className="adm-table">
+                  <thead>
+                    <tr>
+                      <th className="adm-th-cell">구성원</th>
+                      <th className="adm-th-cell">평가건</th>
+                      <th className="adm-th-cell">만족건</th>
+                      <th className="adm-th-cell">불만건</th>
+                      <th className="adm-th-cell">5060건</th>
+                      <th className="adm-th-cell">5대 도시건</th>
+                      <th className="adm-th-cell">문제해결건</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <SummaryTableSkeletonRows rows={4} cols={7} />
+                  </tbody>
+                </table>
               </div>
             ) : centerMonthDetailQuery.isError ? (
               <p className="adm-team-detail-error">
