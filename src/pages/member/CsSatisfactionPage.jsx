@@ -1,15 +1,11 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
-  Sparkles,
   ThumbsUp,
-  CalendarDays,
   CheckCircle2,
   ShieldAlert,
-  Lightbulb,
   MapPinned,
   UserCircle2,
-  ClipboardCheck,
 } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
 import { fetchMemberSatisfaction, fetchMemberFocusTasks } from '../../api/memberApi';
@@ -20,6 +16,9 @@ import './CsSatisfactionPage.css';
 const now = new Date();
 const currentYear = now.getFullYear();
 const currentMonth = now.getMonth() + 1;
+
+/** Good 멘트 티커 — 한 줄씩 자동 순환 */
+const GOOD_TICKER_INTERVAL_MS = 4500;
 
 const MOCK_DATA = {
   skill: '일반',
@@ -75,13 +74,46 @@ function computeAchievementVsTargetPct(actual, target) {
   return (actual / t) * 100;
 }
 
-function formatDate(dateStr) {
-  const d = new Date(dateStr);
-  return `${d.getMonth() + 1}월 ${d.getDate()}일`;
+/* ════════════════════════════════════════════════════════════
+   Good 멘트 티커 — 한 줄씩 자동 순환
+   ════════════════════════════════════════════════════════════ */
+function GoodTicker({ comments }) {
+  const list = Array.isArray(comments) && comments.length > 0 ? comments : [];
+  const [idx, setIdx] = useState(0);
+
+  useEffect(() => {
+    if (list.length <= 1) return undefined;
+    const t = setInterval(() => {
+      setIdx((prev) => (prev + 1) % list.length);
+    }, GOOD_TICKER_INTERVAL_MS);
+    return () => clearInterval(t);
+  }, [list.length]);
+
+  if (list.length === 0) return null;
+  const current = list[idx] ?? list[0];
+
+  return (
+    <div className="csx-ticker" role="status" aria-live="polite">
+      <span className="csx-ticker-icon" aria-hidden>
+        <ThumbsUp size={13} strokeWidth={2.3} />
+      </span>
+      <span className="csx-ticker-tag">Good 멘트</span>
+      <p key={current.id ?? idx} className="csx-ticker-text">
+        <span className="csx-ticker-quote" aria-hidden>{'“'}</span>
+        {current.comment}
+        <span className="csx-ticker-quote" aria-hidden>{'”'}</span>
+      </p>
+      {list.length > 1 ? (
+        <span className="csx-ticker-count" aria-label={`${idx + 1} / ${list.length}`}>
+          {idx + 1}/{list.length}
+        </span>
+      ) : null}
+    </div>
+  );
 }
 
 /* ════════════════════════════════════════════════════════════
-   ① 히어로 — 스킬·소속 + 당월 만족도 % + 달성 뱃지 + 영수증
+   ① 히어로 — 스킬·소속 + 당월 만족도 % + 달성 뱃지 + 영수증 + Good 티커
    ════════════════════════════════════════════════════════════ */
 function HeroPanel({ data, user, year, month }) {
   const d = data;
@@ -99,6 +131,11 @@ function HeroPanel({ data, user, year, month }) {
     .map((s) => (s == null ? '' : String(s).trim()))
     .filter(Boolean)
     .join(' · ');
+
+  const goodList =
+    Array.isArray(d.goodComments) && d.goodComments.length > 0
+      ? d.goodComments
+      : MOCK_DATA.goodComments;
 
   return (
     <section className="csx-hero">
@@ -175,6 +212,8 @@ function HeroPanel({ data, user, year, month }) {
           </span>
         </div>
       </div>
+
+      <GoodTicker comments={goodList} />
     </section>
   );
 }
@@ -249,81 +288,6 @@ function FocusAchievementCards({ data }) {
 }
 
 /* ════════════════════════════════════════════════════════════
-   ③ AI 인사이트 + Good 멘트
-   ════════════════════════════════════════════════════════════ */
-function AiGoodPanel({ data }) {
-  const actualPct = computeMonthlyActualPct(data);
-  const target = Number(data.monthlyTargetPct ?? data.target ?? 0);
-  const met = actualPct != null && target > 0 && actualPct >= target;
-  const improveText = met
-    ? '지금 흐름 그대로 유지하세요. 목표를 안정적으로 달성하고 있어요.'
-    : '마무리 멘트와 공감 표현을 한 번씩 점검해 보세요. 작은 차이가 만족도에 바로 반영돼요.';
-  const tipText = '마무리에 「추가로 도움이 필요하신가요?」 한마디가 만족도에 +2~3점 기여하는 사례가 많아요.';
-
-  const goodList =
-    Array.isArray(data.goodComments) && data.goodComments.length > 0
-      ? data.goodComments
-      : MOCK_DATA.goodComments;
-
-  return (
-    <section className="csx-aigood">
-      <div className="csx-aigood-block">
-        <div className="csx-section-head">
-          <span className="csx-section-title">
-            <Sparkles size={14} strokeWidth={2.2} className="csx-section-title-ico" />
-            AI 인사이트
-          </span>
-        </div>
-
-        <div className="csx-ai-item csx-ai-item--improve">
-          <div className="csx-ai-item-head">
-            <span className="csx-ai-item-icon" aria-hidden>
-              <ClipboardCheck size={13} strokeWidth={2.2} />
-            </span>
-            <span className="csx-ai-item-title">개선 포인트</span>
-          </div>
-          <p className="csx-ai-body">{improveText}</p>
-        </div>
-
-        <div className="csx-ai-item csx-ai-item--tip">
-          <div className="csx-ai-item-head">
-            <span className="csx-ai-item-icon" aria-hidden>
-              <Lightbulb size={13} strokeWidth={2.2} />
-            </span>
-            <span className="csx-ai-item-title">품질 팁</span>
-          </div>
-          <p className="csx-ai-body">{tipText}</p>
-        </div>
-      </div>
-
-      <div className="csx-aigood-block csx-aigood-block--good">
-        <div className="csx-section-head">
-          <span className="csx-section-title">
-            <ThumbsUp size={14} strokeWidth={2.2} className="csx-section-title-ico csx-section-title-ico--green" />
-            Good 멘트
-          </span>
-          <span className="csx-good-badge">{goodList.length}건</span>
-        </div>
-        <ul className="csx-good-list">
-          {goodList.map((item, idx) => (
-            <li key={item.id ?? idx} className="csx-good-item">
-              <span className="csx-good-quote" aria-hidden>{'“'}</span>
-              <div className="csx-good-body">
-                <p className="csx-good-text">{item.comment}</p>
-                <span className="csx-good-date">
-                  <CalendarDays size={11} strokeWidth={2} aria-hidden />
-                  {formatDate(item.date)}
-                </span>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </section>
-  );
-}
-
-/* ════════════════════════════════════════════════════════════
    메인 페이지
    ════════════════════════════════════════════════════════════ */
 export default function CsSatisfactionPage() {
@@ -365,6 +329,10 @@ export default function CsSatisfactionPage() {
         f.problemResolvedTargetPct ?? base.problemResolvedTargetPct ?? MOCK_DATA.problemResolvedTargetPct,
       monthlyTargetPct: base.monthlyTargetPct ?? base.target,
       receivedCount: base.receivedCount ?? base.totalSamples,
+      goodComments:
+        Array.isArray(base.goodComments) && base.goodComments.length > 0
+          ? base.goodComments
+          : MOCK_DATA.goodComments,
     };
   }, [satRaw, isError, focusRaw]);
 
@@ -380,8 +348,6 @@ export default function CsSatisfactionPage() {
       <HeroPanel data={satData} user={user} year={year} month={month} />
 
       <FocusAchievementCards data={satData} />
-
-      <AiGoodPanel data={satData} />
     </div>
   );
 }
