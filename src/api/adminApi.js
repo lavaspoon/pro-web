@@ -100,9 +100,10 @@ export const judgeCase = async ({
  * CS 만족도 — 연간 실(2depth)별 요약
  * GET /api/admin/cs-satisfaction/summary?year=&secondDepthDeptId=
  */
-export const fetchCsSatisfactionSummary = async (year, secondDepthDeptId) => {
+export const fetchCsSatisfactionSummary = async (year, secondDepthDeptId, month) => {
   const params = {};
   if (year != null) params.year = year;
+  if (month != null && month !== '') params.month = month;
   if (secondDepthDeptId != null && secondDepthDeptId !== '') {
     params.secondDepthDeptId = secondDepthDeptId;
   }
@@ -136,9 +137,10 @@ export const fetchCsSatisfactionMonthlyOverview = async (year) => {
  * CS 만족도 — 관리자 상단 KPI(센터 연간 달성·스킬 평균·중점 3종 당월)
  * GET /api/admin/cs-satisfaction/dashboard-kpis?year=
  */
-export const fetchCsSatisfactionDashboardKpis = async (year) => {
+export const fetchCsSatisfactionDashboardKpis = async (year, month) => {
   const params = {};
   if (year != null) params.year = year;
+  if (month != null && month !== '') params.month = month;
   const { data } = await axiosInstance.get('/api/admin/cs-satisfaction/dashboard-kpis', { params });
   return data;
 };
@@ -147,9 +149,10 @@ export const fetchCsSatisfactionDashboardKpis = async (year) => {
  * CS 만족도 — 연간 구성원 랭킹(만족·5대도시·5060·문제해결 각 상위 N명)
  * GET /api/admin/cs-satisfaction/ranking?year=&topN=3
  */
-export const fetchCsSatisfactionRanking = async (year, topN = 3) => {
+export const fetchCsSatisfactionRanking = async (year, topN = 3, month) => {
   const params = { topN };
   if (year != null) params.year = year;
+  if (month != null && month !== '') params.month = month;
   const { data } = await axiosInstance.get('/api/admin/cs-satisfaction/ranking', { params });
   return data;
 };
@@ -163,6 +166,17 @@ export const fetchCsSatisfactionCenterMonthDetail = async (secondDepthDeptId, ye
   if (year != null) params.year = year;
   if (month != null && month !== '') params.month = month;
   const { data } = await axiosInstance.get('/api/admin/cs-satisfaction/center-month-detail', { params });
+  return data;
+};
+
+/**
+ * 구성원별 연간 접수 row 월별 조회
+ * GET /api/admin/cs-satisfaction/member-monthly-rows?skid=&year=
+ */
+export const fetchCsSatisfactionMemberMonthlyRows = async (skid, year) => {
+  const params = { skid };
+  if (year != null) params.year = year;
+  const { data } = await axiosInstance.get('/api/admin/cs-satisfaction/member-monthly-rows', { params });
   return data;
 };
 

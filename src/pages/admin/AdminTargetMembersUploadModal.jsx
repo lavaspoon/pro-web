@@ -80,7 +80,7 @@ export default function AdminTargetMembersUploadModal({ open, onClose }) {
               <div className="sat-setup-pane-head sat-setup-pane-head--minimal">
                 <div>
                   <h3 className="sat-setup-pane-title">엑셀 업로드</h3>
-                  <p className="sat-setup-pane-sub">TB_YOU_TARGET 반영 후 TB_LMS_MEMBER를 동기화합니다.</p>
+                  <p className="sat-setup-pane-sub">TB_YOU_TARGET 반영 후 구성원 평가대상 여부 + 부서 스킬을 동기화합니다.</p>
                 </div>
               </div>
               <div className="sat-setup-pane-body sat-setup-pane-body--upload">
@@ -125,8 +125,9 @@ export default function AdminTargetMembersUploadModal({ open, onClose }) {
                 ) : null}
                 {uploadMutation.isSuccess ? (
                   <p className="sat-setup-ok sat-setup-inline-msg">
-                    반영 {uploadMutation.data?.inserted ?? 0} · 멤버동기화 {uploadMutation.data?.updatedMembers ?? 0}
-                    · 스킵 {uploadMutation.data?.skipped ?? 0}
+                    반영 {uploadMutation.data?.inserted ?? 0} · 구성원동기화 {uploadMutation.data?.updatedMembers ?? 0}
+                    · 부서스킬동기화 {uploadMutation.data?.updatedDepts ?? 0} · 스킵{' '}
+                    {uploadMutation.data?.skipped ?? 0}
                   </p>
                 ) : null}
               </div>

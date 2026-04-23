@@ -1291,20 +1291,20 @@
 }
 
 /* 실(부서)별 성과/만족도: 센터·그룹·실명(팀명) — 헤더·본문 가운데 (일반 tbody td:first-child 규칙보다 구체성 높음) */
-.adm-table--dept-performance thead th.adm-th-cell:nth-child(-n + 3),
-.adm-table--dept-performance thead th:nth-child(-n + 3) {
+.adm-table--dept-performance thead th.adm-th-cell:nth-child(-n + 4),
+.adm-table--dept-performance thead th:nth-child(-n + 4) {
   text-align: center;
 }
 
-.adm-table--dept-performance thead th:nth-child(-n + 3) .adm-th-btn {
+.adm-table--dept-performance thead th:nth-child(-n + 4) .adm-th-btn {
   justify-content: center;
 }
 
-.adm-table--dept-performance tbody td:nth-child(-n + 3) {
+.adm-table--dept-performance tbody td:nth-child(-n + 4) {
   text-align: center;
 }
 
-.adm-table--dept-performance tbody td:nth-child(-n + 3) .adm-dept-filter-btn {
+.adm-table--dept-performance tbody td:nth-child(-n + 4) .adm-dept-filter-btn {
   text-align: center;
 }
 

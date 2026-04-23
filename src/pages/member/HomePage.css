@@ -67,6 +67,50 @@
 }
 .hp-btn--primary:hover { background: #2272eb; }
 
+.hp-btn--month-stats {
+  padding: 8px 12px;
+  gap: 6px;
+  min-height: 38px;
+  background: linear-gradient(180deg, #f3f9ff 0%, #e2efff 100%);
+  border-color: #9fc4fb;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.95) inset,
+    0 8px 18px rgba(49, 130, 246, 0.18);
+}
+
+.hp-btn--month-stats:hover {
+  background: linear-gradient(180deg, #ebf5ff 0%, #dcecff 100%);
+  border-color: #7eb0fa;
+}
+
+.hp-month-stats-label {
+  font-size: 11.5px;
+  font-weight: 800;
+  color: #1f4f93;
+  letter-spacing: -0.02em;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: rgba(49, 130, 246, 0.14);
+}
+
+.hp-btn--month-stats .hp-month-chips {
+  display: inline-flex;
+  gap: 4px;
+  flex-wrap: nowrap;
+}
+
+.hp-btn--month-stats .hp-month-chip {
+  padding: 4px 8px;
+  font-size: 11.5px;
+  font-weight: 700;
+  line-height: 1;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.hp-btn--month-stats .hp-month-chip strong {
+  font-weight: 900;
+}
+
 /* ── 로딩/에러 ──────────────────────────────────────────────── */
 .hp-loading {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -146,6 +190,7 @@
   gap: 6px;
   position: relative;
   z-index: 1;
+  overflow: visible;
 }
 
 .hp-hero-label {
@@ -160,19 +205,24 @@
   display: flex;
   align-items: baseline;
   gap: 4px;
+  padding-block: 2px;
 }
 
 .hp-hero-num {
   font-size: clamp(40px, 5.5vw, 54px);
   font-weight: 800;
-  letter-spacing: -0.055em;
+  letter-spacing: -0.03em;
   color: #191f28;
-  line-height: 1;
+  line-height: 1.14;
   font-variant-numeric: tabular-nums;
   background: linear-gradient(180deg, #191f28 0%, #3182f6 140%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+  -webkit-text-fill-color: transparent;
+  padding: 2px 4px 5px 2px;
+  display: inline-block;
+  overflow: visible;
 }
 
 .hp-hero-num--zero {
@@ -274,7 +324,10 @@
   font-size: 17px;
   font-weight: 800;
   color: #3182f6;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.02em;
+  line-height: 1.12;
+  display: inline-block;
+  padding: 1px 2px 2px 1px;
 }
 
 .hp-breakdown-hint {
@@ -475,10 +528,78 @@
 /* 트랙 */
 .hp-prog-track {
   position: relative;
-  height: 10px;
-  background: #f2f4f6;
+  height: 12px;
+  background: linear-gradient(180deg, #eef2f7 0%, #e6ebf2 100%);
   border-radius: 999px;
   overflow: visible;
+  border: 1px solid rgba(49, 130, 246, 0.14);
+  box-shadow:
+    inset 0 1px 2px rgba(255, 255, 255, 0.95),
+    0 10px 24px rgba(49, 130, 246, 0.12);
+}
+
+.hp-prog-track::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 999px;
+  pointer-events: none;
+  background: linear-gradient(
+    110deg,
+    rgba(255, 255, 255, 0) 10%,
+    rgba(255, 255, 255, 0.75) 48%,
+    rgba(255, 255, 255, 0) 86%
+  );
+  transform: translateX(-120%);
+  mix-blend-mode: screen;
+  opacity: 0;
+}
+
+.hp-prog-stamps {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -26px;
+  height: 20px;
+  pointer-events: none;
+}
+
+.hp-prog-stamp {
+  position: absolute;
+  transform: translateX(-50%);
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1;
+  color: #7b8794;
+  background: #ffffff;
+  border: 1px dashed #cbd5e1;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
+}
+
+.hp-prog-stamp::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: 100%;
+  width: 1.5px;
+  height: 6px;
+  background: rgba(100, 116, 139, 0.4);
+}
+
+.hp-prog-stamp.is-achieved {
+  color: #047857;
+  background: linear-gradient(180deg, #ecfdf5 0%, #d1fae5 100%);
+  border: 1px solid rgba(16, 185, 129, 0.42);
+  box-shadow:
+    0 2px 7px rgba(16, 185, 129, 0.24),
+    0 0 0 1px rgba(16, 185, 129, 0.18) inset;
 }
 
 /* 3등급 배경 컬러 */
@@ -486,12 +607,13 @@
   position: absolute;
   top: 0;
   height: 100%;
+  box-shadow: 0 0 12px rgba(49, 130, 246, 0.2);
 }
 
-.hp-prog-seg--1 { background: linear-gradient(90deg, #ffd966, #ffb700); }
-.hp-prog-seg--2 { background: linear-gradient(90deg, #74a8f9, #3182f6); }
+.hp-prog-seg--1 { background: linear-gradient(90deg, #ffcf56, #ff8f38); }
+.hp-prog-seg--2 { background: linear-gradient(90deg, #6f9dff, #4f46e5); }
 .hp-prog-seg--3 {
-  background: linear-gradient(90deg, #34c48b, #12a765);
+  background: linear-gradient(90deg, #2dd4bf, #06b6d4);
   border-radius: 0 999px 999px 0;
 }
 
@@ -514,15 +636,25 @@
 
 /* 점 */
 .hp-prog-dot {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   border: 3px solid #fff;
-  box-shadow: 0 2px 6px rgba(25, 31, 40, 0.2);
+  box-shadow:
+    0 2px 8px rgba(25, 31, 40, 0.22),
+    0 0 18px rgba(49, 130, 246, 0.26);
 }
 
-.hp-prog-dot--top { background: #ff9f1c; }
-.hp-prog-dot--me  { background: #3182f6; box-shadow: 0 2px 12px rgba(49, 130, 246, 0.5); }
+.hp-prog-dot--top {
+  background: radial-gradient(circle at 35% 30%, #ffd07a 0%, #ff9f1c 60%, #ea7a00 100%);
+}
+
+.hp-prog-dot--me  {
+  background: radial-gradient(circle at 30% 30%, #85b6ff 0%, #3182f6 55%, #1f5fcc 100%);
+  box-shadow:
+    0 2px 12px rgba(49, 130, 246, 0.5),
+    0 0 20px rgba(49, 130, 246, 0.45);
+}
 
 /* 점과 핀 사이 연결선 */
 .hp-prog-stem {
@@ -550,14 +682,18 @@
 }
 
 .hp-prog-pin--top {
-  background: #fff4e0;
-  color: #c46a00;
-  border: 1px solid #ffd9a6;
+  background: linear-gradient(180deg, #fff6e8 0%, #ffe4ba 100%);
+  color: #a65500;
+  border: 1px solid #ffc97a;
 }
 
 .hp-prog-pin--me {
-  background: #3182f6;
+  background: linear-gradient(180deg, #4f94ff 0%, #2563eb 100%);
   color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  box-shadow:
+    0 6px 18px rgba(37, 99, 235, 0.38),
+    0 0 0 1px rgba(255, 255, 255, 0.2) inset;
 }
 
 .hp-prog-pin-label { opacity: 0.8; font-weight: 600; }
@@ -721,10 +857,12 @@
 .hp-cases-item-val {
   font-size: 22px;
   font-weight: 800;
-  letter-spacing: -0.05em;
+  letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
-  line-height: 1;
+  line-height: 1.12;
   color: #191f28;
+  display: inline-block;
+  padding: 1px 2px 2px 1px;
 }
 
 .hp-cases-item-label {

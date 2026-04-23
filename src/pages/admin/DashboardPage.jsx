@@ -92,6 +92,7 @@ export default function DashboardPage() {
   /** null = 미적용, 문자열(빈 문자열 포함) = 해당 값과 일치하는 행만 */
   const [filterCenter, setFilterCenter] = useState(null);
   const [filterGroup, setFilterGroup] = useState(null);
+  const [filterSkill, setFilterSkill] = useState(null);
   const [sortConfig, setSortConfig] = useState({
     key: 'centerName',
     direction: 'asc',
@@ -142,9 +143,13 @@ export default function DashboardPage() {
         const g = normFilterKey(t.groupName);
         if (filterGroup === '' ? g !== '' : g !== filterGroup) return false;
       }
+      if (filterSkill !== null) {
+        const s = normFilterKey(t.skill);
+        if (filterSkill === '' ? s !== '' : s !== filterSkill) return false;
+      }
       return true;
     });
-  }, [teamsEnriched, filterCenter, filterGroup]);
+  }, [teamsEnriched, filterCenter, filterGroup, filterSkill]);
 
   const sortedTeams = useMemo(() => {
     const list = [...teamsFiltered];
@@ -152,7 +157,7 @@ export default function DashboardPage() {
     const dir = direction === 'asc' ? 1 : -1;
     const compare = (a, b) => {
       let primary;
-      if (key === 'name' || key === 'centerName' || key === 'groupName') {
+      if (key === 'name' || key === 'centerName' || key === 'groupName' || key === 'skill') {
         primary = localeKo(a[key], b[key]) * dir;
       } else {
         const va = Number(a[key] ?? 0);
@@ -204,7 +209,7 @@ export default function DashboardPage() {
   const handleSort = (key) => {
     setSortConfig((prev) => {
       if (prev.key !== key) {
-        const isText = key === 'name' || key === 'centerName' || key === 'groupName';
+        const isText = key === 'name' || key === 'centerName' || key === 'groupName' || key === 'skill';
         return { key, direction: isText ? 'asc' : 'desc' };
       }
       return {
@@ -226,9 +231,16 @@ export default function DashboardPage() {
     setFilterGroup((prev) => (prev === key ? null : key));
   };
 
+  const handleSkillFilterClick = (e, team) => {
+    e.stopPropagation();
+    const key = normFilterKey(team.skill);
+    setFilterSkill((prev) => (prev === key ? null : key));
+  };
+
   const clearDeptFilters = () => {
     setFilterCenter(null);
     setFilterGroup(null);
+    setFilterSkill(null);
   };
 
   if (isLoading || !data) {
@@ -499,11 +511,11 @@ export default function DashboardPage() {
             <h2 className="adm-section-heading">실(부서)별 성과</h2>
             <p className="adm-section-hint">
               행을 클릭하면 해당 팀 구성원을 아래에 표시 ·{' '}
-              <strong>센터·그룹</strong>을 클릭하면 같은 값만 필터(다시 클릭하면 해제)
+              <strong>센터·그룹·스킬</strong>을 클릭하면 같은 값만 필터(다시 클릭하면 해제)
             </p>
           </div>
         </div>
-        {(filterCenter !== null || filterGroup !== null) && (
+        {(filterCenter !== null || filterGroup !== null || filterSkill !== null) && (
           <div className="adm-dept-filter-bar" aria-label="적용 중인 필터">
             <span className="adm-dept-filter-bar__label">필터</span>
             {filterCenter !== null && (
@@ -528,6 +540,17 @@ export default function DashboardPage() {
                 <X className="adm-dept-filter-chip__x" size={14} strokeWidth={2.2} aria-hidden />
               </button>
             )}
+            {filterSkill !== null && (
+              <button
+                type="button"
+                className="adm-dept-filter-chip"
+                onClick={() => setFilterSkill(null)}
+                aria-label={`스킬 필터 해제: ${filterSkill === '' ? '없음' : filterSkill}`}
+              >
+                스킬: {filterSkill === '' ? '없음' : filterSkill}
+                <X className="adm-dept-filter-chip__x" size={14} strokeWidth={2.2} aria-hidden />
+              </button>
+            )}
             <button type="button" className="adm-dept-filter-clear" onClick={clearDeptFilters}>
               전체 해제
             </button>
@@ -546,6 +569,12 @@ export default function DashboardPage() {
                 <SortTh
                   label="그룹"
                   sortKey="groupName"
+                  sortConfig={sortConfig}
+                  onSort={handleSort}
+                />
+                <SortTh
+                  label="스킬"
+                  sortKey="skill"
                   sortConfig={sortConfig}
                   onSort={handleSort}
                 />
@@ -584,7 +613,7 @@ export default function DashboardPage() {
             <tbody>
               {sortedTeams.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="adm-table-empty">
+                  <td colSpan={8} className="adm-table-empty">
                     {teamsEnriched.length === 0
                       ? 'leaf 팀이 없습니다. (부서 트리·depth 설정을 확인하세요)'
                       : '조건에 맞는 실이 없습니다. 필터를 해제하거나 다른 값을 선택해 보세요.'}
@@ -628,6 +657,20 @@ export default function DashboardPage() {
                       </button>
                     </td>
                     <td>
+                      <button
+                        type="button"
+                        className={`adm-dept-filter-btn ${
+                          filterSkill !== null && normFilterKey(team.skill) === filterSkill
+                            ? 'is-active'
+                            : ''
+                        }`}
+                        onClick={(e) => handleSkillFilterClick(e, team)}
+                        title="이 스킬만 보기 (같은 값을 다시 클릭하면 해제)"
+                      >
+                        {team.skill?.trim() ? team.skill : '—'}
+                      </button>
+                    </td>
+                    <td>
                       <span className="adm-team-name">{team.name}</span>
                       <span className="adm-member-badge">{team.memberCount}명</span>
                     </td>
@@ -642,7 +685,7 @@ export default function DashboardPage() {
             {sortedTeams.length > 0 && (
               <tfoot>
                 <tr className="adm-table-total-row">
-                  <td colSpan={3}>
+                  <td colSpan={4}>
                     <span className="adm-table-total-label">합계</span>
                     <span className="adm-table-total-sublabel">{sortedTeams.length}개 실</span>
                   </td>

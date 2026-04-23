@@ -1,8 +1,8 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useMemberModalStore } from '../../store/memberModalStore';
-import { Sparkles, ChevronRight, FileText } from 'lucide-react';
+import { Sparkles, ChevronRight } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
 import { fetchMemberHome, fetchMyCases } from '../../api/memberApi';
 import Skeleton from '../../components/common/Skeleton';
@@ -10,7 +10,6 @@ import '../admin/DashboardPage.css';
 import './HomePage.css';
 
 const now = new Date();
-const currentMonth = now.toLocaleDateString('ko-KR', { month: 'long' });
 const currentYear = now.getFullYear();
 const currentMonthNum = now.getMonth() + 1;
 
@@ -27,6 +26,37 @@ function getTierIdx(n) {
   if (n >= 10) return 1;
   if (n >= 1)  return 0;
   return -1;
+}
+
+function useCountUp(target, duration = 1200) {
+  const [value, setValue] = useState(0);
+
+  useEffect(() => {
+    const end = Number(target) || 0;
+    if (end <= 0) {
+      setValue(0);
+      return undefined;
+    }
+
+    let rafId = 0;
+    const startedAt = performance.now();
+    const easeOutCubic = (t) => 1 - (1 - t) ** 3;
+
+    const tick = (nowMs) => {
+      const p = Math.min(1, (nowMs - startedAt) / duration);
+      const eased = easeOutCubic(p);
+      setValue(Math.round(end * eased));
+      if (p < 1) {
+        rafId = requestAnimationFrame(tick);
+      }
+    };
+
+    setValue(0);
+    rafId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafId);
+  }, [target, duration]);
+
+  return value;
 }
 
 function HomeSkeleton({ userName }) {
@@ -128,6 +158,11 @@ export default function HomePage() {
     return { selected, pending, rejected };
   }, [cases]);
 
+  const estimatedWonTarget = data?.myTotalSelected && data?.myTotalSelected > 0
+    ? (TIERS[getTierIdx(data.myTotalSelected)]?.rateWon ?? 0) * data.myTotalSelected
+    : 0;
+  const animatedEstimatedWon = useCountUp(estimatedWonTarget, 1350);
+
   if (isLoading || !data) return <HomeSkeleton userName={user?.name} />;
   if (isError) return <div className="hp-error">오류: {error?.message}</div>;
 
@@ -169,9 +204,20 @@ export default function HomePage() {
           <p className="hp-header-sub">{user?.name ?? '구성원'}님</p>
         </div>
         <div className="hp-header-actions">
-          <Link to="/member/cases" className="hp-btn hp-btn--ghost">
-            <FileText size={15} strokeWidth={2.25} />
-            접수 내역
+          <Link to="/member/cases" className="hp-btn hp-btn--ghost hp-btn--month-stats">
+            <span className="hp-month-stats-label">접수 현황</span>
+            <span className="hp-month-chips">
+              <span className="hp-month-chip hp-month-chip--selected">
+                선정 <strong>{monthStats.selected}</strong>
+              </span>
+              <span className="hp-month-chip hp-month-chip--pending">
+                심사 <strong>{monthStats.pending}</strong>
+              </span>
+              <span className="hp-month-chip hp-month-chip--rejected">
+                비선정 <strong>{monthStats.rejected}</strong>
+              </span>
+            </span>
+            <ChevronRight size={14} strokeWidth={2.5} className="hp-month-strip-arrow" />
           </Link>
           <button type="button" className="hp-btn hp-btn--primary" onClick={openSubmit}>
             <Sparkles size={15} strokeWidth={2.25} />
@@ -190,7 +236,7 @@ export default function HomePage() {
           <div className="hp-hero-amount">
             {estimatedWon > 0 ? (
               <>
-                <span className="hp-hero-num">{estimatedWon.toLocaleString('ko-KR')}</span>
+                <span className="hp-hero-num">{animatedEstimatedWon.toLocaleString('ko-KR')}</span>
                 <span className="hp-hero-won">원</span>
               </>
             ) : (
@@ -230,7 +276,7 @@ export default function HomePage() {
           <div className="hp-breakdown-row hp-breakdown-row--total">
             <span className="hp-breakdown-label">예상 지급액</span>
             <span className="hp-breakdown-value">
-              <strong>{estimatedWon.toLocaleString('ko-KR')}</strong>원
+              <strong>{animatedEstimatedWon.toLocaleString('ko-KR')}</strong>원
             </span>
           </div>
 
@@ -243,22 +289,6 @@ export default function HomePage() {
           )}
         </div>
 
-        {/* 이번 달 접수 현황 — 통합 칩 */}
-        <Link to="/member/cases" className="hp-month-strip">
-          <span className="hp-month-strip-title">{currentMonth} 접수</span>
-          <span className="hp-month-chips">
-            <span className="hp-month-chip hp-month-chip--selected">
-              선정 <strong>{monthStats.selected}</strong>
-            </span>
-            <span className="hp-month-chip hp-month-chip--pending">
-              심사 <strong>{monthStats.pending}</strong>
-            </span>
-            <span className="hp-month-chip hp-month-chip--rejected">
-              비선정 <strong>{monthStats.rejected}</strong>
-            </span>
-          </span>
-          <ChevronRight size={15} strokeWidth={2.5} className="hp-month-strip-arrow" />
-        </Link>
       </section>
 
       {/* ═══════════════════════════════════════════════════════
@@ -285,6 +315,21 @@ export default function HomePage() {
           {/* 좌측 — 프로그레스 */}
           <div className="hp-prog">
             <div className="hp-prog-track">
+              <div className="hp-prog-stamps" aria-hidden>
+                {tierStops.map((t) => {
+                  const achieved = myTotalSelected >= t.minCases;
+                  return (
+                    <div
+                      key={`stamp-${t.id}`}
+                      className={`hp-prog-stamp ${achieved ? 'is-achieved' : ''}`}
+                      style={{ left: `${t.pct}%` }}
+                      title={`${t.name} (${t.range})`}
+                    >
+                      {achieved ? '✓' : '○'}
+                    </div>
+                  );
+                })}
+              </div>
               <div className="hp-prog-seg hp-prog-seg--1" style={{ left: `${tierStops[0].pct}%`, width: `${tierStops[1].pct - tierStops[0].pct}%` }} />
               <div className="hp-prog-seg hp-prog-seg--2" style={{ left: `${tierStops[1].pct}%`, width: `${tierStops[2].pct - tierStops[1].pct}%` }} />
               <div className="hp-prog-seg hp-prog-seg--3" style={{ left: `${tierStops[2].pct}%`, width: `${100 - tierStops[2].pct}%` }} />
