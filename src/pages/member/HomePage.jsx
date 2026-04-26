@@ -69,11 +69,11 @@ function HomeSkeleton({ userName }) {
         </div>
         <div className="hp-header-actions">
           <Skeleton width={96} height={34} radius={10} />
-          <Skeleton width={96} height={34} radius={10} />
         </div>
       </header>
 
       <section className="hp-hero">
+        <Skeleton height={44} radius={14} />
         <div className="hp-hero-top" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
           <Skeleton variant="text" width={120} height={12} />
           <Skeleton width={200} height={40} radius={10} />
@@ -158,10 +158,9 @@ export default function HomePage() {
     return { selected, pending, rejected };
   }, [cases]);
 
-  const estimatedWonTarget = data?.myTotalSelected && data?.myTotalSelected > 0
-    ? (TIERS[getTierIdx(data.myTotalSelected)]?.rateWon ?? 0) * data.myTotalSelected
-    : 0;
-  const animatedEstimatedWon = useCountUp(estimatedWonTarget, 1350);
+  // 공식 지급 예정액 = 백엔드가 반영 처리한 월별 등급 합산 (CS 달성 월만 포함)
+  // hooks 규칙상 조건문 앞에서 호출해야 하므로 data?.totalReflectedWon으로 안전하게 접근
+  const animatedEstimatedWon = useCountUp(data?.totalReflectedWon ?? 0, 1350);
 
   if (isLoading || !data) return <HomeSkeleton userName={user?.name} />;
   if (isError) return <div className="hp-error">오류: {error?.message}</div>;
@@ -173,15 +172,19 @@ export default function HomePage() {
     myIndividualRank,
     individualRankTotal = 0,
     topSelected = 0,
+    totalReflectedWon = 0,
+    currentMonthCsTargetMet = null,
   } = data;
+
+  const estimatedWon = totalReflectedWon;
 
   const tierIdx     = getTierIdx(myTotalSelected);
   const currentTier = tierIdx >= 0 ? TIERS[tierIdx] : null;
   const nextTier    = tierIdx < TIERS.length - 1 ? TIERS[tierIdx + 1] : null;
 
-  const estimatedWon = currentTier ? myTotalSelected * currentTier.rateWon : 0;
   const casesToNext  = nextTier ? nextTier.minCases - myTotalSelected : 0;
-  const boostWon     = nextTier ? (nextTier.minCases * nextTier.rateWon) - estimatedWon : 0;
+  // 다음 등급 도달 시 추가로 받을 예상 금액 (이번 달 1개월분 기준 차액)
+  const boostWon     = nextTier ? nextTier.rateWon - (currentTier?.rateWon ?? 0) : 0;
 
   // 프로그레스 스케일 (0 ~ 25건 기준 — 토피아 이상 커버)
   const SCALE_MAX = 25;
@@ -194,6 +197,11 @@ export default function HomePage() {
   const isInProgram = currentMonthNum >= 1 && currentMonthNum <= PROGRAM_END_MONTH;
   const remainLeft  = isInProgram ? Math.max(0, monthlyLimit - monthlySelected) : 0;
 
+  // 이달 선정 확정 전 건수 반영 시 예상 누적 위치
+  const expectedSelected = myTotalSelected + monthStats.selected;
+  const expectedPct      = clampPct(expectedSelected);
+  const showExpected     = isInProgram && monthStats.selected > 0;
+
   return (
     <div className="page-container adm-dashboard adm-dashboard--yp fade-in yp-home hp-home">
 
@@ -204,21 +212,6 @@ export default function HomePage() {
           <p className="hp-header-sub">{user?.name ?? '구성원'}님</p>
         </div>
         <div className="hp-header-actions">
-          <Link to="/member/cases" className="hp-btn hp-btn--ghost hp-btn--month-stats">
-            <span className="hp-month-stats-label">접수 현황</span>
-            <span className="hp-month-chips">
-              <span className="hp-month-chip hp-month-chip--selected">
-                선정 <strong>{monthStats.selected}</strong>
-              </span>
-              <span className="hp-month-chip hp-month-chip--pending">
-                심사 <strong>{monthStats.pending}</strong>
-              </span>
-              <span className="hp-month-chip hp-month-chip--rejected">
-                비선정 <strong>{monthStats.rejected}</strong>
-              </span>
-            </span>
-            <ChevronRight size={14} strokeWidth={2.5} className="hp-month-strip-arrow" />
-          </Link>
           <button type="button" className="hp-btn hp-btn--primary" onClick={openSubmit}>
             <Sparkles size={15} strokeWidth={2.25} />
             사례 접수
@@ -230,6 +223,32 @@ export default function HomePage() {
           ① 금액 중심 히어로 — 토스 스타일
          ═══════════════════════════════════════════════════════ */}
       <section className="hp-hero">
+        {/* 이번 달 접수 현황 — 히어로 도입부 */}
+        <Link to="/member/cases" className="hp-month-strip">
+          <span className="hp-month-strip-title">{currentMonthNum}월 현황</span>
+          <span className="hp-month-stats">
+            <span className="hp-month-stat hp-month-stat--selected">
+              <span className="hp-month-stat-dot" />
+              <span className="hp-month-stat-label">선정</span>
+              <strong className="hp-month-stat-val">{monthStats.selected}</strong>
+            </span>
+            <span className="hp-month-stat hp-month-stat--pending">
+              <span className="hp-month-stat-dot" />
+              <span className="hp-month-stat-label">심사</span>
+              <strong className="hp-month-stat-val">{monthStats.pending}</strong>
+            </span>
+            <span className="hp-month-stat hp-month-stat--rejected">
+              <span className="hp-month-stat-dot" />
+              <span className="hp-month-stat-label">비선정</span>
+              <strong className="hp-month-stat-val">{monthStats.rejected}</strong>
+            </span>
+          </span>
+          <span className="hp-month-strip-link">
+            전체보기
+            <ChevronRight size={13} strokeWidth={2.5} />
+          </span>
+        </Link>
+
         {/* 상단 중앙: 금액 */}
         <div className="hp-hero-top">
           <p className="hp-hero-label">올해 예상 인센티브</p>
@@ -247,7 +266,7 @@ export default function HomePage() {
             <p className="hp-hero-sub">
               <span className="hp-hero-tier">{currentTier.name}</span>
               <span className="hp-hero-dot" />
-              건당 {currentTier.rateWon.toLocaleString('ko-KR')}원
+              월 {currentTier.rateWon.toLocaleString('ko-KR')}원
             </p>
           ) : (
             <p className="hp-hero-sub">선정 1건부터 인센티브가 시작됩니다</p>
@@ -257,34 +276,34 @@ export default function HomePage() {
         {/* 금액 형성 내역 — 영수증 느낌 */}
         <div className="hp-breakdown">
           <div className="hp-breakdown-row">
-            <span className="hp-breakdown-label">선정 건수</span>
+            <span className="hp-breakdown-label">누적 선정 건수</span>
             <span className="hp-breakdown-value">
               <strong>{myTotalSelected}</strong>건
             </span>
           </div>
           <div className="hp-breakdown-row">
-            <span className="hp-breakdown-label">건당 단가</span>
+            <span className="hp-breakdown-label">이달 만족도 달성 여부</span>
             <span className="hp-breakdown-value">
-              {currentTier ? (
-                <><strong>{currentTier.rateWon.toLocaleString('ko-KR')}</strong>원</>
-              ) : (
-                <span className="hp-breakdown-muted">등급 미달</span>
+              {currentMonthCsTargetMet === true && (
+                <span className="hp-breakdown-cs hp-breakdown-cs--met">달성</span>
               )}
-            </span>
-          </div>
-          <div className="hp-breakdown-divider" />
-          <div className="hp-breakdown-row hp-breakdown-row--total">
-            <span className="hp-breakdown-label">예상 지급액</span>
-            <span className="hp-breakdown-value">
-              <strong>{animatedEstimatedWon.toLocaleString('ko-KR')}</strong>원
+              {currentMonthCsTargetMet === false && (
+                <span className="hp-breakdown-cs hp-breakdown-cs--no">미달성</span>
+              )}
+              {currentMonthCsTargetMet == null && (
+                <span className="hp-breakdown-muted">집계 중</span>
+              )}
             </span>
           </div>
 
           {nextTier && isInProgram && (
             <div className="hp-breakdown-hint">
               <span className="hp-breakdown-hint-dot" />
+              {currentMonthCsTargetMet === false && (
+                <span className="hp-breakdown-hint-cs-warn">만족도 달성 후</span>
+              )}
               <strong>{casesToNext}건</strong> 더 선정되면 <strong>{nextTier.name}</strong> 등급으로
-              <span className="hp-breakdown-boost"> +{boostWon.toLocaleString('ko-KR')}원</span>
+              <span className="hp-breakdown-boost"> 월 +{boostWon.toLocaleString('ko-KR')}원</span>
             </div>
           )}
         </div>
@@ -342,6 +361,17 @@ export default function HomePage() {
                 </div>
               )}
 
+              {showExpected && (
+                <div className="hp-prog-marker hp-prog-marker--expected" style={{ left: `${expectedPct}%` }}>
+                  <div className="hp-prog-pin hp-prog-pin--expected">
+                    <span className="hp-prog-pin-label">예상</span>
+                    <span className="hp-prog-pin-val">{expectedSelected}</span>
+                  </div>
+                  <div className="hp-prog-stem hp-prog-stem--expected" />
+                  <div className="hp-prog-dot hp-prog-dot--expected" />
+                </div>
+              )}
+
               <div className="hp-prog-marker hp-prog-marker--me" style={{ left: `${myPct}%` }}>
                 <div className="hp-prog-dot hp-prog-dot--me" />
                 <div className="hp-prog-stem hp-prog-stem--me" />
@@ -375,7 +405,7 @@ export default function HomePage() {
                 <div key={tier.id}
                   className={`hp-tier-row hp-tier-row--${tier.id}${isActive ? ' is-active' : ''}`}>
                   <span className="hp-tier-row-dot" />
-                  <span className="hp-tier-row-name">{tier.name.replace('YOU ', '')}</span>
+                  <span className="hp-tier-row-name">{tier.name}</span>
                   <span className="hp-tier-row-range">{tier.range}</span>
                   <span className="hp-tier-row-rate">{tier.rateWon / 10000}만</span>
                 </div>

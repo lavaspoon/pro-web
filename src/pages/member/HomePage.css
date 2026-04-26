@@ -305,6 +305,29 @@
   font-weight: 500;
 }
 
+/* 이달 만족도 달성 여부 뱃지 */
+.hp-breakdown-cs {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.hp-breakdown-cs--met {
+  background: linear-gradient(180deg, #34d399 0%, #059669 100%);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+.hp-breakdown-cs--no {
+  background: linear-gradient(180deg, #fb7185 0%, #e11d48 100%);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(225, 29, 72, 0.25);
+}
+
 .hp-breakdown-divider {
   height: 1px;
   background: #e5e8eb;
@@ -362,23 +385,43 @@
   color: #3182f6;
 }
 
-/* ── 월 접수 통합 칩 (히어로 안) ─────────────────────────────── */
+.hp-breakdown-hint-cs-warn {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(239, 68, 68, 0.09);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  font-size: 11px;
+  font-weight: 700;
+  color: #dc2626;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── 월 접수 현황 스트립 (히어로 도입부) ─────────────────────── */
 .hp-month-strip {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
+  gap: 14px;
+  padding: 12px 16px;
   background: #ffffff;
   border: 1px solid #eceff2;
-  border-radius: 12px;
+  border-radius: 14px;
   text-decoration: none;
   color: inherit;
-  transition: border-color 0.15s;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.08s;
   position: relative;
   z-index: 1;
+  box-shadow: 0 1px 2px rgba(25, 31, 40, 0.03);
 }
 
-.hp-month-strip:hover { border-color: #d1d6db; }
+.hp-month-strip:hover {
+  border-color: #c6d3e5;
+  box-shadow: 0 4px 12px rgba(49, 130, 246, 0.08);
+}
+.hp-month-strip:active { transform: scale(0.997); }
 
 .hp-month-strip-title {
   font-size: 12px;
@@ -386,36 +429,94 @@
   color: #4b5662;
   letter-spacing: -0.02em;
   flex-shrink: 0;
+  padding: 3px 8px;
+  background: #f2f4f6;
+  border-radius: 6px;
 }
 
-.hp-month-chips {
+.hp-month-stats {
   display: inline-flex;
-  gap: 6px;
+  gap: 7px;
   flex: 1;
+  justify-content: center;
   flex-wrap: wrap;
 }
 
-.hp-month-chip {
+.hp-month-stat {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 3px 9px;
-  border-radius: 999px;
+  gap: 5px;
   font-size: 12px;
-  font-weight: 600;
   letter-spacing: -0.02em;
+  padding: 4px 10px 4px 8px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  white-space: nowrap;
 }
 
-.hp-month-chip strong {
+.hp-month-stat-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.hp-month-stat-label {
+  font-weight: 600;
+}
+
+.hp-month-stat-val {
+  font-size: 15px;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+  line-height: 1;
 }
 
-.hp-month-chip--selected { background: #e7f1ff; color: #1b64da; }
-.hp-month-chip--pending  { background: #fff4d9; color: #c58a00; }
-.hp-month-chip--rejected { background: #f2f4f6; color: #6b7684; }
+.hp-month-stat--selected {
+  background: rgba(49, 130, 246, 0.08);
+  border-color: rgba(49, 130, 246, 0.2);
+}
+.hp-month-stat--selected .hp-month-stat-dot  { background: #3182f6; }
+.hp-month-stat--selected .hp-month-stat-label { color: #2563b0; }
+.hp-month-stat--selected .hp-month-stat-val  { color: #3182f6; }
 
-.hp-month-strip-arrow { color: #b0b8c1; flex-shrink: 0; }
+.hp-month-stat--pending {
+  background: rgba(255, 159, 28, 0.08);
+  border-color: rgba(255, 159, 28, 0.22);
+}
+.hp-month-stat--pending .hp-month-stat-dot  { background: #ff9f1c; }
+.hp-month-stat--pending .hp-month-stat-label { color: #b86800; }
+.hp-month-stat--pending .hp-month-stat-val  { color: #e08800; }
+
+.hp-month-stat--rejected {
+  background: rgba(139, 149, 161, 0.08);
+  border-color: rgba(139, 149, 161, 0.22);
+}
+.hp-month-stat--rejected .hp-month-stat-dot  { background: #b0b8c1; }
+.hp-month-stat--rejected .hp-month-stat-label { color: #6b7684; }
+.hp-month-stat--rejected .hp-month-stat-val  { color: #6b7684; }
+
+.hp-month-strip-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #8b95a1;
+  letter-spacing: -0.02em;
+  flex-shrink: 0;
+}
+
+.hp-month-strip:hover .hp-month-strip-link { color: #3182f6; }
+
+@media (max-width: 480px) {
+  .hp-month-strip { gap: 8px; padding: 10px 12px; }
+  .hp-month-stats { gap: 5px; }
+  .hp-month-stat { padding: 3px 8px 3px 7px; }
+  .hp-month-stat-val { font-size: 13px; }
+  .hp-month-strip-link { display: none; }
+}
 
 /* ═══════════════════════════════════════════════════════════
    ② 등급 프로그레스 — 3구간 + 1위/나 마커
@@ -666,6 +767,7 @@
 
 .hp-prog-stem--top { color: #ff9f1c; }
 .hp-prog-stem--me  { color: #3182f6; }
+.hp-prog-stem--expected { color: #10b981; }
 
 /* 핀 (라벨) */
 .hp-prog-pin {
@@ -694,6 +796,27 @@
   box-shadow:
     0 6px 18px rgba(37, 99, 235, 0.38),
     0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+}
+
+.hp-prog-pin--expected {
+  background: linear-gradient(180deg, #ecfdf5 0%, #d1fae5 100%);
+  color: #065f46;
+  border: 1px solid #6ee7b7;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
+}
+
+/* 예상 마커 — 위치 및 점 */
+.hp-prog-marker--expected {
+  top: auto;
+  bottom: 5px;
+  flex-direction: column-reverse;
+}
+
+.hp-prog-dot--expected {
+  background: radial-gradient(circle at 35% 30%, #6ee7b7 0%, #10b981 60%, #059669 100%);
+  box-shadow:
+    0 2px 8px rgba(25, 31, 40, 0.18),
+    0 0 16px rgba(16, 185, 129, 0.35);
 }
 
 .hp-prog-pin-label { opacity: 0.8; font-weight: 600; }
