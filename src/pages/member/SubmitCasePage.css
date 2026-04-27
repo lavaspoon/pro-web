@@ -28,13 +28,17 @@
   .submit-layout {
     grid-template-columns: 1fr;
   }
-  .submit-guide { order: -1; }
+
+  .submit-guide {
+    order: -1;
+  }
 }
 
 /* 모달 안: 단일 열 폼 */
 .submit-layout-modal {
   display: block;
 }
+
 .submit-layout-modal .submit-guide {
   display: none;
 }
@@ -196,7 +200,9 @@
 }
 
 @media (max-width: 480px) {
-  .form-row { grid-template-columns: 1fr; }
+  .form-row {
+    grid-template-columns: 1fr;
+  }
 }
 
 .form-row-call-datetime {
@@ -270,7 +276,10 @@
   color: var(--text-primary);
   margin-bottom: 10px;
 }
-.guide-header svg { color: var(--accent); }
+
+.guide-header svg {
+  color: var(--accent);
+}
 
 .guide-list {
   list-style: none;
@@ -287,19 +296,27 @@
   position: relative;
   letter-spacing: -0.01em;
 }
+
 .guide-list li::before {
   content: '·';
   position: absolute;
   left: 4px;
   color: var(--text-tertiary);
 }
-.guide-list li strong { color: var(--text-primary); font-weight: 600; }
+
+.guide-list li strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
 
 .tips-card {
   background: rgba(255, 149, 0, 0.04);
   border-color: rgba(255, 149, 0, 0.2);
 }
-.tips-card .guide-header svg { color: var(--warning); }
+
+.tips-card .guide-header svg {
+  color: var(--warning);
+}
 
 /* Success state */
 .submit-success {

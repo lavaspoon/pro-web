@@ -333,11 +333,25 @@
 }
 
 /* 열 너비 */
-.mct-col-no     { width: 36px; }
-.mct-col-status { width: 68px; }
-.mct-col-title  { width: auto; }
-.mct-col-date   { width: 84px; }
-.mct-col-action { width: 28px; }
+.mct-col-no {
+  width: 36px;
+}
+
+.mct-col-status {
+  width: 68px;
+}
+
+.mct-col-title {
+  width: auto;
+}
+
+.mct-col-date {
+  width: 84px;
+}
+
+.mct-col-action {
+  width: 28px;
+}
 
 /* 데이터 행 */
 .mct-row {
@@ -463,11 +477,19 @@
 }
 
 @media (max-width: 480px) {
-  .mct-col-date,
-  .mct-date { display: none; }
 
-  .mct-col-no { width: 28px; }
-  .mct-col-status { width: 60px; }
+  .mct-col-date,
+  .mct-date {
+    display: none;
+  }
+
+  .mct-col-no {
+    width: 28px;
+  }
+
+  .mct-col-status {
+    width: 60px;
+  }
 
   .member-case-list-head {
     padding: 18px 16px 14px;

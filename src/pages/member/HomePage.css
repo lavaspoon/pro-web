@@ -508,6 +508,169 @@
   flex-shrink: 0;
 }
 
+/* ── 이달 접수 현황 블록 (히어로 통합) ──────────────────────── */
+.hp-month-block {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 13px 14px;
+  background: #f4f6f9;
+  border-radius: 14px;
+  border: 1.5px solid #d8dde5;
+  position: relative;
+  z-index: 1;
+}
+
+.hp-month-block-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.hp-month-block-title-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.hp-month-block-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #333d4b;
+  letter-spacing: -0.02em;
+}
+
+.hp-month-block-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #8b95a1;
+  text-decoration: none;
+  letter-spacing: -0.01em;
+  transition: color 0.15s;
+  flex-shrink: 0;
+}
+
+.hp-month-block-link:hover { color: #3182f6; }
+
+.hp-month-block-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.hp-month-block-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 11px 12px 10px;
+  border-radius: 10px;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 3px rgba(25, 31, 40, 0.05);
+}
+
+.hp-month-block-item-label-top {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.hp-month-block-num-row {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+}
+
+.hp-month-block-val {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.hp-month-block-unit {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  opacity: 0.6;
+}
+
+.hp-month-block-item--selected {
+  background: linear-gradient(160deg, #f0f7ff 0%, #e8f2ff 100%);
+  border-color: rgba(49, 130, 246, 0.18);
+}
+.hp-month-block-item--selected .hp-month-block-item-label-top { color: #2563b0; }
+.hp-month-block-item--selected .hp-month-block-val  { color: #3182f6; }
+.hp-month-block-item--selected .hp-month-block-unit { color: #3182f6; }
+
+.hp-month-block-item--pending {
+  background: linear-gradient(160deg, #fffaf0 0%, #fff5e0 100%);
+  border-color: rgba(255, 159, 28, 0.2);
+}
+.hp-month-block-item--pending .hp-month-block-item-label-top { color: #b86800; }
+.hp-month-block-item--pending .hp-month-block-val  { color: #e08800; }
+.hp-month-block-item--pending .hp-month-block-unit { color: #e08800; }
+
+.hp-month-block-item--rejected {
+  background: #f9fafb;
+  border-color: #eaecf0;
+}
+.hp-month-block-item--rejected .hp-month-block-item-label-top { color: #8b95a1; }
+.hp-month-block-item--rejected .hp-month-block-val  { color: #b0b8c1; }
+.hp-month-block-item--rejected .hp-month-block-unit { color: #b0b8c1; }
+
+.hp-month-block-remain {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 12px;
+  background: #ffffff;
+  border: 1px solid #e5e8eb;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #6b7684;
+  letter-spacing: -0.01em;
+}
+
+.hp-month-block-remain strong {
+  font-weight: 800;
+  color: #3182f6;
+}
+
+/* 만족도 달성 여부 뱃지 (월 현황 스트립 내) */
+.hp-month-cs {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.hp-month-cs--met {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.28);
+  color: #059669;
+}
+
+.hp-month-cs--no {
+  background: rgba(239, 68, 68, 0.09);
+  border: 1px solid rgba(239, 68, 68, 0.22);
+  color: #dc2626;
+}
+
 .hp-month-strip:hover .hp-month-strip-link { color: #3182f6; }
 
 @media (max-width: 480px) {
@@ -1012,6 +1175,20 @@
   color: #191f28;
   letter-spacing: -0.03em;
   font-variant-numeric: tabular-nums;
+}
+
+/* 등급표 하단 안내 메모 */
+.hp-tier-info-note {
+  margin-top: 4px;
+  padding: 8px 10px;
+  background: #f2f4f6;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #8b95a1;
+  letter-spacing: -0.01em;
+  line-height: 1.6;
+  text-align: center;
 }
 
 /* 현재 등급 요약 */

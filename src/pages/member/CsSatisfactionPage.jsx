@@ -25,6 +25,34 @@ const now = new Date();
 const currentYear = now.getFullYear();
 const currentMonth = now.getMonth() + 1;
 
+function useCountUpFloat(target, duration = 1200) {
+  const [value, setValue] = useState(0);
+
+  useEffect(() => {
+    const end = Number(target) || 0;
+    if (end <= 0) {
+      setValue(0);
+      return undefined;
+    }
+
+    let rafId = 0;
+    const startedAt = performance.now();
+    const easeOutCubic = (t) => 1 - (1 - t) ** 3;
+
+    const tick = (nowMs) => {
+      const p = Math.min(1, (nowMs - startedAt) / duration);
+      setValue(end * easeOutCubic(p));
+      if (p < 1) rafId = requestAnimationFrame(tick);
+    };
+
+    setValue(0);
+    rafId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafId);
+  }, [target, duration]);
+
+  return value;
+}
+
 const MEMBER_ROWS_PAGE_SIZE = 10;
 
 /** Good 멘트 티커 — 한 줄씩 자동 순환 */
@@ -329,7 +357,6 @@ function GaugeRing({ actual, target, met }) {
           style={{
             transform: 'rotate(-90deg)',
             transformOrigin: `${RING_CX}px ${RING_CY}px`,
-            transition: 'stroke-dashoffset 0.8s cubic-bezier(0.34,1.56,0.64,1)',
             filter: met === true
               ? 'drop-shadow(0 0 5px rgba(16,185,129,0.5))'
               : 'drop-shadow(0 0 5px rgba(49,130,246,0.4))',
@@ -364,6 +391,8 @@ function HeroPanel({ data, user, year, month, onShowAll }) {
   const actualPct = computeActualPct(d);
   const target = toNum(d.monthlyTargetPct ?? d.target);
   const met = computeMet(d);
+
+  const animatedActualPct = useCountUpFloat(actualPct ?? 0, 1300);
 
   const received = toNum(d.receivedCount ?? d.totalSamples, 0) ?? 0;
   const satisfied = toNum(d.satisfiedCount, 0) ?? 0;
@@ -430,12 +459,12 @@ function HeroPanel({ data, user, year, month, onShowAll }) {
 
       {/* 중앙: 링 게이지 */}
       <div className={`csx-gauge-wrap csx-gauge-wrap--${statusMod}`}>
-        <GaugeRing actual={actualPct} target={target} met={met} />
+        <GaugeRing actual={animatedActualPct} target={target} met={met} />
         <div className="csx-gauge-center">
           <p className="csx-gauge-period">{year}.{String(month).padStart(2, '0')}</p>
           <div className="csx-gauge-value">
             <span className={`csx-gauge-num csx-gauge-num--${statusMod}`}>
-              {actualPct != null ? fmt(actualPct) : '—'}
+              {actualPct != null ? fmt(animatedActualPct) : '—'}
             </span>
             <span className="csx-gauge-unit">%</span>
           </div>

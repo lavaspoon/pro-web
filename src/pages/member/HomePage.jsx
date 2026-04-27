@@ -16,15 +16,15 @@ const currentMonthNum = now.getMonth() + 1;
 const PROGRAM_END_MONTH = 9;
 
 const TIERS = [
-  { id: 'mangju', name: 'YOU 망주',     range: '1~9건',  minCases: 1,  rateWon: 30000 },
-  { id: 'player', name: 'YOU 플레이어', range: '10~18건', minCases: 10, rateWon: 50000 },
-  { id: 'topia',  name: 'YOU 토피아',   range: '19건~',  minCases: 19, rateWon: 70000 },
+  { id: 'mangju', name: 'YOU 망주', range: '1건 이상', minCases: 1, rateWon: 30000 },
+  { id: 'player', name: 'YOU 플레이어', range: '10건 이상', minCases: 10, rateWon: 50000 },
+  { id: 'topia', name: 'YOU 토피아', range: '19건 이상', minCases: 19, rateWon: 70000 },
 ];
 
 function getTierIdx(n) {
   if (n >= 19) return 2;
   if (n >= 10) return 1;
-  if (n >= 1)  return 0;
+  if (n >= 1) return 0;
   return -1;
 }
 
@@ -182,24 +182,24 @@ export default function HomePage() {
 
   const estimatedWon = totalReflectedWon;
 
-  const tierIdx     = getTierIdx(myTotalSelected);
+  const tierIdx = getTierIdx(myTotalSelected);
   const currentTier = tierIdx >= 0 ? TIERS[tierIdx] : null;
-  const nextTier    = tierIdx < TIERS.length - 1 ? TIERS[tierIdx + 1] : null;
+  const nextTier = tierIdx < TIERS.length - 1 ? TIERS[tierIdx + 1] : null;
 
-  const casesToNext  = nextTier ? nextTier.minCases - myTotalSelected : 0;
+  const casesToNext = nextTier ? nextTier.minCases - myTotalSelected : 0;
   // 다음 등급 도달 시 추가로 받을 예상 금액 (이번 달 1개월분 기준 차액)
-  const boostWon     = nextTier ? nextTier.rateWon - (currentTier?.rateWon ?? 0) : 0;
+  const boostWon = nextTier ? nextTier.rateWon - (currentTier?.rateWon ?? 0) : 0;
 
   // 프로그레스 스케일 (0 ~ 25건 기준 — 토피아 이상 커버)
   const SCALE_MAX = 25;
   const clampPct = (n) => Math.max(0, Math.min(100, (n / SCALE_MAX) * 100));
-  const myPct    = clampPct(myTotalSelected);
-  const topPct   = clampPct(topSelected);
+  const myPct = clampPct(myTotalSelected);
+  const topPct = clampPct(topSelected);
 
   const tierStops = TIERS.map((t) => ({ ...t, pct: clampPct(t.minCases) }));
 
   const isInProgram = currentMonthNum >= 1 && currentMonthNum <= PROGRAM_END_MONTH;
-  const remainLeft  = isInProgram ? Math.max(0, monthlyLimit - monthlySelected) : 0;
+  const remainLeft = isInProgram ? Math.max(0, monthlyLimit - monthlySelected) : 0;
 
 
   return (
@@ -223,33 +223,8 @@ export default function HomePage() {
           ① 금액 중심 히어로 — 토스 스타일
          ═══════════════════════════════════════════════════════ */}
       <section className="hp-hero">
-        {/* 이번 달 접수 현황 — 히어로 도입부 */}
-        <Link to="/member/cases" className="hp-month-strip">
-          <span className="hp-month-strip-title">{currentMonthNum}월 현황</span>
-          <span className="hp-month-stats">
-            <span className="hp-month-stat hp-month-stat--selected">
-              <span className="hp-month-stat-dot" />
-              <span className="hp-month-stat-label">선정</span>
-              <strong className="hp-month-stat-val">{monthStats.selected}</strong>
-            </span>
-            <span className="hp-month-stat hp-month-stat--pending">
-              <span className="hp-month-stat-dot" />
-              <span className="hp-month-stat-label">심사</span>
-              <strong className="hp-month-stat-val">{monthStats.pending}</strong>
-            </span>
-            <span className="hp-month-stat hp-month-stat--rejected">
-              <span className="hp-month-stat-dot" />
-              <span className="hp-month-stat-label">비선정</span>
-              <strong className="hp-month-stat-val">{monthStats.rejected}</strong>
-            </span>
-          </span>
-          <span className="hp-month-strip-link">
-            전체보기
-            <ChevronRight size={13} strokeWidth={2.5} />
-          </span>
-        </Link>
 
-        {/* 상단 중앙: 금액 */}
+        {/* 금액 */}
         <div className="hp-hero-top">
           <p className="hp-hero-label">올해 예상 인센티브</p>
           <div className="hp-hero-amount">
@@ -273,37 +248,48 @@ export default function HomePage() {
           )}
         </div>
 
-        {/* 금액 형성 내역 — 영수증 느낌 */}
-        <div className="hp-breakdown">
-          <div className="hp-breakdown-row">
-            <span className="hp-breakdown-label">누적 선정 건수</span>
-            <span className="hp-breakdown-value">
-              <strong>{myTotalSelected}</strong>건
-            </span>
-          </div>
-          <div className="hp-breakdown-row">
-            <span className="hp-breakdown-label">이달 만족도 달성 여부</span>
-            <span className="hp-breakdown-value">
+        {/* 이달 접수 현황 — 히어로 하단 통합 */}
+        <div className="hp-month-block">
+          <div className="hp-month-block-header">
+            <div className="hp-month-block-title-wrap">
+              <span className="hp-month-block-title">{currentMonthNum}월 접수 현황</span>
               {currentMonthCsTargetMet === true && (
-                <span className="hp-breakdown-cs hp-breakdown-cs--met">달성</span>
+                <span className="hp-month-cs hp-month-cs--met">만족도 달성 완료</span>
               )}
               {currentMonthCsTargetMet === false && (
-                <span className="hp-breakdown-cs hp-breakdown-cs--no">미달성</span>
+                <span className="hp-month-cs hp-month-cs--no">만족도 달성 필요</span>
               )}
-              {currentMonthCsTargetMet == null && (
-                <span className="hp-breakdown-muted">집계 중</span>
-              )}
-            </span>
+            </div>
+            <Link to="/member/cases" className="hp-month-block-link">
+              전체보기 <ChevronRight size={12} strokeWidth={2.5} />
+            </Link>
           </div>
-
-          {nextTier && isInProgram && (
-            <div className="hp-breakdown-hint">
-              <span className="hp-breakdown-hint-dot" />
-              {currentMonthCsTargetMet === false && (
-                <span className="hp-breakdown-hint-cs-warn">만족도 달성 후</span>
-              )}
-              <strong>{casesToNext}건</strong> 더 선정되면 <strong>{nextTier.name}</strong> 등급으로
-              <span className="hp-breakdown-boost"> 월 +{boostWon.toLocaleString('ko-KR')}원</span>
+          <div className="hp-month-block-grid">
+            <div className="hp-month-block-item hp-month-block-item--selected">
+              <span className="hp-month-block-item-label-top">선정</span>
+              <div className="hp-month-block-num-row">
+                <span className="hp-month-block-val">{monthStats.selected}</span>
+                <span className="hp-month-block-unit">건</span>
+              </div>
+            </div>
+            <div className="hp-month-block-item hp-month-block-item--pending">
+              <span className="hp-month-block-item-label-top">심사 중</span>
+              <div className="hp-month-block-num-row">
+                <span className="hp-month-block-val">{monthStats.pending}</span>
+                <span className="hp-month-block-unit">건</span>
+              </div>
+            </div>
+            <div className="hp-month-block-item hp-month-block-item--rejected">
+              <span className="hp-month-block-item-label-top">비선정</span>
+              <div className="hp-month-block-num-row">
+                <span className="hp-month-block-val">{monthStats.rejected}</span>
+                <span className="hp-month-block-unit">건</span>
+              </div>
+            </div>
+          </div>
+          {isInProgram && (
+            <div className="hp-month-block-remain">
+              이달 접수 가능 <strong>{remainLeft}건</strong> 남음
             </div>
           )}
         </div>
@@ -322,37 +308,16 @@ export default function HomePage() {
               <strong>{myTotalSelected}</strong>건 선정
             </span>
           </div>
-          {myIndividualRank != null && individualRankTotal > 0 && (
-            <div className="hp-rank-chip">
-              <span className="hp-rank-chip-num">{myIndividualRank}</span>
-              <div className="hp-rank-chip-right">
-                <span className="hp-rank-chip-unit">위</span>
-                <span className="hp-rank-chip-total">{individualRankTotal}명 중</span>
-              </div>
-            </div>
-          )}
         </div>
 
-          {/* 좌: 프로그레스 바 + 마커  |  우: 컴팩트 등급표 */}
+        {/* 좌: 프로그레스 바 + 마커  |  우: 컴팩트 등급표 */}
         <div className="hp-tier-body">
           {/* 좌측 — 프로그레스 */}
           <div className="hp-prog">
 
-            {/* 타이틀 + 범례 */}
+            {/* 타이틀 */}
             <div className="hp-prog-header">
               <span className="hp-prog-title">누적 선정 건수</span>
-              <div className="hp-prog-legend">
-                <span className="hp-prog-legend-item">
-                  <span className="hp-prog-legend-dot hp-prog-legend-dot--me" />
-                  내 위치
-                </span>
-                {topSelected > 0 && (
-                  <span className="hp-prog-legend-item">
-                    <span className="hp-prog-legend-dot hp-prog-legend-dot--top" />
-                    현재 1위
-                  </span>
-                )}
-              </div>
             </div>
 
             <div className="hp-prog-track">
@@ -376,23 +341,11 @@ export default function HomePage() {
               <div className="hp-prog-seg hp-prog-seg--2" style={{ left: `${tierStops[1].pct}%`, width: `${tierStops[2].pct - tierStops[1].pct}%` }} />
               <div className="hp-prog-seg hp-prog-seg--3" style={{ left: `${tierStops[2].pct}%`, width: `${100 - tierStops[2].pct}%` }} />
 
-              {topSelected > 0 && (
-                <div className="hp-prog-marker hp-prog-marker--top" style={{ left: `${topPct}%` }}>
-                  <div className="hp-prog-pin hp-prog-pin--top">
-                    <span className="hp-prog-pin-label">현재 1위</span>
-                    <span className="hp-prog-pin-sep">·</span>
-                    <span className="hp-prog-pin-val">{topSelected}건</span>
-                  </div>
-                  <div className="hp-prog-stem hp-prog-stem--top" />
-                  <div className="hp-prog-dot hp-prog-dot--top" />
-                </div>
-              )}
-
               <div className="hp-prog-marker hp-prog-marker--me" style={{ left: `${myPct}%` }}>
                 <div className="hp-prog-dot hp-prog-dot--me" />
                 <div className="hp-prog-stem hp-prog-stem--me" />
                 <div className="hp-prog-pin hp-prog-pin--me">
-                  <span className="hp-prog-pin-label">나</span>
+                  <span className="hp-prog-pin-label">나의 누적 건수</span>
                   <span className="hp-prog-pin-sep">·</span>
                   <span className="hp-prog-pin-val">{myTotalSelected}건</span>
                 </div>
@@ -410,7 +363,7 @@ export default function HomePage() {
             {/* 다음 등급까지 */}
             {nextTier ? (
               <div className="hp-tier-next">
-                <strong>{nextTier.name}</strong>까지 <strong>{casesToNext}건</strong>
+                <strong>{nextTier.name}</strong>까지 <strong>{casesToNext}건</strong>, 월 <strong>{nextTier.rateWon.toLocaleString('ko-KR')}원</strong>을 꾸준히 받을 수 있어요.
               </div>
             ) : currentTier ? (
               <div className="hp-tier-next hp-tier-next--max">최고 등급 달성 중</div>
@@ -431,6 +384,9 @@ export default function HomePage() {
                 </div>
               );
             })}
+            <div className="hp-tier-info-note">
+              달성한 등급은 9월까지 유지되며,<br />월 마다 만족도 달성 시, 해당 금액이 지급됩니다.
+            </div>
           </div>
         </div>
       </section>
