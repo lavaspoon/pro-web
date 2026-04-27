@@ -44,64 +44,38 @@
 }
 
 /* ═══════════════════════════════════════════════════════════
-   ① 히어로 — 스킬·소속 + 만족도 % + 달성 뱃지 + 영수증
+   ① 히어로 — 링 게이지 중심 레이아웃
    ═══════════════════════════════════════════════════════════ */
 .csx-hero {
-  padding: 24px 20px 18px;
-  gap: 16px;
+  padding: 20px 20px 18px;
+  gap: 14px;
   position: relative;
   overflow: hidden;
 }
 
-.csx-hero::before {
-  content: '';
-  position: absolute;
-  top: -110px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 420px;
-  height: 220px;
-  background: radial-gradient(ellipse at center, rgba(49, 130, 246, 0.18) 0%, rgba(49, 130, 246, 0.05) 45%, transparent 72%);
-  pointer-events: none;
-  z-index: 0;
-}
-
-.csx-hero::after {
-  content: '';
-  position: absolute;
-  right: -60px;
-  bottom: -70px;
-  width: 220px;
-  height: 220px;
-  background: radial-gradient(circle at center, rgba(16, 185, 129, 0.1) 0%, transparent 65%);
-  pointer-events: none;
-  z-index: 0;
-}
-
-.csx-hero-main {
+/* 상단 바: 스킬 칩 + 월 현황 스트립 */
+.csx-hero-topbar {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 12px;
-  text-align: center;
-  padding: 2px 0 2px;
+  gap: 10px;
   position: relative;
   z-index: 1;
 }
 
-/* 상단 현황 스트립 — HomePage 접수현황 패턴 */
+/* 상단 현황 스트립 */
 .csx-month-strip {
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 12px 16px;
+  gap: 10px;
+  padding: 10px 14px;
   background: linear-gradient(180deg, #ffffff 0%, #f7faff 100%);
   border: 1px solid #e5ecf5;
   border-radius: 14px;
   box-shadow:
     0 1px 2px rgba(25, 31, 40, 0.03),
-    0 6px 16px rgba(49, 130, 246, 0.06);
+    0 4px 12px rgba(49, 130, 246, 0.05);
   cursor: pointer;
   font-family: inherit;
   text-align: left;
@@ -110,18 +84,18 @@
 
 .csx-month-strip:hover {
   border-color: #c6d3e5;
-  box-shadow: 0 4px 12px rgba(49, 130, 246, 0.1);
+  box-shadow: 0 4px 14px rgba(49, 130, 246, 0.1);
 }
 
 .csx-month-strip:active { transform: scale(0.997); }
 
 .csx-month-strip-title {
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 800;
   color: #1f4f93;
   letter-spacing: -0.02em;
   flex-shrink: 0;
-  padding: 3px 9px;
+  padding: 2px 8px;
   background: rgba(49, 130, 246, 0.1);
   border: 1px solid rgba(49, 130, 246, 0.18);
   border-radius: 6px;
@@ -129,7 +103,7 @@
 
 .csx-month-stats {
   display: inline-flex;
-  gap: 7px;
+  gap: 5px;
   flex: 1;
   justify-content: center;
   flex-wrap: wrap;
@@ -138,28 +112,26 @@
 .csx-month-stat {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  font-size: 12px;
+  gap: 4px;
+  font-size: 11.5px;
   letter-spacing: -0.02em;
-  padding: 4px 10px 4px 8px;
+  padding: 3px 8px 3px 7px;
   border-radius: 999px;
   border: 1px solid transparent;
   white-space: nowrap;
 }
 
 .csx-month-stat-dot {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
   flex-shrink: 0;
 }
 
-.csx-month-stat-label {
-  font-weight: 600;
-}
+.csx-month-stat-label { font-weight: 600; }
 
 .csx-month-stat-val {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.03em;
@@ -194,56 +166,219 @@
   display: inline-flex;
   align-items: center;
   gap: 1px;
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 700;
   color: #8b95a1;
   letter-spacing: -0.02em;
   flex-shrink: 0;
 }
-
 .csx-month-strip:hover .csx-month-strip-link { color: #3182f6; }
 
-/* 메인 만족도 카드 — 스킬/달성/목표/실적을 한 영역에 통합 */
-.csx-hero-amount {
-  width: 100%;
+/* ── 링 게이지 ─────────────────────────────────────────────── */
+.csx-gauge-wrap {
   position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 4px 0;
+}
+
+.csx-gauge-svg {
+  display: block;
+  flex-shrink: 0;
+  filter: drop-shadow(0 8px 24px rgba(49, 130, 246, 0.13));
+}
+
+.csx-gauge-wrap--met .csx-gauge-svg {
+  filter: drop-shadow(0 8px 24px rgba(16, 185, 129, 0.2));
+}
+
+.csx-gauge-wrap--no .csx-gauge-svg {
+  filter: drop-shadow(0 8px 24px rgba(49, 130, 246, 0.18));
+}
+
+/* 링 중앙 오버레이 텍스트 */
+.csx-gauge-center {
+  position: absolute;
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 1px;
+  pointer-events: none;
+  user-select: none;
+}
+
+.csx-gauge-period {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #8b95a1;
+  text-transform: uppercase;
+}
+
+.csx-gauge-value {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+  line-height: 1;
+}
+
+.csx-gauge-num {
+  font-size: 42px;
+  font-weight: 900;
+  letter-spacing: -0.055em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  background: linear-gradient(180deg, #1f5fcc 0%, #3182f6 55%, #60a5fa 120%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
+.csx-gauge-num--met {
+  background: linear-gradient(180deg, #047857 0%, #10b981 55%, #34d399 120%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.csx-gauge-num--none {
+  background: linear-gradient(180deg, #64748b 0%, #94a3b8 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.csx-gauge-unit {
+  font-size: 16px;
+  font-weight: 800;
+  color: #8b95a1;
+  letter-spacing: -0.02em;
+  padding-bottom: 4px;
+}
+
+.csx-gauge-target {
+  margin: 2px 0 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #8b95a1;
+  letter-spacing: -0.02em;
+}
+
+.csx-gauge-target strong {
+  font-weight: 800;
+  color: #3182f6;
+}
+
+.csx-gauge-wrap--met .csx-gauge-target strong {
+  color: #059669;
+}
+
+/* ── 하단 푸터: AI 가이드 + 상태 칩 ──────────────────────────── */
+.csx-hero-footer {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
   gap: 10px;
-  padding: 20px 20px 18px;
-  background:
-    radial-gradient(140% 80% at 50% -20%, rgba(49, 130, 246, 0.12) 0%, transparent 60%),
-    linear-gradient(180deg, #ffffff 0%, #f3f7ff 100%);
-  border: 1px solid #e0e9f6;
-  border-radius: 18px;
-  box-shadow:
-    0 1px 2px rgba(25, 31, 40, 0.04),
-    0 14px 34px rgba(49, 130, 246, 0.1);
+  padding: 10px 14px;
+  border-radius: 13px;
+  border: 1px solid rgba(99, 102, 241, 0.16);
+  background: linear-gradient(135deg,
+    rgba(99, 102, 241, 0.07) 0%,
+    rgba(59, 130, 246, 0.07) 50%,
+    rgba(16, 185, 129, 0.07) 100%);
   overflow: hidden;
 }
 
-.csx-hero-amount::before {
+.csx-hero-footer::before {
   content: '';
   position: absolute;
   inset: 0;
+  background: radial-gradient(120% 80% at 100% 0%, rgba(99, 102, 241, 0.12) 0%, transparent 55%);
   pointer-events: none;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.75) 0%, rgba(255, 255, 255, 0) 40%);
-  border-top-left-radius: inherit;
-  border-top-right-radius: inherit;
 }
 
-.csx-hero-amount-head {
+.csx-hero-footer--met {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.09) 0%, rgba(52, 211, 153, 0.09) 100%);
+  border-color: rgba(16, 185, 129, 0.24);
+}
+
+.csx-hero-footer--short {
+  background: linear-gradient(135deg, rgba(251, 146, 60, 0.08) 0%, rgba(239, 68, 68, 0.07) 100%);
+  border-color: rgba(251, 146, 60, 0.22);
+}
+
+.csx-hero-footer--noData,
+.csx-hero-footer--noTarget {
+  background: linear-gradient(135deg, rgba(100, 116, 139, 0.07) 0%, rgba(148, 163, 184, 0.07) 100%);
+  border-color: rgba(100, 116, 139, 0.18);
+}
+
+.csx-hero-footer-icon {
   position: relative;
   z-index: 1;
-  width: 100%;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  flex-wrap: wrap;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #6366f1 0%, #3b82f6 60%, #10b981 130%);
+  color: #ffffff;
+  box-shadow: 0 3px 8px rgba(99, 102, 241, 0.32);
+  flex-shrink: 0;
 }
 
+.csx-hero-footer--met .csx-hero-footer-icon {
+  background: linear-gradient(135deg, #059669 0%, #10b981 60%, #34d399 130%);
+  box-shadow: 0 3px 8px rgba(16, 185, 129, 0.32);
+}
+
+.csx-hero-footer--short .csx-hero-footer-icon {
+  background: linear-gradient(135deg, #f97316 0%, #ef4444 100%);
+  box-shadow: 0 3px 8px rgba(239, 68, 68, 0.28);
+}
+
+.csx-hero-footer--noData .csx-hero-footer-icon,
+.csx-hero-footer--noTarget .csx-hero-footer-icon {
+  background: linear-gradient(135deg, #64748b 0%, #94a3b8 100%);
+  box-shadow: 0 2px 6px rgba(100, 116, 139, 0.28);
+}
+
+.csx-hero-footer-text {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-width: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #334155;
+  letter-spacing: -0.02em;
+  line-height: 1.4;
+  word-break: keep-all;
+}
+
+.csx-hero-footer-text strong {
+  font-weight: 800;
+  color: #1e293b;
+}
+
+.csx-hero-kpi-ai-strong {
+  font-size: 13px;
+  font-weight: 900 !important;
+  background: linear-gradient(135deg, #f97316 0%, #ef4444 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent !important;
+  -webkit-text-fill-color: transparent;
+  padding: 0 1px;
+}
+
+/* 칩 — 스킬·달성상태 */
 .csx-hero-chip {
   display: inline-flex;
   align-items: center;
@@ -257,339 +392,40 @@
   border: 1px solid transparent;
   line-height: 1.2;
   box-shadow: 0 2px 6px rgba(25, 31, 40, 0.06);
+  flex-shrink: 0;
 }
 
 .csx-hero-chip--skill {
   background: linear-gradient(180deg, #4f94ff 0%, #2563eb 100%);
   color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.35);
-  box-shadow:
-    0 4px 12px rgba(37, 99, 235, 0.28),
-    0 0 0 1px rgba(255, 255, 255, 0.18) inset;
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.28), 0 0 0 1px rgba(255,255,255,0.18) inset;
 }
 
 .csx-hero-chip--met {
+  position: relative;
+  z-index: 1;
   background: linear-gradient(180deg, #34d399 0%, #059669 100%);
   color: #ffffff;
   border-color: rgba(255, 255, 255, 0.35);
-  box-shadow:
-    0 4px 12px rgba(16, 185, 129, 0.28),
-    0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+  box-shadow: 0 3px 10px rgba(16, 185, 129, 0.28), 0 0 0 1px rgba(255,255,255,0.2) inset;
 }
 
 .csx-hero-chip--no {
-  background: linear-gradient(180deg, #fb7185 0%, #e11d48 100%);
+  position: relative;
+  z-index: 1;
+  background: linear-gradient(180deg, #60a5fa 0%, #3182f6 100%);
   color: #ffffff;
   border-color: rgba(255, 255, 255, 0.3);
-  box-shadow:
-    0 4px 12px rgba(225, 29, 72, 0.26),
-    0 0 0 1px rgba(255, 255, 255, 0.18) inset;
+  box-shadow: 0 3px 10px rgba(49, 130, 246, 0.28), 0 0 0 1px rgba(255,255,255,0.18) inset;
 }
 
 .csx-hero-chip--none {
+  position: relative;
+  z-index: 1;
   background: linear-gradient(180deg, #e5e7eb 0%, #cbd5e1 100%);
   color: #334155;
   border-color: rgba(255, 255, 255, 0.4);
-}
-
-.csx-hero-label {
-  position: relative;
-  z-index: 1;
-  margin: 4px 0 0;
-  font-size: 12.5px;
-  font-weight: 600;
-  color: #6b7684;
-  letter-spacing: -0.02em;
-}
-
-.csx-hero-value {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  align-items: baseline;
-  gap: 4px;
-  line-height: 1;
-  padding: 2px 0 4px;
-  filter: drop-shadow(0 4px 14px rgba(49, 130, 246, 0.18));
-}
-
-.csx-hero-num {
-  font-size: 52px;
-  font-weight: 900;
-  letter-spacing: -0.055em;
-  color: #191f28;
-  font-variant-numeric: tabular-nums;
-  line-height: 1;
-  background: linear-gradient(180deg, #1f5fcc 0%, #3182f6 60%, #60a5fa 130%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  -webkit-text-fill-color: transparent;
-  padding: 2px 4px 4px 2px;
-}
-
-.csx-hero-num--met {
-  background: linear-gradient(180deg, #047857 0%, #10b981 60%, #34d399 130%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  -webkit-text-fill-color: transparent;
-}
-
-.csx-hero-unit {
-  font-size: 20px;
-  font-weight: 800;
-  color: #6b7684;
-  letter-spacing: -0.02em;
-}
-
-.csx-hero-kpi {
-  position: relative;
-  z-index: 1;
-  width: 100%;
-  display: flex;
-  align-items: stretch;
-  margin-top: 6px;
-  padding: 4px;
-  background: #ffffff;
-  border: 1px solid #e5ecf5;
-  border-radius: 14px;
-  box-shadow: 0 2px 8px rgba(49, 130, 246, 0.08);
-}
-
-.csx-hero-kpi-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 3px;
-  padding: 9px 10px;
-  border-radius: 10px;
-  transition: background 0.15s ease;
-}
-
-.csx-hero-kpi-item--target {
-  flex: 0 0 auto;
-  min-width: 96px;
-  background: linear-gradient(180deg, #f7faff 0%, #eef4ff 100%);
-}
-
-.csx-hero-kpi-label {
-  font-size: 11px;
-  font-weight: 800;
-  color: #8b95a1;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-}
-
-.csx-hero-kpi-value {
-  font-size: 18px;
-  font-weight: 900;
-  color: #3182f6;
-  letter-spacing: -0.03em;
-  line-height: 1.1;
-  font-variant-numeric: tabular-nums;
-}
-
-.csx-hero-kpi-divider {
-  width: 1px;
-  background: linear-gradient(180deg, transparent 0%, #e5e8eb 20%, #e5e8eb 80%, transparent 100%);
-  margin: 6px 4px;
-  flex-shrink: 0;
-}
-
-/* AI 가이드 — 목표 달성까지 필요한 만족 건수 안내 */
-.csx-hero-kpi-ai {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 12px 8px 10px;
-  border-radius: 10px;
-  background:
-    linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(59, 130, 246, 0.08) 50%, rgba(16, 185, 129, 0.08) 100%);
-  border: 1px solid rgba(99, 102, 241, 0.14);
-  text-align: left;
-  position: relative;
-  overflow: hidden;
-}
-
-.csx-hero-kpi-ai::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(120% 80% at 100% 0%, rgba(99, 102, 241, 0.15) 0%, transparent 55%);
-  pointer-events: none;
-}
-
-.csx-hero-kpi-ai-icon {
-  position: relative;
-  z-index: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 8px;
-  background: linear-gradient(135deg, #6366f1 0%, #3b82f6 60%, #10b981 130%);
-  color: #ffffff;
-  box-shadow:
-    0 4px 10px rgba(99, 102, 241, 0.35),
-    0 0 0 1px rgba(255, 255, 255, 0.35) inset;
-  flex-shrink: 0;
-}
-
-.csx-hero-kpi-ai-body {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  min-width: 0;
-  flex: 1;
-}
-
-.csx-hero-kpi-ai-label {
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  color: #4f46e5;
-  text-transform: uppercase;
-}
-
-.csx-hero-kpi-ai-text {
-  font-size: 12.5px;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  color: #334155;
-  line-height: 1.35;
-  word-break: keep-all;
-}
-
-.csx-hero-kpi-ai-text strong {
-  font-weight: 800;
-  color: #1e293b;
-}
-
-.csx-hero-kpi-ai-strong {
-  font-size: 13.5px;
-  font-weight: 900 !important;
-  background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 60%, #10b981 130%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent !important;
-  -webkit-text-fill-color: transparent;
-  padding: 0 1px;
-}
-
-/* 상태별 톤 변화 */
-.csx-hero-kpi-ai--met {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(52, 211, 153, 0.1) 100%);
-  border-color: rgba(16, 185, 129, 0.22);
-}
-.csx-hero-kpi-ai--met .csx-hero-kpi-ai-icon {
-  background: linear-gradient(135deg, #059669 0%, #10b981 60%, #34d399 130%);
-  box-shadow:
-    0 4px 10px rgba(16, 185, 129, 0.35),
-    0 0 0 1px rgba(255, 255, 255, 0.35) inset;
-}
-.csx-hero-kpi-ai--met .csx-hero-kpi-ai-label { color: #047857; }
-
-.csx-hero-kpi-ai--noData,
-.csx-hero-kpi-ai--noTarget {
-  background: linear-gradient(135deg, rgba(100, 116, 139, 0.08) 0%, rgba(148, 163, 184, 0.08) 100%);
-  border-color: rgba(100, 116, 139, 0.18);
-}
-.csx-hero-kpi-ai--noData .csx-hero-kpi-ai-icon,
-.csx-hero-kpi-ai--noTarget .csx-hero-kpi-ai-icon {
-  background: linear-gradient(135deg, #64748b 0%, #94a3b8 100%);
-  box-shadow: 0 2px 6px rgba(100, 116, 139, 0.3);
-}
-.csx-hero-kpi-ai--noData .csx-hero-kpi-ai-label,
-.csx-hero-kpi-ai--noTarget .csx-hero-kpi-ai-label { color: #475569; }
-
-.csx-hero-kpi-ai--short {
-  background: linear-gradient(135deg, rgba(251, 146, 60, 0.08) 0%, rgba(239, 68, 68, 0.08) 100%);
-  border-color: rgba(251, 146, 60, 0.22);
-}
-.csx-hero-kpi-ai--short .csx-hero-kpi-ai-icon {
-  background: linear-gradient(135deg, #f97316 0%, #ef4444 100%);
-  box-shadow:
-    0 4px 10px rgba(239, 68, 68, 0.28),
-    0 0 0 1px rgba(255, 255, 255, 0.35) inset;
-}
-.csx-hero-kpi-ai--short .csx-hero-kpi-ai-label { color: #c2410c; }
-.csx-hero-kpi-ai--short .csx-hero-kpi-ai-strong {
-  background: linear-gradient(135deg, #f97316 0%, #ef4444 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent !important;
-  -webkit-text-fill-color: transparent;
-}
-
-/* 영수증 breakdown — 홈 hp-breakdown과 동일 톤 */
-.csx-breakdown {
-  background: #f9fafb;
-  border: 1px solid #f2f4f6;
-  border-radius: 12px;
-  padding: 14px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  position: relative;
-  z-index: 1;
-}
-
-.csx-breakdown-row {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
-  font-size: 13px;
-  letter-spacing: -0.02em;
-}
-
-.csx-breakdown-label {
-  font-weight: 600;
-  color: #6b7684;
-}
-
-.csx-breakdown-value {
-  font-weight: 600;
-  color: #333d4b;
-  font-variant-numeric: tabular-nums;
-}
-
-.csx-breakdown-value strong {
-  font-weight: 800;
-  color: #191f28;
-  margin-right: 1px;
-  font-size: 14px;
-}
-
-.csx-breakdown-value--pos strong {
-  color: #0a7ea4;
-}
-
-.csx-breakdown-value--neg strong {
-  color: #dc2626;
-}
-
-.csx-breakdown-divider {
-  height: 1px;
-  background: #e5e8eb;
-  margin: 2px 0;
-}
-
-.csx-breakdown-row--total .csx-breakdown-label {
-  color: #333d4b;
-  font-weight: 700;
-}
-
-.csx-breakdown-row--total .csx-breakdown-value strong {
-  font-size: 16px;
-  color: #3182f6;
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -829,17 +665,22 @@
     grid-template-columns: 1fr;
   }
 
+  .csx-hero-topbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
   .csx-month-strip {
-    gap: 8px;
-    padding: 10px 12px;
+    gap: 7px;
+    padding: 9px 12px;
   }
 
   .csx-month-stats {
-    gap: 5px;
+    gap: 4px;
   }
 
   .csx-month-stat {
-    padding: 3px 8px 3px 7px;
+    padding: 3px 7px 3px 6px;
   }
 
   .csx-month-stat-val {
@@ -847,27 +688,8 @@
   }
 
   .csx-month-strip-link { display: none; }
-  .csx-hero-kpi {
-    flex-direction: column;
-    gap: 6px;
-  }
 
-  .csx-hero-kpi-item--target {
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-    min-width: 0;
-    padding: 10px 12px;
-  }
-
-  .csx-hero-kpi-divider {
-    display: none;
-  }
-
-  .csx-hero-kpi-ai {
-    width: 100%;
-  }
+  .csx-gauge-num { font-size: 36px; }
 }
 
 /* ═══════════════════════════════════════════════════════════

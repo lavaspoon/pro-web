@@ -105,7 +105,11 @@ function HomeSkeleton({ userName }) {
         </div>
         <div className="hp-tier-body">
           <div className="hp-prog">
-            <Skeleton height={10} radius={999} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+              <Skeleton variant="text" width={80} height={12} />
+              <Skeleton variant="text" width={100} height={12} />
+            </div>
+            <Skeleton height={10} radius={999} style={{ marginTop: 44 }} />
             <div style={{ marginTop: 10 }}>
               <Skeleton variant="text" width={'100%'} height={10} />
             </div>
@@ -197,10 +201,6 @@ export default function HomePage() {
   const isInProgram = currentMonthNum >= 1 && currentMonthNum <= PROGRAM_END_MONTH;
   const remainLeft  = isInProgram ? Math.max(0, monthlyLimit - monthlySelected) : 0;
 
-  // 이달 선정 확정 전 건수 반영 시 예상 누적 위치
-  const expectedSelected = myTotalSelected + monthStats.selected;
-  const expectedPct      = clampPct(expectedSelected);
-  const showExpected     = isInProgram && monthStats.selected > 0;
 
   return (
     <div className="page-container adm-dashboard adm-dashboard--yp fade-in yp-home hp-home">
@@ -323,28 +323,51 @@ export default function HomePage() {
             </span>
           </div>
           {myIndividualRank != null && individualRankTotal > 0 && (
-            <span className="hp-tier-now-rank">
-              {individualRankTotal}명 중 <strong>{myIndividualRank}위</strong>
-            </span>
+            <div className="hp-rank-chip">
+              <span className="hp-rank-chip-num">{myIndividualRank}</span>
+              <div className="hp-rank-chip-right">
+                <span className="hp-rank-chip-unit">위</span>
+                <span className="hp-rank-chip-total">{individualRankTotal}명 중</span>
+              </div>
+            </div>
           )}
         </div>
 
-        {/* 좌: 프로그레스 바 + 마커  |  우: 컴팩트 등급표 */}
+          {/* 좌: 프로그레스 바 + 마커  |  우: 컴팩트 등급표 */}
         <div className="hp-tier-body">
           {/* 좌측 — 프로그레스 */}
           <div className="hp-prog">
+
+            {/* 타이틀 + 범례 */}
+            <div className="hp-prog-header">
+              <span className="hp-prog-title">누적 선정 건수</span>
+              <div className="hp-prog-legend">
+                <span className="hp-prog-legend-item">
+                  <span className="hp-prog-legend-dot hp-prog-legend-dot--me" />
+                  내 위치
+                </span>
+                {topSelected > 0 && (
+                  <span className="hp-prog-legend-item">
+                    <span className="hp-prog-legend-dot hp-prog-legend-dot--top" />
+                    현재 1위
+                  </span>
+                )}
+              </div>
+            </div>
+
             <div className="hp-prog-track">
               <div className="hp-prog-stamps" aria-hidden>
                 {tierStops.map((t) => {
                   const achieved = myTotalSelected >= t.minCases;
+                  const shortName = t.name.replace('YOU ', '');
                   return (
                     <div
                       key={`stamp-${t.id}`}
-                      className={`hp-prog-stamp ${achieved ? 'is-achieved' : ''}`}
+                      className={`hp-prog-stamp hp-prog-stamp--${t.id} ${achieved ? 'is-achieved' : ''}`}
                       style={{ left: `${t.pct}%` }}
-                      title={`${t.name} (${t.range})`}
                     >
-                      {achieved ? '✓' : '○'}
+                      <span className="hp-prog-stamp-icon">{achieved ? '✓' : ''}</span>
+                      <span className="hp-prog-stamp-name">{shortName}</span>
                     </div>
                   );
                 })}
@@ -355,36 +378,33 @@ export default function HomePage() {
 
               {topSelected > 0 && (
                 <div className="hp-prog-marker hp-prog-marker--top" style={{ left: `${topPct}%` }}>
-                  <div className="hp-prog-pin hp-prog-pin--top">1위 {topSelected}</div>
+                  <div className="hp-prog-pin hp-prog-pin--top">
+                    <span className="hp-prog-pin-label">현재 1위</span>
+                    <span className="hp-prog-pin-sep">·</span>
+                    <span className="hp-prog-pin-val">{topSelected}건</span>
+                  </div>
                   <div className="hp-prog-stem hp-prog-stem--top" />
                   <div className="hp-prog-dot hp-prog-dot--top" />
-                </div>
-              )}
-
-              {showExpected && (
-                <div className="hp-prog-marker hp-prog-marker--expected" style={{ left: `${expectedPct}%` }}>
-                  <div className="hp-prog-pin hp-prog-pin--expected">
-                    <span className="hp-prog-pin-label">예상</span>
-                    <span className="hp-prog-pin-val">{expectedSelected}</span>
-                  </div>
-                  <div className="hp-prog-stem hp-prog-stem--expected" />
-                  <div className="hp-prog-dot hp-prog-dot--expected" />
                 </div>
               )}
 
               <div className="hp-prog-marker hp-prog-marker--me" style={{ left: `${myPct}%` }}>
                 <div className="hp-prog-dot hp-prog-dot--me" />
                 <div className="hp-prog-stem hp-prog-stem--me" />
-                <div className="hp-prog-pin hp-prog-pin--me">나 {myTotalSelected}</div>
+                <div className="hp-prog-pin hp-prog-pin--me">
+                  <span className="hp-prog-pin-label">나</span>
+                  <span className="hp-prog-pin-sep">·</span>
+                  <span className="hp-prog-pin-val">{myTotalSelected}건</span>
+                </div>
               </div>
             </div>
 
-            {/* 하단 숫자 눈금 */}
+            {/* 하단 눈금 + 등급 구간명 */}
             <div className="hp-prog-scale">
-              <span>0</span>
-              <span>10</span>
-              <span>19</span>
-              <span>{SCALE_MAX}건</span>
+              <span className="hp-prog-scale-num">0</span>
+              <span className="hp-prog-scale-tier hp-prog-scale-tier--mangju">망주 · 10</span>
+              <span className="hp-prog-scale-tier hp-prog-scale-tier--player">플레이어 · 19</span>
+              <span className="hp-prog-scale-num">{SCALE_MAX}건</span>
             </div>
 
             {/* 다음 등급까지 */}

@@ -200,31 +200,14 @@ function GoodTicker({ comments }) {
 function HeroSkeleton() {
   return (
     <section className="csx-hero">
-      <div className="csx-hero-main" style={{ gap: 8 }}>
-        <Skeleton height={44} radius={12} />
-        <div className="csx-hero-amount" aria-hidden>
-          <div className="csx-hero-amount-head">
-            <Skeleton width={72} height={22} radius={999} />
-            <Skeleton width={68} height={22} radius={999} />
-          </div>
-          <Skeleton variant="text" width={120} height={12} />
-          <Skeleton width={160} height={44} radius={10} />
-          <div className="csx-hero-kpi" style={{ background: 'transparent', border: 'none' }}>
-            <div className="csx-hero-kpi-item csx-hero-kpi-item--target">
-              <Skeleton variant="text" width={40} height={10} />
-              <Skeleton variant="text" width={54} height={16} />
-            </div>
-            <div className="csx-hero-kpi-divider" />
-            <div className="csx-hero-kpi-ai">
-              <Skeleton width={22} height={22} radius={8} />
-              <div className="csx-hero-kpi-ai-body">
-                <Skeleton variant="text" width={48} height={9} />
-                <Skeleton variant="text" width={140} height={12} />
-              </div>
-            </div>
-          </div>
-        </div>
+      <div className="csx-hero-topbar" aria-hidden>
+        <Skeleton width={72} height={24} radius={999} />
+        <Skeleton height={44} radius={12} style={{ flex: 1 }} />
       </div>
+      <div className="csx-gauge-wrap" style={{ alignItems: 'center', justifyContent: 'center' }} aria-hidden>
+        <Skeleton width={164} height={164} radius={999} />
+      </div>
+      <Skeleton height={40} radius={12} />
       <Skeleton height={42} radius={12} />
     </section>
   );
@@ -254,6 +237,126 @@ function FocusSkeleton() {
 }
 
 /* ════════════════════════════════════════════════════════════
+   링 게이지 SVG
+   ════════════════════════════════════════════════════════════ */
+const RING_R = 72;
+const RING_STROKE = 10;
+const RING_GAP = 4;
+const RING_SIZE = (RING_R + RING_STROKE) * 2;
+const RING_CX = RING_SIZE / 2;
+const RING_CY = RING_SIZE / 2;
+const CIRCUMFERENCE = 2 * Math.PI * RING_R;
+
+function GaugeRing({ actual, target, met }) {
+  const clampedActual = Math.min(Math.max(actual ?? 0, 0), 100);
+  const clampedTarget = target != null ? Math.min(Math.max(target, 0), 100) : null;
+
+  const actualOffset = CIRCUMFERENCE * (1 - clampedActual / 100);
+  const targetOffset = clampedTarget != null
+    ? CIRCUMFERENCE * (1 - clampedTarget / 100)
+    : null;
+
+  const trackColor = '#eef1f6';
+  const actualGrad = met === true
+    ? 'url(#gaugeGradMet)'
+    : met === false
+      ? 'url(#gaugeGradNo)'
+      : 'url(#gaugeGradNeutral)';
+
+  return (
+    <svg
+      className="csx-gauge-svg"
+      width={RING_SIZE}
+      height={RING_SIZE}
+      viewBox={`0 0 ${RING_SIZE} ${RING_SIZE}`}
+      aria-hidden
+    >
+      <defs>
+        <linearGradient id="gaugeGradMet" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#10b981" />
+          <stop offset="100%" stopColor="#34d399" />
+        </linearGradient>
+        <linearGradient id="gaugeGradNo" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#3182f6" />
+          <stop offset="100%" stopColor="#60a5fa" />
+        </linearGradient>
+        <linearGradient id="gaugeGradNeutral" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#94a3b8" />
+          <stop offset="100%" stopColor="#cbd5e1" />
+        </linearGradient>
+        <filter id="gaugeGlow" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="3" result="blur" />
+          <feMerge>
+            <feMergeNode in="blur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+      </defs>
+
+      {/* 트랙 */}
+      <circle
+        cx={RING_CX} cy={RING_CY} r={RING_R}
+        fill="none"
+        stroke={trackColor}
+        strokeWidth={RING_STROKE}
+        strokeLinecap="round"
+      />
+
+      {/* 목표 마커 */}
+      {clampedTarget != null && (
+        <circle
+          cx={RING_CX} cy={RING_CY} r={RING_R}
+          fill="none"
+          stroke="#dbeafe"
+          strokeWidth={RING_STROKE + RING_GAP}
+          strokeLinecap="butt"
+          strokeDasharray={`2 ${CIRCUMFERENCE - 2}`}
+          strokeDashoffset={CIRCUMFERENCE * 0.25 - targetOffset}
+          style={{ transform: 'rotate(-90deg)', transformOrigin: `${RING_CX}px ${RING_CY}px` }}
+        />
+      )}
+
+      {/* 실적 아크 */}
+      {actual != null && (
+        <circle
+          cx={RING_CX} cy={RING_CY} r={RING_R}
+          fill="none"
+          stroke={actualGrad}
+          strokeWidth={RING_STROKE}
+          strokeLinecap="round"
+          strokeDasharray={`${CIRCUMFERENCE} ${CIRCUMFERENCE}`}
+          strokeDashoffset={actualOffset}
+          style={{
+            transform: 'rotate(-90deg)',
+            transformOrigin: `${RING_CX}px ${RING_CY}px`,
+            transition: 'stroke-dashoffset 0.8s cubic-bezier(0.34,1.56,0.64,1)',
+            filter: met === true
+              ? 'drop-shadow(0 0 5px rgba(16,185,129,0.5))'
+              : 'drop-shadow(0 0 5px rgba(49,130,246,0.4))',
+          }}
+        />
+      )}
+
+      {/* 목표 눈금 점 */}
+      {clampedTarget != null && (() => {
+        const angle = (clampedTarget / 100) * 360 - 90;
+        const rad = (angle * Math.PI) / 180;
+        const px = RING_CX + RING_R * Math.cos(rad);
+        const py = RING_CY + RING_R * Math.sin(rad);
+        return (
+          <circle
+            cx={px} cy={py} r={4}
+            fill="#ffffff"
+            stroke={met === true ? '#059669' : '#3182f6'}
+            strokeWidth={2.5}
+          />
+        );
+      })()}
+    </svg>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════
    ① 히어로
    ════════════════════════════════════════════════════════════ */
 function HeroPanel({ data, user, year, month, onShowAll }) {
@@ -267,23 +370,15 @@ function HeroPanel({ data, user, year, month, onShowAll }) {
   const unsatisfied = toNum(d.unsatisfiedCount, 0) ?? 0;
 
   const skillText = (d.skill ?? user?.skill ?? '').toString().trim();
-
-  const badgeText = met === true ? '목표 달성' : met === false ? '목표 미달성' : '집계 전';
-
   const shortage = computeShortageVsTarget(d);
+
   const aiMessage = (() => {
     switch (shortage.status) {
       case 'met':
-        return (
-          <>이달 목표를 <strong>이미 달성</strong>했어요. 끝까지 유지해봐요.</>
-        );
+        return <>이달 목표를 <strong>달성</strong>했어요. 끝까지 유지해봐요.</>;
       case 'short':
         return (
-          <>
-            이달 목표 달성을 위해{' '}
-            <strong className="csx-hero-kpi-ai-strong">만족 {shortage.count}건</strong>
-            이 더 필요해요.
-          </>
+          <>만족 <strong className="csx-hero-kpi-ai-strong">{shortage.count}건</strong> 더 필요해요.</>
         );
       case 'noData':
         return <>이번 달 접수 데이터를 기다리고 있어요.</>;
@@ -293,9 +388,15 @@ function HeroPanel({ data, user, year, month, onShowAll }) {
     }
   })();
 
+  const statusMod = met === true ? 'met' : met === false ? 'no' : 'none';
+
   return (
     <section className="csx-hero">
-      <div className="csx-hero-main">
+      {/* 상단: 스킬 칩 + 월 현황 버튼 */}
+      <div className="csx-hero-topbar">
+        <span className="csx-hero-chip csx-hero-chip--skill">
+          {skillText || '스킬 미지정'}
+        </span>
         <button
           type="button"
           className="csx-month-strip"
@@ -325,54 +426,38 @@ function HeroPanel({ data, user, year, month, onShowAll }) {
             <ChevronRight size={13} strokeWidth={2.5} />
           </span>
         </button>
-        <div className="csx-hero-amount">
-          <div className="csx-hero-amount-head">
-            <span className="csx-hero-chip csx-hero-chip--skill">
-              {skillText || '스킬 미지정'}
-            </span>
-            <span className={`csx-hero-chip csx-hero-chip--status ${
-              met === true
-                ? 'csx-hero-chip--met'
-                : met === false
-                  ? 'csx-hero-chip--no'
-                  : 'csx-hero-chip--none'
-            }`}>
-              {badgeText}
-            </span>
-          </div>
+      </div>
 
-          <p className="csx-hero-label">{year}년 {month}월 만족도</p>
-
-          <div className="csx-hero-value">
-            <span className={`csx-hero-num ${met === true ? 'csx-hero-num--met' : ''}`}>
+      {/* 중앙: 링 게이지 */}
+      <div className={`csx-gauge-wrap csx-gauge-wrap--${statusMod}`}>
+        <GaugeRing actual={actualPct} target={target} met={met} />
+        <div className="csx-gauge-center">
+          <p className="csx-gauge-period">{year}.{String(month).padStart(2, '0')}</p>
+          <div className="csx-gauge-value">
+            <span className={`csx-gauge-num csx-gauge-num--${statusMod}`}>
               {actualPct != null ? fmt(actualPct) : '—'}
             </span>
-            <span className="csx-hero-unit">%</span>
+            <span className="csx-gauge-unit">%</span>
           </div>
-
-          <div className="csx-hero-kpi">
-            <div className="csx-hero-kpi-item csx-hero-kpi-item--target">
-              <span className="csx-hero-kpi-label">이달 목표</span>
-              <strong className="csx-hero-kpi-value">
-                {target != null ? `${fmt(target)}%` : '—'}
-              </strong>
-            </div>
-            <div className="csx-hero-kpi-divider" aria-hidden />
-            <div
-              className={`csx-hero-kpi-ai csx-hero-kpi-ai--${shortage.status}`}
-              role="status"
-              aria-live="polite"
-            >
-              <span className="csx-hero-kpi-ai-icon" aria-hidden>
-                <Sparkles size={13} strokeWidth={2.4} />
-              </span>
-              <div className="csx-hero-kpi-ai-body">
-                <span className="csx-hero-kpi-ai-label">AI 가이드</span>
-                <span className="csx-hero-kpi-ai-text">{aiMessage}</span>
-              </div>
-            </div>
-          </div>
+          {target != null && (
+            <p className="csx-gauge-target">
+              목표 <strong>{fmt(target)}%</strong>
+            </p>
+          )}
         </div>
+      </div>
+
+      {/* 하단: AI 가이드 + 달성 배지 */}
+      <div className={`csx-hero-footer csx-hero-footer--${shortage.status}`}>
+        <span className="csx-hero-footer-icon" aria-hidden>
+          <Sparkles size={12} strokeWidth={2.4} />
+        </span>
+        <span className="csx-hero-footer-text" role="status" aria-live="polite">
+          {aiMessage}
+        </span>
+        <span className={`csx-hero-chip csx-hero-chip--${statusMod}`}>
+          {met === true ? '달성' : met === false ? '미달성' : '집계 전'}
+        </span>
       </div>
 
       <GoodTicker comments={d.goodComments} />

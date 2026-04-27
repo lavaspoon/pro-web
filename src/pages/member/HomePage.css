@@ -580,6 +580,51 @@
   color: #3182f6;
 }
 
+/* 순위 뱃지 */
+.hp-rank-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px 5px 8px;
+  background: linear-gradient(135deg, #fff7e6 0%, #fff0cc 100%);
+  border: 1px solid #ffd666;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(255, 163, 0, 0.18);
+  flex-shrink: 0;
+}
+
+.hp-rank-chip-num {
+  font-size: 22px;
+  font-weight: 900;
+  color: #b45309;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.hp-rank-chip-right {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.hp-rank-chip-unit {
+  font-size: 12px;
+  font-weight: 800;
+  color: #b45309;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.hp-rank-chip-total {
+  font-size: 10px;
+  font-weight: 500;
+  color: #92400e;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+  opacity: 0.7;
+}
+
 /* 다음 등급까지 */
 .hp-tier-next {
   margin-top: 12px;
@@ -619,9 +664,58 @@
   }
 }
 
+/* 프로그레스 헤더 (타이틀 + 범례) */
+.hp-prog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  gap: 8px;
+}
+
+.hp-prog-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #4b5662;
+  letter-spacing: -0.02em;
+}
+
+.hp-prog-legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.hp-prog-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #6b7684;
+  letter-spacing: -0.01em;
+}
+
+.hp-prog-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.hp-prog-legend-dot--me {
+  background: radial-gradient(circle at 30% 30%, #85b6ff 0%, #3182f6 55%, #1f5fcc 100%);
+  box-shadow: 0 1px 4px rgba(49, 130, 246, 0.5);
+}
+
+.hp-prog-legend-dot--top {
+  background: radial-gradient(circle at 35% 30%, #ffd07a 0%, #ff9f1c 60%, #ea7a00 100%);
+  box-shadow: 0 1px 4px rgba(255, 163, 28, 0.5);
+}
+
 .hp-prog {
   position: relative;
-  padding: 40px 10px 0;
+  padding: 0 10px 0;
   display: flex;
   flex-direction: column;
 }
@@ -630,6 +724,7 @@
 .hp-prog-track {
   position: relative;
   height: 12px;
+  margin-top: 44px;
   background: linear-gradient(180deg, #eef2f7 0%, #e6ebf2 100%);
   border-radius: 999px;
   overflow: visible;
@@ -660,27 +755,18 @@
   position: absolute;
   left: 0;
   right: 0;
-  top: -26px;
-  height: 20px;
+  top: -38px;
+  height: 32px;
   pointer-events: none;
 }
 
 .hp-prog-stamp {
   position: absolute;
   transform: translateX(-50%);
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
   display: inline-flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  font-size: 11px;
-  font-weight: 900;
-  line-height: 1;
-  color: #7b8794;
-  background: #ffffff;
-  border: 1px dashed #cbd5e1;
-  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
+  gap: 1px;
 }
 
 .hp-prog-stamp::after {
@@ -691,17 +777,43 @@
   top: 100%;
   width: 1.5px;
   height: 6px;
-  background: rgba(100, 116, 139, 0.4);
+  background: rgba(100, 116, 139, 0.25);
 }
 
-.hp-prog-stamp.is-achieved {
+.hp-prog-stamp-icon {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 900;
+  line-height: 1;
+  color: #b0b8c1;
+  background: #f2f4f6;
+  border: 1.5px dashed #d1d6db;
+}
+
+.hp-prog-stamp.is-achieved .hp-prog-stamp-icon {
   color: #047857;
   background: linear-gradient(180deg, #ecfdf5 0%, #d1fae5 100%);
-  border: 1px solid rgba(16, 185, 129, 0.42);
-  box-shadow:
-    0 2px 7px rgba(16, 185, 129, 0.24),
-    0 0 0 1px rgba(16, 185, 129, 0.18) inset;
+  border: 1.5px solid rgba(16, 185, 129, 0.5);
+  box-shadow: 0 1px 5px rgba(16, 185, 129, 0.22);
 }
+
+.hp-prog-stamp-name {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  color: #b0b8c1;
+  line-height: 1;
+}
+
+.hp-prog-stamp--mangju.is-achieved .hp-prog-stamp-name { color: #d97706; }
+.hp-prog-stamp--player.is-achieved .hp-prog-stamp-name { color: #3182f6; }
+.hp-prog-stamp--topia.is-achieved  .hp-prog-stamp-name { color: #059669; }
 
 /* 3등급 배경 컬러 */
 .hp-prog-seg {
@@ -773,7 +885,7 @@
 .hp-prog-pin {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
   padding: 3px 9px;
   border-radius: 999px;
   font-size: 11px;
@@ -798,43 +910,46 @@
     0 0 0 1px rgba(255, 255, 255, 0.2) inset;
 }
 
-.hp-prog-pin--expected {
-  background: linear-gradient(180deg, #ecfdf5 0%, #d1fae5 100%);
-  color: #065f46;
-  border: 1px solid #6ee7b7;
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
-}
-
-/* 예상 마커 — 위치 및 점 */
-.hp-prog-marker--expected {
-  top: auto;
-  bottom: 5px;
-  flex-direction: column-reverse;
-}
-
-.hp-prog-dot--expected {
-  background: radial-gradient(circle at 35% 30%, #6ee7b7 0%, #10b981 60%, #059669 100%);
-  box-shadow:
-    0 2px 8px rgba(25, 31, 40, 0.18),
-    0 0 16px rgba(16, 185, 129, 0.35);
-}
-
 .hp-prog-pin-label { opacity: 0.8; font-weight: 600; }
+.hp-prog-pin-sep   { opacity: 0.4; font-weight: 400; }
 .hp-prog-pin-val   { font-weight: 800; font-variant-numeric: tabular-nums; }
 
 .hp-prog-pin--me .hp-prog-pin-label { opacity: 0.85; }
 
-/* 하단 숫자 눈금 */
+/* 하단 눈금 */
 .hp-prog-scale {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   margin-top: 10px;
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 600;
   color: #b0b8c1;
   letter-spacing: -0.01em;
   font-variant-numeric: tabular-nums;
   padding: 0 2px;
+}
+
+.hp-prog-scale-num {
+  color: #b0b8c1;
+}
+
+.hp-prog-scale-tier {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 999px;
+  letter-spacing: -0.01em;
+}
+
+.hp-prog-scale-tier--mangju {
+  color: #b45309;
+  background: rgba(251, 191, 36, 0.12);
+}
+
+.hp-prog-scale-tier--player {
+  color: #2563b0;
+  background: rgba(49, 130, 246, 0.1);
 }
 
 /* 우측 컴팩트 등급표 */
@@ -1021,7 +1136,7 @@
 
 /* ── 반응형 ────────────────────────────────────────────────── */
 @media (max-width: 560px) {
-  .hp-prog { padding: 48px 8px 80px; }
+  .hp-prog { padding: 0 8px 0; }
   .hp-prog-label-name { font-size: 11px; }
   .hp-prog-label-rate { font-size: 10px; }
   .hp-prog-label-range { display: none; }
@@ -1029,4 +1144,6 @@
   .hp-tier-summary-val { font-size: 13px; }
   .hp-tier-summary-label { font-size: 11px; }
   .hp-cases-item-val { font-size: 24px; }
+  .hp-prog-header { flex-direction: column; align-items: flex-start; gap: 4px; }
+  .hp-rank-chip-num { font-size: 18px; }
 }
