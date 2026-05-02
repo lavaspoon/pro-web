@@ -1,25 +1,36 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useMemberModalStore } from '../../store/memberModalStore';
-import { Sparkles, ChevronRight } from 'lucide-react';
+import { Sparkles, ChevronRight, Medal, Zap, Trophy } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
 import { fetchMemberHome, fetchMyCases } from '../../api/memberApi';
 import Skeleton from '../../components/common/Skeleton';
+import StatusBadge from '../../components/common/StatusBadge';
 import '../admin/DashboardPage.css';
 import './HomePage.css';
 
 const now = new Date();
-const currentYear = now.getFullYear();
 const currentMonthNum = now.getMonth() + 1;
 
-const PROGRAM_END_MONTH = 9;
+/** 월별 반영 시점·조건 (백엔드 스케줄러와 동일 개념) */
+const PAYOUT_POLICY_LINES = [
+  <>매년 <strong>1~9월</strong> 프로그램 기간, <strong>다음 달 1일 18시</strong>에 전월 실적이 반영됩니다.</>,
+  <>부서 스킬 <strong>만족도 목표 달성</strong> 월에만 그달 선정 건이 인증·누적되며, 반영 건이 <strong>1건 이상</strong>일 때만 해당 월 등급 단가가 지급됩니다.</>,
+  <>만족도만 달성하고 선정이 없으면 그달 지급은 없고, 누적·등급은 그대로 유지됩니다.</>,
+];
 
 const TIERS = [
   { id: 'mangju', name: 'YOU 망주', range: '1건 이상', minCases: 1, rateWon: 30000 },
   { id: 'player', name: 'YOU 플레이어', range: '10건 이상', minCases: 10, rateWon: 50000 },
   { id: 'topia', name: 'YOU 토피아', range: '19건 이상', minCases: 19, rateWon: 70000 },
 ];
+
+const TIER_ICONS = {
+  mangju: Medal,
+  player: Zap,
+  topia: Trophy,
+};
 
 function getTierIdx(n) {
   if (n >= 19) return 2;
@@ -28,35 +39,59 @@ function getTierIdx(n) {
   return -1;
 }
 
-function useCountUp(target, duration = 1200) {
-  const [value, setValue] = useState(0);
+function formatPreviewDate(dateStr) {
+  if (!dateStr) return '—';
+  const d = new Date(dateStr);
+  if (Number.isNaN(d.getTime())) return '—';
+  return `${d.getMonth() + 1}월 ${d.getDate()}일`;
+}
 
-  useEffect(() => {
-    const end = Number(target) || 0;
-    if (end <= 0) {
-      setValue(0);
-      return undefined;
-    }
+function formatWon(won) {
+  const n = Number(won);
+  if (!Number.isFinite(n)) return '—';
+  return `${n.toLocaleString('ko-KR')}원`;
+}
 
-    let rafId = 0;
-    const startedAt = performance.now();
-    const easeOutCubic = (t) => 1 - (1 - t) ** 3;
+function TierSatBadge({ met, hasTarget }) {
+  const base = 'hp-tier-sat-badge hp-tier-sat-badge--apple';
+  if (!hasTarget) {
+    return <span className={`${base} hp-tier-sat-badge--muted`}>목표 없음</span>;
+  }
+  if (met === true) {
+    return <span className={`${base} hp-tier-sat-badge--met`}>달성</span>;
+  }
+  if (met === false) {
+    return <span className={`${base} hp-tier-sat-badge--no`}>미달</span>;
+  }
+  return null;
+}
 
-    const tick = (nowMs) => {
-      const p = Math.min(1, (nowMs - startedAt) / duration);
-      const eased = easeOutCubic(p);
-      setValue(Math.round(end * eased));
-      if (p < 1) {
-        rafId = requestAnimationFrame(tick);
-      }
-    };
+function reflectCsDotClass(met) {
+  if (met === true) return 'hp-reflect-dot hp-reflect-dot--met';
+  if (met === false) return 'hp-reflect-dot hp-reflect-dot--no';
+  return 'hp-reflect-dot hp-reflect-dot--na';
+}
 
-    setValue(0);
-    rafId = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rafId);
-  }, [target, duration]);
+function reflectRawRowClass(raw) {
+  if (raw == null) return 'hp-reflect-raw hp-reflect-raw--na';
+  if (Number(raw) > 0) return 'hp-reflect-raw hp-reflect-raw--hit';
+  return 'hp-reflect-raw hp-reflect-raw--zero';
+}
 
-  return value;
+function reflectPickSegText(raw) {
+  if (raw == null) return '—';
+  return String(Number(raw));
+}
+
+function reflectCsTitle(met) {
+  if (met === true) return '만족도 달성';
+  if (met === false) return '만족도 미달';
+  return '반영 전';
+}
+
+function reflectPickTitle(raw) {
+  if (raw == null) return '반영 전';
+  return `선정 raw ${Number(raw)}건`;
 }
 
 function HomeSkeleton({ userName }) {
@@ -72,60 +107,51 @@ function HomeSkeleton({ userName }) {
         </div>
       </header>
 
-      <section className="hp-hero">
-        <Skeleton height={44} radius={14} />
-        <div className="hp-hero-top" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-          <Skeleton variant="text" width={120} height={12} />
-          <Skeleton width={200} height={40} radius={10} />
-          <Skeleton variant="text" width={160} height={12} />
-        </div>
-        <div className="hp-breakdown">
-          {[0, 1].map((i) => (
-            <div key={i} className="hp-breakdown-row">
-              <Skeleton variant="text" width={70} height={12} />
-              <Skeleton variant="text" width={60} height={12} />
-            </div>
-          ))}
-          <div className="hp-breakdown-divider" />
-          <div className="hp-breakdown-row hp-breakdown-row--total">
-            <Skeleton variant="text" width={90} height={13} />
-            <Skeleton variant="text" width={90} height={14} />
-          </div>
-        </div>
-        <Skeleton height={48} radius={12} />
-      </section>
+      <aside className="hp-program-note">
+        <Skeleton variant="text" width={140} height={13} />
+        <Skeleton variant="text" width="100%" height={36} />
+      </aside>
 
-      <section className="hp-card hp-tier-card">
-        <div className="hp-tier-now">
-          <div className="hp-tier-now-main" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <Skeleton width={74} height={22} radius={999} />
-            <Skeleton variant="text" width={80} height={13} />
+      <section className="hp-hero">
+        <div className="hp-month-block hp-month-block--main">
+          <div className="hp-month-block-header">
+            <div className="hp-month-block-title-wrap">
+              <Skeleton variant="text" width={110} height={14} />
+              <Skeleton width={88} height={22} radius={999} />
+            </div>
+            <Skeleton variant="text" width={56} height={12} />
           </div>
-          <Skeleton variant="text" width={110} height={12} />
-        </div>
-        <div className="hp-tier-body">
-          <div className="hp-prog">
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-              <Skeleton variant="text" width={80} height={12} />
-              <Skeleton variant="text" width={100} height={12} />
-            </div>
-            <Skeleton height={10} radius={999} style={{ marginTop: 44 }} />
-            <div style={{ marginTop: 10 }}>
-              <Skeleton variant="text" width={'100%'} height={10} />
-            </div>
-            <div style={{ marginTop: 14 }}>
-              <Skeleton variant="text" width={140} height={12} />
-            </div>
-          </div>
-          <div className="hp-tier-table">
+          <div className="hp-month-block-grid">
             {[0, 1, 2].map((i) => (
-              <div key={i} className="hp-tier-row" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <Skeleton variant="circle" width={8} height={8} />
-                <Skeleton variant="text" width={48} height={12} />
-                <Skeleton variant="text" width={56} height={12} />
-                <Skeleton variant="text" width={40} height={12} />
+              <div key={i} className="hp-month-block-item">
+                <Skeleton variant="text" width={40} height={11} />
+                <Skeleton variant="text" width={36} height={28} />
               </div>
             ))}
+          </div>
+          <div className="hp-month-preview hp-month-preview--loading">
+            {[0, 1, 2].map((i) => (
+              <Skeleton key={i} height={38} radius={8} />
+            ))}
+          </div>
+        </div>
+        <div className="hp-hero-compact">
+          <Skeleton variant="text" width="100%" height={14} />
+        </div>
+      </section>
+
+      <section className="hp-card hp-tier-dash hp-tier-dash--loading">
+        <div className="hp-tier-dash-hd">
+          <Skeleton variant="text" width={120} height={14} />
+        </div>
+        <div className="hp-tier-sheet hp-tier-sheet--loading">
+          <div className="hp-tier-main-grid">
+            <div className="hp-tier-main-col">
+              <Skeleton height={88} radius={12} />
+              <Skeleton height={56} radius={10} />
+              <Skeleton height={80} radius={10} />
+            </div>
+            <Skeleton width={118} height={108} radius={10} />
           </div>
         </div>
       </section>
@@ -149,63 +175,60 @@ export default function HomePage() {
     enabled: !!user?.skid,
   });
 
-  const monthStats = useMemo(() => {
+  const { monthStats, monthPreviewCases } = useMemo(() => {
     const mk = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-    let selected = 0, pending = 0, rejected = 0;
+    let selected = 0;
+    let pending = 0;
+    let rejected = 0;
+    const thisMonthCases = [];
     cases.forEach((c) => {
       const key = (c.month || c.submittedAt || '').slice(0, 7);
       if (key !== mk) return;
+      thisMonthCases.push(c);
       if (c.status === 'selected') selected++;
       else if (c.status === 'pending') pending++;
       else if (c.status === 'rejected') rejected++;
     });
-    return { selected, pending, rejected };
+    thisMonthCases.sort((a, b) => {
+      const ta = new Date(a.submittedAt || 0).getTime();
+      const tb = new Date(b.submittedAt || 0).getTime();
+      return tb - ta;
+    });
+    return {
+      monthStats: { selected, pending, rejected },
+      monthPreviewCases: thisMonthCases.slice(0, 3),
+    };
   }, [cases]);
-
-  // 공식 지급 예정액 = 백엔드가 반영 처리한 월별 등급 합산 (CS 달성 월만 포함)
-  // hooks 규칙상 조건문 앞에서 호출해야 하므로 data?.totalReflectedWon으로 안전하게 접근
-  const animatedEstimatedWon = useCountUp(data?.totalReflectedWon ?? 0, 1350);
 
   if (isLoading || !data) return <HomeSkeleton userName={user?.name} />;
   if (isError) return <div className="hp-error">오류: {error?.message}</div>;
 
   const {
-    myTotalSelected = 0,
-    monthlySelected = 0,
-    monthlyLimit = 3,
-    myIndividualRank,
-    individualRankTotal = 0,
-    topSelected = 0,
     totalReflectedWon = 0,
     currentMonthCsTargetMet = null,
+    csSkillTargetPercent = null,
+    yearReflectCumulativeCount = 0,
+    reflectMonthsJanSep = [],
   } = data;
 
-  const estimatedWon = totalReflectedWon;
+  const csHasTarget =
+    csSkillTargetPercent != null && Number(csSkillTargetPercent) > 0;
 
-  const tierIdx = getTierIdx(myTotalSelected);
-  const currentTier = tierIdx >= 0 ? TIERS[tierIdx] : null;
-  const nextTier = tierIdx < TIERS.length - 1 ? TIERS[tierIdx + 1] : null;
+  const cumulative = yearReflectCumulativeCount;
+  const tierIdx = getTierIdx(cumulative);
 
-  const casesToNext = nextTier ? nextTier.minCases - myTotalSelected : 0;
-  // 다음 등급 도달 시 추가로 받을 예상 금액 (이번 달 1개월분 기준 차액)
-  const boostWon = nextTier ? nextTier.rateWon - (currentTier?.rateWon ?? 0) : 0;
-
-  // 프로그레스 스케일 (0 ~ 25건 기준 — 토피아 이상 커버)
-  const SCALE_MAX = 25;
-  const clampPct = (n) => Math.max(0, Math.min(100, (n / SCALE_MAX) * 100));
-  const myPct = clampPct(myTotalSelected);
-  const topPct = clampPct(topSelected);
-
-  const tierStops = TIERS.map((t) => ({ ...t, pct: clampPct(t.minCases) }));
-
-  const isInProgram = currentMonthNum >= 1 && currentMonthNum <= PROGRAM_END_MONTH;
-  const remainLeft = isInProgram ? Math.max(0, monthlyLimit - monthlySelected) : 0;
-
+  const reflectRows =
+    reflectMonthsJanSep.length >= 9
+      ? reflectMonthsJanSep
+      : Array.from({ length: 9 }, (_, i) => {
+          const m = i + 1;
+          const hit = reflectMonthsJanSep.find((r) => r.month === m);
+          return hit ?? { month: m, csTargetMet: null, selectedCountRaw: null };
+        });
 
   return (
     <div className="page-container adm-dashboard adm-dashboard--yp fade-in yp-home hp-home">
 
-      {/* ── 헤더 ─────────────────────────────────────────────── */}
       <header className="hp-header">
         <div className="hp-header-text">
           <h1 className="hp-header-title">나의 YOU PRO</h1>
@@ -219,37 +242,17 @@ export default function HomePage() {
         </div>
       </header>
 
-      {/* ═══════════════════════════════════════════════════════
-          ① 금액 중심 히어로 — 토스 스타일
-         ═══════════════════════════════════════════════════════ */}
+      <aside className="hp-program-note" aria-label="인센티브 반영 안내">
+        <p className="hp-program-note-title">인센티브 반영 안내</p>
+        <ul className="hp-program-note-list">
+          {PAYOUT_POLICY_LINES.map((line, i) => (
+            <li key={i}>{line}</li>
+          ))}
+        </ul>
+      </aside>
+
       <section className="hp-hero">
-
-        {/* 금액 */}
-        <div className="hp-hero-top">
-          <p className="hp-hero-label">올해 예상 인센티브</p>
-          <div className="hp-hero-amount">
-            {estimatedWon > 0 ? (
-              <>
-                <span className="hp-hero-num">{animatedEstimatedWon.toLocaleString('ko-KR')}</span>
-                <span className="hp-hero-won">원</span>
-              </>
-            ) : (
-              <span className="hp-hero-num hp-hero-num--zero">0원</span>
-            )}
-          </div>
-          {currentTier ? (
-            <p className="hp-hero-sub">
-              <span className="hp-hero-tier">{currentTier.name}</span>
-              <span className="hp-hero-dot" />
-              월 {currentTier.rateWon.toLocaleString('ko-KR')}원
-            </p>
-          ) : (
-            <p className="hp-hero-sub">선정 1건부터 인센티브가 시작됩니다</p>
-          )}
-        </div>
-
-        {/* 이달 접수 현황 — 히어로 하단 통합 */}
-        <div className="hp-month-block">
+        <div className="hp-month-block hp-month-block--main">
           <div className="hp-month-block-header">
             <div className="hp-month-block-title-wrap">
               <span className="hp-month-block-title">{currentMonthNum}월 접수 현황</span>
@@ -287,107 +290,141 @@ export default function HomePage() {
               </div>
             </div>
           </div>
-          {isInProgram && (
-            <div className="hp-month-block-remain">
-              이달 접수 가능 <strong>{remainLeft}건</strong> 남음
-            </div>
-          )}
-        </div>
 
+          <div className="hp-month-preview">
+            <div className="hp-month-preview-head">
+              <span className="hp-month-preview-label">이달 접수 미리보기</span>
+              <span className="hp-month-preview-hint">최신순 최대 3건</span>
+            </div>
+            {monthPreviewCases.length === 0 ? (
+              <p className="hp-month-preview-empty">이번 달 접수 내역이 없습니다.</p>
+            ) : (
+              <ul className="hp-month-preview-list">
+                {monthPreviewCases.map((c) => (
+                  <li key={c.id}>
+                    <Link to="/member/cases" className="hp-month-preview-row" aria-label={`${c.title || '사례'} 상세 목록으로 이동`}>
+                      <span className="hp-month-preview-date">{formatPreviewDate(c.submittedAt)}</span>
+                      <span className="hp-month-preview-title" title={c.title || ''}>
+                        {c.title?.trim() ? c.title : '제목 없음'}
+                      </span>
+                      <ChevronRight size={14} strokeWidth={2.25} className="hp-month-preview-chev" aria-hidden />
+                      <span className="hp-month-preview-badge">
+                        <StatusBadge status={c.status} size="sm" />
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
       </section>
 
-      {/* ═══════════════════════════════════════════════════════
-          ② 나의 등급 — 심플 버전
-         ═══════════════════════════════════════════════════════ */}
-      <section className="hp-card hp-tier-card">
-        {/* 현재 내 상태 요약 한 줄 */}
-        <div className="hp-tier-now">
-          <div className="hp-tier-now-main">
-            <span className="hp-tier-now-badge">{currentTier?.name ?? '등급 전'}</span>
-            <span className="hp-tier-now-cases">
-              <strong>{myTotalSelected}</strong>건 선정
-            </span>
-          </div>
-        </div>
+      <section className="hp-card hp-tier-dash" aria-label="등급과 인센티브">
+        <header className="hp-tier-dash-hd">
+          <h2 className="hp-tier-dash-title">등급 · 인센티브</h2>
+        </header>
 
-        {/* 좌: 프로그레스 바 + 마커  |  우: 컴팩트 등급표 */}
-        <div className="hp-tier-body">
-          {/* 좌측 — 프로그레스 */}
-          <div className="hp-prog">
+        <div className="hp-tier-sheet">
+          <div className="hp-tier-main-grid">
+            <div className="hp-tier-main-col">
+              <div className="hp-tier-kpis">
+                <div className="hp-tier-kpi hp-tier-kpi--combined">
+                  <span className="hp-tier-kpi-label">현재 누적 금액</span>
+                  <span className="hp-tier-kpi-value">{formatWon(totalReflectedWon)}</span>
+                  <span className="hp-tier-kpi-sub">
+                    반영 누적{' '}
+                    <span className="hp-tier-kpi-sub-num">{cumulative}</span>
+                    건
+                  </span>
+                </div>
+                <div className="hp-tier-kpi">
+                  <span className="hp-tier-kpi-label">{currentMonthNum}월 만족도</span>
+                  <span className="hp-tier-kpi-value hp-tier-kpi-value--badge">
+                    <TierSatBadge met={currentMonthCsTargetMet} hasTarget={csHasTarget} />
+                  </span>
+                </div>
+              </div>
 
-            {/* 타이틀 */}
-            <div className="hp-prog-header">
-              <span className="hp-prog-title">누적 선정 건수</span>
+              <p className="hp-tier-policy" role="note">
+                만족도 목표에 <strong>미달</strong>한 달의 선정 건수는 인센티브 반영 기준으로{' '}
+                <strong>무효</strong> 처리되어 누적 실적·지급에 포함되지 않습니다.
+              </p>
+
+              <div className="hp-tier-month" role="group" aria-label="1월부터 9월 반영">
+                <div className="hp-tier-month-hd">
+                  <span className="hp-tier-month-title">1–9월</span>
+                  <span className="hp-tier-month-legend">
+                    <span className="hp-tier-month-legend-i">
+                      <span className="hp-reflect-dot hp-reflect-dot--met" />달성
+                    </span>
+                    <span className="hp-tier-month-legend-i">
+                      <span className="hp-reflect-dot hp-reflect-dot--no" />미달
+                    </span>
+                    <span className="hp-tier-month-legend-i">
+                      <span className="hp-reflect-dot hp-reflect-dot--na" />대기
+                    </span>
+                    <span className="hp-tier-month-legend-sep">·</span>
+                    <span>숫자 = raw</span>
+                    <span className="hp-tier-month-legend-sep">·</span>
+                    <span className="hp-tier-month-legend-note">미달 시 선정 무효</span>
+                  </span>
+                </div>
+
+                <div className="hp-reflect-rail-scroll">
+                  <div className="hp-reflect-rail hp-reflect-rail--inset">
+                    {reflectRows.map((row) => (
+                      <div
+                        key={row.month}
+                        className="hp-reflect-node"
+                        title={`${row.month}월 · ${reflectCsTitle(row.csTargetMet)} · ${reflectPickTitle(row.selectedCountRaw)}`}
+                      >
+                        <span className="hp-reflect-node-month">{row.month}</span>
+                        <span className={reflectCsDotClass(row.csTargetMet)} />
+                        <span className={reflectRawRowClass(row.selectedCountRaw)}>
+                          {reflectPickSegText(row.selectedCountRaw)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <div className="hp-prog-track">
-              <div className="hp-prog-stamps" aria-hidden>
-                {tierStops.map((t) => {
-                  const achieved = myTotalSelected >= t.minCases;
-                  const shortName = t.name.replace('YOU ', '');
+            <aside className="hp-tier-rank-aside" aria-label="등급표">
+              <span className="hp-tier-rank-aside-title">등급</span>
+              <ul className="hp-tier-rank-list">
+                {TIERS.map((tier, i) => {
+                  const TierIcon = TIER_ICONS[tier.id];
                   return (
-                    <div
-                      key={`stamp-${t.id}`}
-                      className={`hp-prog-stamp hp-prog-stamp--${t.id} ${achieved ? 'is-achieved' : ''}`}
-                      style={{ left: `${t.pct}%` }}
+                    <li
+                      key={tier.id}
+                      className={`hp-tier-rank-row hp-tier-rank-row--${tier.id}${i === tierIdx ? ' is-current' : ''}`}
                     >
-                      <span className="hp-prog-stamp-icon">{achieved ? '✓' : ''}</span>
-                      <span className="hp-prog-stamp-name">{shortName}</span>
-                    </div>
+                      <span className="hp-tier-rank-icon-wrap" aria-hidden>
+                        <TierIcon className="hp-tier-rank-icon" size={15} strokeWidth={2.25} />
+                      </span>
+                      <div className="hp-tier-rank-body">
+                        <span className="hp-tier-rank-name">{tier.name.replace('YOU ', '')}</span>
+                        <span className="hp-tier-rank-line">
+                          <span className="hp-tier-rank-range">{tier.range.replace(' 이상', '')}</span>
+                          <span className="hp-tier-rank-sep">·</span>
+                          <span className="hp-tier-rank-won">{tier.rateWon / 10000}만</span>
+                        </span>
+                      </div>
+                    </li>
                   );
                 })}
-              </div>
-              <div className="hp-prog-seg hp-prog-seg--1" style={{ left: `${tierStops[0].pct}%`, width: `${tierStops[1].pct - tierStops[0].pct}%` }} />
-              <div className="hp-prog-seg hp-prog-seg--2" style={{ left: `${tierStops[1].pct}%`, width: `${tierStops[2].pct - tierStops[1].pct}%` }} />
-              <div className="hp-prog-seg hp-prog-seg--3" style={{ left: `${tierStops[2].pct}%`, width: `${100 - tierStops[2].pct}%` }} />
-
-              <div className="hp-prog-marker hp-prog-marker--me" style={{ left: `${myPct}%` }}>
-                <div className="hp-prog-dot hp-prog-dot--me" />
-                <div className="hp-prog-stem hp-prog-stem--me" />
-                <div className="hp-prog-pin hp-prog-pin--me">
-                  <span className="hp-prog-pin-label">나의 누적 건수</span>
-                  <span className="hp-prog-pin-sep">·</span>
-                  <span className="hp-prog-pin-val">{myTotalSelected}건</span>
-                </div>
-              </div>
-            </div>
-
-            {/* 하단 눈금 + 등급 구간명 */}
-            <div className="hp-prog-scale">
-              <span className="hp-prog-scale-num">0</span>
-              <span className="hp-prog-scale-tier hp-prog-scale-tier--mangju">망주 · 10</span>
-              <span className="hp-prog-scale-tier hp-prog-scale-tier--player">플레이어 · 19</span>
-              <span className="hp-prog-scale-num">{SCALE_MAX}건</span>
-            </div>
-
-            {/* 다음 등급까지 */}
-            {nextTier ? (
-              <div className="hp-tier-next">
-                <strong>{nextTier.name}</strong>까지 <strong>{casesToNext}건</strong>, 월 <strong>{nextTier.rateWon.toLocaleString('ko-KR')}원</strong>을 꾸준히 받을 수 있어요.
-              </div>
-            ) : currentTier ? (
-              <div className="hp-tier-next hp-tier-next--max">최고 등급 달성 중</div>
-            ) : null}
+              </ul>
+            </aside>
           </div>
 
-          {/* 우측 — 컴팩트 등급표 */}
-          <div className="hp-tier-table">
-            {TIERS.map((tier, i) => {
-              const isActive = i === tierIdx;
-              return (
-                <div key={tier.id}
-                  className={`hp-tier-row hp-tier-row--${tier.id}${isActive ? ' is-active' : ''}`}>
-                  <span className="hp-tier-row-dot" />
-                  <span className="hp-tier-row-name">{tier.name}</span>
-                  <span className="hp-tier-row-range">{tier.range}</span>
-                  <span className="hp-tier-row-rate">{tier.rateWon / 10000}만</span>
-                </div>
-              );
-            })}
-            <div className="hp-tier-info-note">
-              달성한 등급은 9월까지 유지되며,<br />월 마다 만족도 달성 시, 해당 금액이 지급됩니다.
-            </div>
-          </div>
+          <p className="hp-tier-footnote">
+            금액은 반영된 지급 합계이며, 건수는 최근 반영 월{' '}
+            <code className="hp-tier-code">cumulative_count</code>입니다. 월별은 반영 후{' '}
+            <code className="hp-tier-code">cs_target_met</code> ·{' '}
+            <code className="hp-tier-code">selected_count_raw</code>. 미달 월은 선정이 반영되지 않습니다.
+          </p>
         </div>
       </section>
 

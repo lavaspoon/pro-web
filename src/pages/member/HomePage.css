@@ -36,6 +36,45 @@
 
 .hp-header-actions { display: flex; gap: 6px; flex-shrink: 0; }
 
+/* ── 인센티브 반영 정책 안내 (스케줄러 기준) ──────────────────── */
+.hp-home .hp-program-note {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0 0 2px;
+  padding: 12px 14px;
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  position: relative;
+  z-index: 1;
+}
+
+.hp-home .hp-program-note-title {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: #334155;
+}
+
+.hp-home .hp-program-note-list {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #64748b;
+  letter-spacing: -0.02em;
+  line-height: 1.55;
+}
+
+.hp-home .hp-program-note-list li strong {
+  font-weight: 800;
+  color: #1e293b;
+}
+
 .hp-btn {
   display: inline-flex;
   align-items: center;
@@ -158,16 +197,16 @@
 }
 
 /* ═══════════════════════════════════════════════════════════
-   ① 히어로 — 금액 중앙 + 영수증 스타일 내역
+   ① 히어로 — 접수 현황 우선 + 예상액·등급 간략
    ═══════════════════════════════════════════════════════════ */
 .hp-hero {
   background: #ffffff;
   border-radius: 18px;
   border: 1px solid #f2f4f6;
-  padding: 24px 20px 18px;
+  padding: 20px 18px 16px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
   position: relative;
   overflow: hidden;
 }
@@ -175,10 +214,13 @@
 .hp-hero::before {
   content: '';
   position: absolute;
-  top: -80px; left: 50%;
+  top: -48px;
+  left: 50%;
   transform: translateX(-50%);
-  width: 380px; height: 180px;
-  background: radial-gradient(ellipse at center, rgba(49, 130, 246, 0.1) 0%, transparent 70%);
+  width: 100%;
+  max-width: 420px;
+  height: 220px;
+  background: radial-gradient(ellipse at 50% 0%, rgba(49, 130, 246, 0.07) 0%, transparent 62%);
   pointer-events: none;
 }
 
@@ -646,6 +688,208 @@
   color: #3182f6;
 }
 
+/* 이달 접수 현황 — 메인 강조 */
+.hp-month-block--main {
+  padding: 18px 16px;
+  gap: 14px;
+  background: linear-gradient(180deg, #f7faff 0%, #eef3fb 100%);
+  border: 1.5px solid rgba(49, 130, 246, 0.22);
+  box-shadow: 0 8px 26px rgba(49, 130, 246, 0.09);
+}
+
+.hp-month-block--main .hp-month-block-title {
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: #191f28;
+}
+
+.hp-month-block--main .hp-month-block-item {
+  padding: 14px 14px 12px;
+}
+
+.hp-month-block--main .hp-month-block-val {
+  font-size: clamp(28px, 7.5vw, 36px);
+}
+
+.hp-month-block--main .hp-month-block-item-label-top {
+  font-size: 12px;
+}
+
+/* 이달 접수 미리보기 (최대 3건) */
+.hp-home .hp-month-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 10px;
+  margin-top: 4px;
+  border-top: 1px solid rgba(49, 130, 246, 0.12);
+}
+
+.hp-home .hp-month-preview-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.hp-home .hp-month-preview-label {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #475569;
+}
+
+.hp-home .hp-month-preview-hint {
+  font-size: 10.5px;
+  font-weight: 500;
+  color: #94a3b8;
+  letter-spacing: -0.01em;
+}
+
+.hp-home .hp-month-preview-empty {
+  margin: 0;
+  padding: 11px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #94a3b8;
+  text-align: center;
+  letter-spacing: -0.02em;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px dashed #cbd5e1;
+  border-radius: 10px;
+}
+
+.hp-home .hp-month-preview-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hp-home .hp-month-preview-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 8px 10px;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.hp-home .hp-month-preview-row:hover {
+  border-color: rgba(49, 130, 246, 0.38);
+  box-shadow: 0 2px 10px rgba(49, 130, 246, 0.1);
+}
+
+.hp-home .hp-month-preview-badge {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+
+.hp-home .hp-month-preview-title {
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: #1e293b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.hp-home .hp-month-preview-date {
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: #64748b;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.hp-home .hp-month-preview-chev {
+  color: #cbd5e1;
+  flex-shrink: 0;
+}
+
+.hp-home .hp-month-preview--loading {
+  gap: 6px;
+  padding-top: 10px;
+  margin-top: 4px;
+  border-top: 1px solid rgba(49, 130, 246, 0.12);
+}
+
+/* 예상 인센티브 · 등급 한 줄 (.hp-home 스코프로 정렬 보장) */
+.hp-home .hp-hero-compact {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 11px 14px;
+  background: #f9fafb;
+  border-radius: 12px;
+  border: 1px solid #e8ecf0;
+  font-size: 12px;
+  font-weight: 500;
+  color: #4b5662;
+  letter-spacing: -0.02em;
+  line-height: 1.45;
+  position: relative;
+  z-index: 1;
+}
+
+.hp-home .hp-hero-compact-label {
+  flex-shrink: 0;
+  font-weight: 600;
+  color: #8b95a1;
+}
+
+.hp-home .hp-hero-compact-amount {
+  flex-shrink: 0;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: #191f28;
+}
+
+.hp-home .hp-hero-compact-dot {
+  flex-shrink: 0;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #d1d6db;
+}
+
+.hp-home .hp-hero-compact-tier {
+  flex-shrink: 0;
+  font-weight: 700;
+  color: #1d6fd8;
+}
+
+.hp-home .hp-hero-compact-meta {
+  flex-shrink: 0;
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  color: #6b7684;
+}
+
+.hp-home .hp-hero-compact-hint {
+  flex: 1;
+  min-width: 0;
+  font-size: 11.5px;
+  color: #8b95a1;
+}
+
 /* 만족도 달성 여부 뱃지 (월 현황 스트립 내) */
 .hp-month-cs {
   display: inline-flex;
@@ -681,12 +925,692 @@
   .hp-month-strip-link { display: none; }
 }
 
+/* ── 등급 · 인센티브 (통합 시트, 컴팩트) ─────────────────────────── */
+.hp-home .hp-card.hp-tier-dash {
+  padding: 16px 16px 18px;
+  gap: 0;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    'Helvetica Neue',
+    Arial,
+    sans-serif;
+}
+
+.hp-tier-dash-hd {
+  margin: 0 0 12px;
+}
+
+.hp-tier-dash-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  color: #1d1d1f;
+}
+
+.hp-tier-sheet {
+  border-radius: 12px;
+  background: #f5f5f7;
+  padding: 12px;
+  box-sizing: border-box;
+}
+
+.hp-tier-main-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: start;
+}
+
+.hp-tier-main-col {
+  min-width: 0;
+}
+
+.hp-tier-sheet--loading .hp-tier-main-grid {
+  align-items: stretch;
+}
+
+.hp-tier-sheet--loading {
+  display: block;
+}
+
+.hp-tier-dash--loading .hp-tier-dash-hd {
+  margin-bottom: 12px;
+}
+
+.hp-tier-kpis {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: 0;
+  padding: 4px 0 12px;
+  border-bottom: 0.5px solid rgba(0, 0, 0, 0.08);
+}
+
+.hp-tier-kpi {
+  padding: 4px 10px 0;
+  text-align: center;
+  border-right: 0.5px solid rgba(0, 0, 0, 0.08);
+}
+
+.hp-tier-kpi:last-child {
+  border-right: none;
+}
+
+.hp-tier-kpi--combined {
+  padding-bottom: 6px;
+}
+
+.hp-tier-kpi-sub {
+  display: block;
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #86868b;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+}
+
+.hp-tier-kpi-sub-num {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: #424245;
+}
+
+.hp-tier-policy {
+  margin: 10px 2px 4px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(0, 122, 255, 0.06);
+  box-shadow: inset 0 0 0 0.5px rgba(0, 122, 255, 0.14);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.45;
+  letter-spacing: -0.02em;
+  color: #636366;
+}
+
+.hp-tier-policy strong {
+  font-weight: 600;
+  color: #1d1d1f;
+}
+
+.hp-tier-kpi-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 500;
+  color: #86868b;
+  letter-spacing: -0.01em;
+  margin-bottom: 6px;
+}
+
+.hp-tier-kpi-value {
+  display: block;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: #1d1d1f;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+.hp-tier-kpi-value--badge {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 26px;
+}
+
+.hp-tier-kpi-unit {
+  margin-left: 2px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #6e6e73;
+}
+
+.hp-tier-sat-badge.hp-tier-sat-badge--apple {
+  padding: 5px 11px;
+  border-radius: 980px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  border: none;
+}
+
+.hp-tier-sat-badge.hp-tier-sat-badge--apple.hp-tier-sat-badge--met {
+  background: rgba(52, 199, 89, 0.14);
+  color: #1e7e34;
+}
+
+.hp-tier-sat-badge.hp-tier-sat-badge--apple.hp-tier-sat-badge--no {
+  background: rgba(255, 59, 48, 0.12);
+  color: #c41e13;
+}
+
+.hp-tier-sat-badge.hp-tier-sat-badge--apple.hp-tier-sat-badge--muted {
+  background: rgba(142, 142, 147, 0.14);
+  color: #636366;
+}
+
+.hp-tier-rank-aside {
+  width: 118px;
+  flex-shrink: 0;
+  padding: 4px 0 0;
+}
+
+.hp-tier-rank-aside-title {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #86868b;
+  margin-bottom: 6px;
+  padding-left: 2px;
+}
+
+.hp-tier-rank-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.hp-tier-rank-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 7px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.06);
+}
+
+.hp-tier-rank-row.is-current {
+  background: rgba(0, 122, 255, 0.11);
+  box-shadow:
+    inset 0 0 0 0.5px rgba(0, 122, 255, 0.42),
+    0 2px 10px rgba(0, 122, 255, 0.07);
+}
+
+.hp-tier-rank-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.hp-tier-rank-row.is-current .hp-tier-rank-icon-wrap {
+  background: rgba(0, 122, 255, 0.16);
+}
+
+.hp-tier-rank-icon {
+  color: #636366;
+}
+
+.hp-tier-rank-row.is-current .hp-tier-rank-icon {
+  color: #007aff;
+}
+
+.hp-tier-rank-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.hp-tier-rank-name {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: #1d1d1f;
+  line-height: 1.2;
+}
+
+.hp-tier-rank-line {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: #86868b;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.hp-tier-rank-row.is-current .hp-tier-rank-name {
+  color: #004c99;
+}
+
+.hp-tier-rank-row.is-current .hp-tier-rank-line {
+  color: #3a3a3c;
+}
+
+.hp-tier-rank-sep {
+  margin: 0 2px;
+  opacity: 0.55;
+}
+
+.hp-tier-rank-won {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: #424245;
+}
+
+.hp-tier-rank-row.is-current .hp-tier-rank-won {
+  color: #1d1d1f;
+}
+
+.hp-tier-month {
+  padding-top: 12px;
+}
+
+.hp-tier-month-hd {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.hp-tier-month-title {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: #1d1d1f;
+}
+
+.hp-tier-month-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #86868b;
+}
+
+.hp-tier-month-legend-i {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.hp-tier-month-legend-i .hp-reflect-dot {
+  width: 8px;
+  height: 8px;
+}
+
+.hp-tier-month-legend-sep {
+  opacity: 0.45;
+}
+
+.hp-tier-month-legend-note {
+  font-weight: 600;
+  color: #636366;
+}
+
+.hp-reflect-rail-scroll {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.hp-reflect-rail {
+  display: grid;
+  grid-template-columns: repeat(9, minmax(0, 1fr));
+  gap: 0;
+  width: 100%;
+  min-width: 292px;
+  padding: 12px 8px 10px;
+  box-sizing: border-box;
+}
+
+.hp-reflect-rail--inset {
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.65);
+  box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.06);
+}
+
+.hp-reflect-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  padding: 2px 2px;
+  border-right: 0.5px solid rgba(0, 0, 0, 0.06);
+}
+
+.hp-reflect-node:last-child {
+  border-right: none;
+}
+
+.hp-reflect-node-month {
+  font-size: 11px;
+  font-weight: 600;
+  color: #424245;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.hp-reflect-dot {
+  flex-shrink: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+
+.hp-reflect-dot--met {
+  background: #34c759;
+}
+
+.hp-reflect-dot--no {
+  background: #ff9500;
+}
+
+.hp-reflect-dot--na {
+  background: #ffffff;
+  border: 1.5px solid #d2d2d7;
+}
+
+.hp-reflect-raw {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+  min-height: 1.2em;
+}
+
+.hp-reflect-raw--hit {
+  color: #007aff;
+}
+
+.hp-reflect-raw--zero {
+  color: #86868b;
+  font-weight: 500;
+}
+
+.hp-reflect-raw--na {
+  color: #d2d2d7;
+  font-weight: 500;
+}
+
+.hp-tier-footnote {
+  margin: 12px 4px 0;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.45;
+  color: #86868b;
+  letter-spacing: -0.01em;
+}
+
+.hp-tier-code {
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
+  font-size: 10px;
+  font-weight: 500;
+  color: #6e6e73;
+  background: rgba(0, 0, 0, 0.04);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+@media (max-width: 520px) {
+  .hp-tier-kpis {
+    grid-template-columns: 1fr;
+    border-bottom: none;
+    padding-bottom: 8px;
+  }
+
+  .hp-tier-kpi {
+    border-right: none;
+    border-bottom: 0.5px solid rgba(0, 0, 0, 0.08);
+    padding: 10px 8px 12px;
+    text-align: left;
+  }
+
+  .hp-tier-kpi:last-child {
+    border-bottom: none;
+  }
+
+  .hp-tier-kpi-value {
+    font-size: 20px;
+  }
+
+  .hp-tier-kpi--combined .hp-tier-kpi-value {
+    font-size: 22px;
+  }
+
+  .hp-tier-kpi-value--badge {
+    justify-content: flex-start;
+  }
+
+  .hp-tier-main-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .hp-tier-rank-aside {
+    width: 100%;
+    padding-top: 0;
+    padding-bottom: 4px;
+    border-top: 0.5px solid rgba(0, 0, 0, 0.08);
+    margin-top: 2px;
+    padding-top: 10px;
+  }
+
+  .hp-tier-rank-aside-title {
+    margin-bottom: 8px;
+  }
+
+  .hp-tier-rank-list {
+    flex-direction: column;
+    gap: 5px;
+    max-width: 280px;
+    margin-left: auto;
+  }
+
+  .hp-tier-rank-row {
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+    padding: 7px 10px;
+  }
+
+  .hp-tier-rank-icon-wrap {
+    width: 28px;
+    height: 28px;
+  }
+
+  .hp-tier-rank-body {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .hp-tier-rank-line {
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 360px) {
+  .hp-reflect-node-month {
+    font-size: 10px;
+  }
+
+  .hp-reflect-raw {
+    font-size: 11px;
+  }
+
+  .hp-reflect-rail {
+    min-width: 268px;
+    padding: 10px 6px 8px;
+  }
+}
+
+.hp-tier-sat-badge--compact {
+  padding: 3px 8px;
+  font-size: 10px;
+}
+
 /* ═══════════════════════════════════════════════════════════
    ② 등급 프로그레스 — 3구간 + 1위/나 마커
    ═══════════════════════════════════════════════════════════ */
 .hp-tier-card {
   padding: 16px 20px 16px;
   gap: 0;
+}
+
+.hp-tier-card--simple {
+  padding: 14px 18px 16px;
+}
+
+/* 이번 달 만족도 — 부서 스킬 목표·유효 건 집계 */
+.hp-tier-sat-block {
+  margin: -2px -4px 12px;
+  padding: 12px 14px 14px;
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+}
+
+.hp-tier-sat-block--loading {
+  background: transparent;
+  border-style: dashed;
+  border-color: #e5e7eb;
+}
+
+.hp-tier-sat-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.hp-tier-sat-title {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: #1e293b;
+}
+
+.hp-tier-sat-badge {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.hp-tier-sat-badge--met {
+  background: rgba(18, 167, 101, 0.14);
+  border: 1px solid rgba(18, 167, 101, 0.35);
+  color: #047857;
+}
+
+.hp-tier-sat-badge--no {
+  background: rgba(239, 68, 68, 0.09);
+  border: 1px solid rgba(239, 68, 68, 0.22);
+  color: #dc2626;
+}
+
+.hp-tier-sat-badge--muted {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+  font-weight: 700;
+}
+
+.hp-tier-sat-skill {
+  margin: 0 0 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #64748b;
+  letter-spacing: -0.02em;
+}
+
+.hp-tier-sat-skill strong {
+  font-weight: 800;
+  color: #334155;
+}
+
+.hp-tier-sat-ratio {
+  margin: 0 0 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hp-tier-sat-ratio-main {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  color: #0f172a;
+  font-variant-numeric: tabular-nums;
+}
+
+.hp-tier-sat-ratio-main strong {
+  font-weight: 900;
+}
+
+.hp-tier-sat-ratio-slash {
+  margin: 0 4px;
+  font-weight: 700;
+  color: #94a3b8;
+}
+
+.hp-tier-sat-ratio-caption {
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  letter-spacing: -0.02em;
+}
+
+.hp-tier-sat-pcts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #475569;
+  letter-spacing: -0.02em;
+}
+
+.hp-tier-sat-pcts strong {
+  font-weight: 800;
+  color: #1e293b;
+  font-variant-numeric: tabular-nums;
+}
+
+.hp-tier-sat-pcts-div {
+  color: #cbd5e1;
+  font-weight: 700;
+}
+
+.hp-tier-sat-footnote {
+  margin: 10px 0 0;
+  font-size: 10px;
+  font-weight: 500;
+  color: #94a3b8;
+  letter-spacing: -0.01em;
+  line-height: 1.45;
 }
 
 /* 현재 상태 한 줄 요약 */
@@ -1189,6 +2113,219 @@
   letter-spacing: -0.01em;
   line-height: 1.6;
   text-align: center;
+}
+
+/* 등급 카드 — 단순 레이아웃 (홈만 사용, 그리드·옛 프로그레스 규칙 무시) */
+.hp-home .hp-tier-body.hp-tier-body--simple {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 0;
+  grid-template-columns: unset;
+}
+
+.hp-home .hp-prog-header--simple {
+  margin-bottom: 0;
+}
+
+.hp-home .hp-prog-simple-wrap {
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 18px 10px 10px;
+}
+
+.hp-home .hp-prog-track.hp-prog-track--simple {
+  position: relative;
+  height: 12px;
+  margin-top: 0;
+  margin-bottom: 0;
+  background: #e3e8ef;
+  border-radius: 999px;
+  overflow: visible;
+  border: 1px solid rgba(49, 130, 246, 0.12);
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.88);
+}
+
+.hp-home .hp-prog-track.hp-prog-track--simple::before {
+  display: none;
+}
+
+.hp-home .hp-prog-track.hp-prog-track--simple .hp-prog-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 0;
+  height: 100%;
+  max-width: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #93b9ff, #3182f6);
+  pointer-events: none;
+  transition: width 0.35s ease;
+}
+
+.hp-home .hp-prog-marker.hp-prog-marker--simple.hp-prog-marker--me {
+  top: 50%;
+  z-index: 2;
+  transform: translate(-50%, -50%);
+  flex-direction: column;
+}
+
+.hp-home .hp-prog-marker--simple .hp-prog-dot--me {
+  width: 16px;
+  height: 16px;
+  border-width: 3px;
+}
+
+.hp-home .hp-prog-marker--simple .hp-prog-pin-val--simple {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #1e40af;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(49, 130, 246, 0.28);
+  box-shadow: 0 2px 8px rgba(25, 31, 40, 0.08);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.hp-home .hp-prog-scale.hp-prog-scale--simple {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 4px 2px;
+  align-items: start;
+  justify-items: center;
+  margin-top: 2px;
+  padding: 0 4px;
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 9px;
+  font-weight: 600;
+  color: #8b95a1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.25;
+  text-align: center;
+}
+
+.hp-home p.hp-tier-next--simple {
+  margin: 0;
+  margin-top: 6px;
+}
+
+.hp-home .hp-tier-next--simple {
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #333d4b;
+  text-align: center;
+  letter-spacing: -0.02em;
+  background: #eef4fc;
+  border: 1px solid rgba(49, 130, 246, 0.12);
+}
+
+.hp-home .hp-tier-next--simple strong {
+  font-weight: 800;
+  color: #2272eb;
+}
+
+.hp-home .hp-tier-next--simple.hp-tier-next--max {
+  background: #eafaf0;
+  border-color: rgba(18, 167, 101, 0.22);
+  color: #0f766e;
+}
+
+.hp-home .hp-tier-inline {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.hp-home .hp-tier-inline-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 10px 6px;
+  border-radius: 12px;
+  background: #f4f6f9;
+  border: 1px solid #e8ecf0;
+  text-align: center;
+  min-width: 0;
+}
+
+.hp-home .hp-tier-inline-item.is-active {
+  background: #ffffff;
+  border-color: rgba(49, 130, 246, 0.4);
+  box-shadow: 0 2px 12px rgba(49, 130, 246, 0.12);
+}
+
+.hp-home .hp-tier-inline-item--mangju.is-active {
+  border-color: rgba(217, 119, 6, 0.45);
+  box-shadow: 0 2px 10px rgba(245, 158, 11, 0.15);
+}
+
+.hp-home .hp-tier-inline-item--topia.is-active {
+  border-color: rgba(5, 150, 105, 0.4);
+  box-shadow: 0 2px 10px rgba(16, 185, 129, 0.12);
+}
+
+.hp-home .hp-tier-inline-name {
+  font-size: 11px;
+  font-weight: 800;
+  color: #191f28;
+  letter-spacing: -0.02em;
+}
+
+.hp-home .hp-tier-inline-meta {
+  font-size: 9px;
+  font-weight: 500;
+  color: #8b95a1;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+
+.hp-home .hp-tier-inline-rate {
+  font-size: 11px;
+  font-weight: 800;
+  color: #191f28;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.hp-home .hp-tier-info-note.hp-tier-info-note--simple {
+  margin: 0;
+  margin-top: 6px;
+  padding: 8px 12px;
+  background: #f2f4f6;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #6b7684;
+  letter-spacing: -0.02em;
+  line-height: 1.5;
+  text-align: center;
+  border: 1px solid #e8ecf0;
+}
+
+.hp-home .hp-tier-card.hp-tier-card--simple {
+  overflow: visible;
+}
+
+@media (max-width: 360px) {
+  .hp-home .hp-tier-inline {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* 현재 등급 요약 */
