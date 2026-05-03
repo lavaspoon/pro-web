@@ -307,6 +307,178 @@
   backdrop-filter: blur(2px);
 }
 
+.adm-sat-exclude-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1001;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(15, 23, 42, 0.42);
+}
+
+.adm-sat-exclude-modal {
+  width: min(540px, 100%);
+  border-radius: 14px;
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  background: #fff;
+  box-shadow: 0 22px 54px rgba(15, 23, 42, 0.3);
+  overflow: hidden;
+}
+
+.adm-sat-exclude-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.1);
+  background: rgba(248, 250, 252, 0.92);
+}
+
+.adm-sat-exclude-head h3 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.adm-sat-exclude-body {
+  padding: 0.95rem 1rem 1rem;
+}
+
+.adm-sat-exclude-hint {
+  margin: 0;
+  font-size: 0.77rem;
+  color: #475569;
+  line-height: 1.45;
+}
+
+.adm-sat-exclude-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.6rem;
+  margin-top: 0.8rem;
+}
+
+.adm-sat-exclude-grid--range {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.adm-sat-exclude-field--full {
+  grid-column: 1 / -1;
+}
+
+.adm-sat-exclude-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.34rem;
+}
+
+.adm-sat-exclude-field span {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #334155;
+}
+
+.adm-sat-exclude-field select {
+  min-height: 2.1rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 8px;
+  border: 1px solid rgba(15, 23, 42, 0.16);
+  background: #fff;
+  font-size: 0.78rem;
+}
+
+.adm-sat-exclude-datetime {
+  min-height: 2.1rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 8px;
+  border: 1px solid rgba(15, 23, 42, 0.16);
+  background: #fff;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.adm-sat-exclude-msg {
+  margin: 0.7rem 0 0;
+}
+
+.adm-sat-exclude-msg--ok {
+  border: 1px solid rgba(16, 185, 129, 0.28);
+  background: rgba(220, 252, 231, 0.65);
+  color: #166534;
+  border-radius: 10px;
+  padding: 0.58rem 0.74rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.adm-sat-exclude-actions {
+  margin-top: 0.85rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.45rem;
+}
+
+.adm-sat-exclude-history {
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid rgba(15, 23, 42, 0.1);
+}
+
+.adm-sat-exclude-history-title {
+  margin: 0 0 0.5rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.adm-sat-exclude-history-empty {
+  margin: 0;
+  font-size: 0.78rem;
+  color: #64748b;
+}
+
+.adm-sat-exclude-history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  max-height: 200px;
+  overflow: auto;
+}
+
+.adm-sat-exclude-history-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.65rem;
+  padding: 0.45rem 0.55rem;
+  border-radius: 8px;
+  background: rgba(248, 250, 252, 0.95);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  font-size: 0.76rem;
+}
+
+.adm-sat-exclude-history-skill {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.adm-sat-exclude-history-range {
+  color: #334155;
+  font-variant-numeric: tabular-nums;
+}
+
+.adm-sat-exclude-history-meta {
+  margin-left: auto;
+  color: #64748b;
+  font-size: 0.72rem;
+}
+
 .adm-sat-row-modal {
   width: min(1120px, 100%);
   height: min(86vh, 920px);
@@ -756,7 +928,397 @@
   padding-bottom: 2rem;
 }
 
+/* 금일 시간대별 만족도 (09–18시) */
+.adm-hourly-section {
+  margin-top: 0.2rem;
+}
+
+.adm-hourly-section-hint {
+  max-width: 52rem;
+  margin-top: 0.35rem;
+}
+
+.adm-hourly-empty {
+  margin: 0.5rem 0 0;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  background: rgba(248, 250, 252, 0.95);
+  border: 1px dashed rgba(15, 23, 42, 0.12);
+  font-size: 0.82rem;
+  color: #64748b;
+  line-height: 1.45;
+}
+
+.adm-hourly-shell {
+  margin-top: 0.85rem;
+  padding: 1.05rem 1.15rem 1.15rem;
+  border-radius: 20px;
+  background: linear-gradient(
+    165deg,
+    rgba(255, 255, 255, 0.97) 0%,
+    rgba(248, 250, 252, 0.94) 45%,
+    rgba(241, 245, 249, 0.72) 100%
+  );
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.04),
+    0 12px 40px rgba(15, 23, 42, 0.06);
+}
+
+.adm-hourly-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.adm-hourly-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.65rem 0.9rem;
+}
+
+.adm-hourly-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+  min-width: 0;
+}
+
+.adm-hourly-filter-k {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.adm-hourly-select {
+  min-width: 9.5rem;
+  min-height: 2.35rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 12px;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  background: rgba(255, 255, 255, 0.92);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #0f172a;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.adm-hourly-select:hover {
+  border-color: rgba(10, 126, 164, 0.28);
+}
+
+.adm-hourly-select:focus {
+  outline: none;
+  border-color: var(--accent, #0a7ea4);
+  box-shadow: 0 0 0 3px rgba(10, 126, 164, 0.18);
+}
+
+.adm-hourly-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.adm-hourly-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  border-radius: 12px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: rgba(255, 255, 255, 0.92);
+  color: #334155;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.adm-hourly-nav-btn:hover:not(:disabled) {
+  border-color: rgba(10, 126, 164, 0.35);
+  color: var(--accent, #0a7ea4);
+  background: rgba(10, 126, 164, 0.06);
+}
+
+.adm-hourly-nav-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(10, 126, 164, 0.22);
+}
+
+.adm-hourly-nav-btn:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+
+.adm-hourly-meta-txt {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #475569;
+  letter-spacing: -0.02em;
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.adm-hourly-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.18rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #0369a1;
+  background: rgba(56, 189, 248, 0.14);
+  border: 1px solid rgba(56, 189, 248, 0.28);
+}
+
+.adm-hourly-badge--wide {
+  color: #7c3aed;
+  background: rgba(139, 92, 246, 0.12);
+  border-color: rgba(139, 92, 246, 0.28);
+}
+
+/* ◀ ▶ 로 페이지 이동 — 가로 스크롤 없음 */
+.adm-hourly-strip {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.7rem;
+  align-items: stretch;
+  overflow: hidden;
+  min-width: 0;
+  padding: 0.12rem 0.08rem 0.08rem;
+}
+
+.adm-hourly-slot {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0.56rem 0.52rem 0.6rem;
+  border-radius: 16px;
+  background: linear-gradient(
+    165deg,
+    rgba(255, 255, 255, 0.97) 0%,
+    rgba(248, 250, 252, 0.9) 55%,
+    rgba(241, 245, 249, 0.82) 100%
+  );
+  border: 1px solid rgba(15, 23, 42, 0.09);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.92),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.35),
+    0 2px 10px rgba(15, 23, 42, 0.045);
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    border-color 0.18s ease;
+}
+
+/* 카드 상단 포인트 악센트 */
+.adm-hourly-slot::before {
+  content: '';
+  position: absolute;
+  left: 0.65rem;
+  right: 0.65rem;
+  top: 0;
+  height: 2px;
+  border-radius: 0 0 8px 8px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(10, 126, 164, 0.2) 22%,
+    rgba(10, 126, 164, 0.55) 50%,
+    rgba(10, 126, 164, 0.2) 78%,
+    transparent 100%
+  );
+  pointer-events: none;
+}
+
+/* 카드 우측 세로 구분선(말단 카드 제외) — 그라데이션으로 자연스럽게 페이드 */
+.adm-hourly-slot:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 18%;
+  bottom: 18%;
+  right: -0.36rem;
+  width: 1px;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(15, 23, 42, 0.05) 8%,
+    rgba(15, 23, 42, 0.11) 45%,
+    rgba(15, 23, 42, 0.14) 50%,
+    rgba(15, 23, 42, 0.11) 55%,
+    rgba(15, 23, 42, 0.05) 92%,
+    transparent 100%
+  );
+  pointer-events: none;
+}
+
+.adm-hourly-slot:hover {
+  transform: translateY(-1px);
+  border-color: rgba(10, 126, 164, 0.16);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.45),
+    0 8px 22px rgba(15, 23, 42, 0.07);
+}
+
+.adm-hourly-slot__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.3rem;
+  margin-bottom: 0.4rem;
+  padding-bottom: 0.4rem;
+  border-bottom: none;
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(10, 126, 164, 0.14) 12%,
+    rgba(15, 23, 42, 0.09) 50%,
+    rgba(10, 126, 164, 0.14) 88%,
+    transparent 100%
+  );
+  background-size: 100% 1px;
+  background-repeat: no-repeat;
+  background-position: bottom;
+  min-width: 0;
+}
+
+.adm-hourly-slot__time {
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: #0f172a;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.adm-hourly-slot__n {
+  font-size: 0.62rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: #64748b;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.adm-hourly-slot__metrics {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-width: 0;
+}
+
+.adm-hourly-metric {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.35rem 0.5rem;
+  min-width: 0;
+  padding: 0.22rem 0;
+}
+
+.adm-hourly-metric:not(:first-child) {
+  padding-top: 0.34rem;
+  margin-top: 0.04rem;
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(15, 23, 42, 0.05) 10%,
+    rgba(15, 23, 42, 0.09) 50%,
+    rgba(15, 23, 42, 0.05) 90%,
+    transparent 100%
+  );
+  background-size: 100% 1px;
+  background-repeat: no-repeat;
+  background-position: top center;
+}
+
+.adm-hourly-metric dt {
+  margin: 0;
+  font-size: 0.62rem;
+  font-weight: 600;
+  color: #94a3b8;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+  flex: 0 1 auto;
+  min-width: min-content;
+  max-width: 100%;
+  overflow: visible;
+  white-space: normal;
+  word-break: keep-all;
+}
+
+.adm-hourly-metric dd {
+  margin: 0;
+  padding-top: 0.06rem;
+  text-align: right;
+  font-size: 0.68rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  color: #334155;
+  flex: 0 0 auto;
+  white-space: nowrap;
+  min-width: 2.35rem;
+}
+
+.adm-hourly-metric-val--pos {
+  color: #0f766e;
+}
+
+.adm-hourly-metric-val--neg {
+  color: #b91c1c;
+}
+
+.adm-hourly-skeleton__filters {
+  display: flex;
+  gap: 0.65rem;
+  margin-bottom: 1rem;
+}
+
+.adm-hourly-skeleton__grid {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.5rem;
+  overflow: hidden;
+}
+
+.adm-hourly-skeleton__grid .sk {
+  flex: 1 1 0;
+  min-width: 7.35rem;
+  max-width: 12rem;
+}
+
 @media (max-width: 768px) {
+  .adm-sat-exclude-grid {
+    grid-template-columns: 1fr;
+  }
+
   .adm-sat-member-detail-card .member-card-header {
     align-items: flex-start;
   }

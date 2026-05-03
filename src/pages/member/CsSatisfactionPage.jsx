@@ -195,6 +195,8 @@ function HeroSkeleton() {
     <>
       <section className="csx-session csx-session--primary">
         <section className="csx-hero csx-hero--unified">
+          <span className="csx-corner-tr" aria-hidden />
+          <span className="csx-corner-bl" aria-hidden />
           <div className="csx-hero-topbar" aria-hidden>
             <Skeleton width={72} height={24} radius={999} />
           </div>
@@ -203,8 +205,7 @@ function HeroSkeleton() {
               <div className="csx-gauge-wrap" style={{ alignItems: 'center', justifyContent: 'center' }} aria-hidden>
                 <Skeleton width={184} height={184} radius={999} />
               </div>
-              <Skeleton height={36} radius={10} style={{ width: '100%' }} />
-              <Skeleton height={28} radius={999} style={{ width: '72%' }} />
+              <Skeleton height={36} radius={999} style={{ width: '70%', margin: '0 auto' }} />
             </div>
             <div className="csx-ai-insight csx-ai-insight--skeleton" aria-hidden>
               <Skeleton variant="text" width={120} height={14} />
@@ -218,6 +219,8 @@ function HeroSkeleton() {
         </section>
       </section>
       <section className="csx-session csx-session--secondary csx-session--skeleton csx-session--rates" aria-hidden>
+        <span className="csx-corner-tr" aria-hidden />
+        <span className="csx-corner-bl" aria-hidden />
         <Skeleton variant="text" width={140} height={18} />
         <Skeleton variant="text" width="95%" height={12} style={{ marginTop: 6 }} />
         <ul className="csx-rate-deck csx-rate-deck--skeleton">
@@ -275,8 +278,8 @@ function GaugeRing({ actual, target, met, size = 'default' }) {
           <stop offset="100%" stopColor="#34d399" />
         </linearGradient>
         <linearGradient id="gaugeGradNo" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#3182f6" />
-          <stop offset="100%" stopColor="#60a5fa" />
+          <stop offset="0%" stopColor="#64748b" />
+          <stop offset="100%" stopColor="#94a3b8" />
         </linearGradient>
         <linearGradient id="gaugeGradNeutral" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor="#94a3b8" />
@@ -329,7 +332,7 @@ function GaugeRing({ actual, target, met, size = 'default' }) {
             transformOrigin: `${ringCx}px ${ringCy}px`,
             filter: met === true
               ? 'drop-shadow(0 0 5px rgba(16,185,129,0.5))'
-              : 'drop-shadow(0 0 5px rgba(49,130,246,0.4))',
+              : 'drop-shadow(0 0 5px rgba(100,116,139,0.35))',
           }}
         />
       )}
@@ -344,7 +347,7 @@ function GaugeRing({ actual, target, met, size = 'default' }) {
           <circle
             cx={px} cy={py} r={4}
             fill="#ffffff"
-            stroke={met === true ? '#059669' : '#3182f6'}
+            stroke={met === true ? '#059669' : met === false ? '#64748b' : '#94a3b8'}
             strokeWidth={2.5}
           />
         );
@@ -358,65 +361,6 @@ function clipInsightLines(lines, maxItems = 8, maxChars = 120) {
     const t = String(s);
     return t.length > maxChars ? `${t.slice(0, maxChars)}…` : t;
   });
-}
-
-function SatisfactionLinearBar({
-  actualPct,
-  target,
-  met,
-  animatedActualPct,
-}) {
-  const fillPct = animatedActualPct != null
-    ? Math.min(100, Math.max(0, Number(animatedActualPct)))
-    : null;
-  const markerLeft = target != null ? Math.min(100, Math.max(0, Number(target))) : null;
-  const statusMod = met === true ? 'met' : met === false ? 'no' : 'none';
-
-  const ariaLabel = (() => {
-    const a = actualPct != null ? `${fmt(animatedActualPct ?? actualPct)}%` : '집계 전';
-    const t = target != null ? `목표 ${fmt(target)}%` : '목표 미설정';
-    return `이달 만족도 진행, 실적 ${a}, ${t}`;
-  })();
-
-  return (
-    <div
-      className={`csx-linear-bar csx-linear-bar--${statusMod}`}
-      role="group"
-      aria-label={ariaLabel}
-    >
-      <div className="csx-linear-bar-meta" aria-hidden>
-        {actualPct != null ? (
-          <>
-            <strong>{fmt(animatedActualPct ?? actualPct)}%</strong>
-            {target != null ? (
-              <span className="csx-linear-bar-slash"> / {fmt(target)}%</span>
-            ) : (
-              <span className="csx-linear-bar-muted"> · 목표 없음</span>
-            )}
-          </>
-        ) : (
-          <span className="csx-linear-bar-muted">집계 전</span>
-        )}
-      </div>
-      <div className="csx-linear-bar-track" aria-hidden>
-        {fillPct != null ? (
-          <div
-            className={`csx-linear-bar-fill csx-linear-bar-fill--${statusMod}`}
-            style={{ width: `${fillPct}%` }}
-          />
-        ) : (
-          <div className="csx-linear-bar-fill csx-linear-bar-fill--empty" style={{ width: '0%' }} />
-        )}
-        {markerLeft != null ? (
-          <span
-            className="csx-linear-bar-marker"
-            style={{ left: `${markerLeft}%` }}
-            title={`목표 ${fmt(target)}%`}
-          />
-        ) : null}
-      </div>
-    </div>
-  );
 }
 
 function buildInsightStatsLines(d) {
@@ -786,15 +730,12 @@ function ReceptionFocusSection({
       className="csx-session csx-session--secondary csx-session--rates"
       aria-labelledby="csx-session-reception-focus-title"
     >
+      <span className="csx-corner-tr" aria-hidden />
+      <span className="csx-corner-bl" aria-hidden />
       <header className="csx-session-head-main csx-session-head-main--rates">
         <h2 id="csx-session-reception-focus-title" className="csx-session-title-main">
           만족도 현황
         </h2>
-        <p className="csx-session-desc-main">
-          기준: <strong>해당 지표 건수 ÷ 이달 평가 건수(useYn=Y)</strong>
-          <span className="csx-session-desc-divider">·</span>
-          분모 {received > 0 ? <strong>{received}건</strong> : <strong>0건</strong>}
-        </p>
       </header>
 
       <SatisfactionRateDeck
@@ -820,6 +761,7 @@ function HeroPanel({
   month,
   insightMents,
   insightMentsPending,
+  skill,
 }) {
   const d = data ?? {};
   const actualPct = computeActualPct(d);
@@ -848,17 +790,10 @@ function HeroPanel({
 
   const statusMod = met === true ? 'met' : met === false ? 'no' : 'none';
 
-  const compactStatus = (() => {
-    if (met === true) return '달성';
-    if (met === false && shortage.status === 'short') return `미달성 · 만족 ${shortage.count}건 부족`;
-    if (met === false) return '미달성';
-    if (shortage.status === 'noData') return '접수 대기';
-    if (shortage.status === 'noTarget') return '목표 없음';
-    return '집계 전';
-  })();
-
   return (
     <section className="csx-hero csx-hero--unified">
+      <span className="csx-corner-tr" aria-hidden />
+      <span className="csx-corner-bl" aria-hidden />
       <div className="csx-hero-topbar csx-hero-topbar--solo">
         <span className="csx-hero-chip csx-hero-chip--skill">
           {month}월 만족도
@@ -870,28 +805,45 @@ function HeroPanel({
           <div className={`csx-gauge-featured csx-gauge-wrap csx-gauge-wrap--${statusMod}`}>
             <GaugeRing actual={animatedActualPct} target={target} met={met} size="large" />
             <div className="csx-gauge-center">
-              <p className="csx-gauge-period">
-                목표: {target != null ? `${fmt(target)}%` : '—'}
-              </p>
+              <p className="csx-gauge-period">현재 만족도</p>
               <div className="csx-gauge-value">
                 <span className={`csx-gauge-num csx-gauge-num--${statusMod}`}>
                   {actualPct != null ? fmt(animatedActualPct) : '—'}
                 </span>
                 <span className="csx-gauge-unit">%</span>
               </div>
+              <p className="csx-gauge-target-line">
+                목표 <strong>{target != null ? `${fmt(target)}%` : '—'}</strong>
+              </p>
             </div>
           </div>
 
-          <SatisfactionLinearBar
-            actualPct={actualPct}
-            target={target}
-            met={met}
-            animatedActualPct={animatedActualPct}
-          />
-
-          <p className={`csx-hero-status-compact csx-hero-status-compact--${statusMod}`} role="status">
-            {compactStatus}
-          </p>
+          <div
+            className={`csx-achieve-badge csx-achieve-badge--${statusMod}`}
+            role="status"
+            aria-label={met === true ? '목표 달성' : met === false ? '목표 미달성' : '집계 전'}
+          >
+            <span className="csx-achieve-badge-icon" aria-hidden>
+              {met === true ? (
+                <CheckCircle2 size={20} strokeWidth={2.4} />
+              ) : met === false ? (
+                <AlertCircle size={20} strokeWidth={2.4} />
+              ) : (
+                <Inbox size={20} strokeWidth={2.4} />
+              )}
+            </span>
+            <span className="csx-achieve-badge-text">
+              {met === true
+                ? `${skill ? `${skill} ` : ''}만족도 목표 달성`
+                : met === false
+                  ? `${skill ? `${skill} ` : ''}만족도 목표 미달성`
+                  : shortage.status === 'noData'
+                    ? '접수 대기'
+                    : shortage.status === 'noTarget'
+                      ? '목표 미설정'
+                      : '집계 전'}
+            </span>
+          </div>
         </div>
 
         <CsAiInsight
@@ -1055,6 +1007,7 @@ export default function CsSatisfactionPage() {
               month={month}
               insightMents={insightMentsQuery.data}
               insightMentsPending={insightMentsQuery.isPending || insightMentsQuery.isFetching}
+              skill={headerSkill}
             />
           </section>
           <ReceptionFocusSection

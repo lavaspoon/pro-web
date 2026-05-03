@@ -98,14 +98,12 @@
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: linear-gradient(
-    105deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0) 38%,
-    rgba(255, 255, 255, 0.35) 50%,
-    rgba(255, 255, 255, 0) 62%,
-    transparent 100%
-  );
+  background: linear-gradient(105deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0) 38%,
+      rgba(255, 255, 255, 0.35) 50%,
+      rgba(255, 255, 255, 0) 62%,
+      transparent 100%);
   background-size: 200% 100%;
   animation: adm-pending-shimmer 4.5s ease-in-out infinite;
   pointer-events: none;
@@ -113,6 +111,7 @@
 }
 
 @keyframes adm-pending-shimmer {
+
   0%,
   100% {
     background-position: 120% 0;
@@ -270,12 +269,10 @@
   padding: 1.35rem 1.25rem 1.4rem;
   border-radius: 20px;
   border: 1px solid var(--adm-hairline, rgba(60, 60, 67, 0.11));
-  background: linear-gradient(
-    152deg,
-    rgba(255, 255, 255, 0.82) 0%,
-    rgba(248, 250, 252, 0.94) 45%,
-    rgba(236, 241, 247, 0.55) 100%
-  );
+  background: linear-gradient(152deg,
+      rgba(255, 255, 255, 0.82) 0%,
+      rgba(248, 250, 252, 0.94) 45%,
+      rgba(236, 241, 247, 0.55) 100%);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.9),
     0 4px 22px rgba(15, 23, 42, 0.05);
@@ -287,11 +284,9 @@
   inset: 0;
   border-radius: inherit;
   pointer-events: none;
-  background: radial-gradient(
-    ellipse 90% 60% at 10% -5%,
-    rgba(14, 165, 233, 0.08),
-    transparent 52%
-  );
+  background: radial-gradient(ellipse 90% 60% at 10% -5%,
+      rgba(14, 165, 233, 0.08),
+      transparent 52%);
 }
 
 .adm-dashboard--yp .adm-overview-shell .adm-overview-grid {
@@ -306,12 +301,10 @@
   padding: 1.2rem 1.15rem 1rem;
   border-radius: 18px;
   border-color: rgba(60, 60, 67, 0.09);
-  background: linear-gradient(
-    168deg,
-    rgba(255, 255, 255, 0.99) 0%,
-    rgba(252, 253, 255, 0.88) 55%,
-    rgba(248, 250, 252, 0.65) 100%
-  );
+  background: linear-gradient(168deg,
+      rgba(255, 255, 255, 0.99) 0%,
+      rgba(252, 253, 255, 0.88) 55%,
+      rgba(248, 250, 252, 0.65) 100%);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.95),
     0 1px 2px rgba(15, 23, 42, 0.035),
@@ -330,11 +323,9 @@
   right: 0;
   height: 3px;
   border-radius: 18px 18px 0 0;
-  background: linear-gradient(
-    90deg,
-    var(--kpi-accent, var(--accent)),
-    rgba(255, 255, 255, 0.35)
-  );
+  background: linear-gradient(90deg,
+      var(--kpi-accent, var(--accent)),
+      rgba(255, 255, 255, 0.35));
   opacity: 0.95;
 }
 
@@ -560,6 +551,18 @@
   color: var(--danger, #dc2626);
   font-size: 0.875rem;
   font-weight: 500;
+}
+
+.adm-team-detail-empty {
+  margin: 0;
+  padding: 1.75rem 1.25rem;
+  border-radius: var(--r-lg);
+  border: 1px dashed var(--border);
+  background: var(--surface-inset);
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-align: center;
 }
 
 .adm-header {

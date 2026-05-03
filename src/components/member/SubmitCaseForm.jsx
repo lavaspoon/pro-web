@@ -5,7 +5,7 @@ import useAuthStore from '../../store/authStore';
 import { submitCase } from '../../api/memberApi';
 import '../../pages/member/SubmitCasePage.css';
 
-/** STT TB_STT_RESULT.call_time 과 맞추기: "YYYY-MM-DD HH:mm:00" */
+/** API 전달용 통화 일시: "YYYY-MM-DD HH:mm:00" */
 function buildCallDateTimeForApi(datePart, timePart) {
   if (!datePart || !timePart) return '';
   return `${datePart} ${timePart}:00`;
@@ -119,7 +119,7 @@ export default function SubmitCaseForm({ className = '', onGoToCaseList, compact
         <p>
           YOU PRO 사례가 접수되었습니다.
           <br />
-          녹취(STT) 매칭 후 AI·관리자 검토가 진행됩니다.
+          별도 녹취 시스템 분석 후 AI 1차 판단·관리자 검토가 진행됩니다.
         </p>
         <div className="success-actions">
           <button type="button" className="btn btn-primary" onClick={onGoToCaseList}>
@@ -277,7 +277,7 @@ export default function SubmitCaseForm({ className = '', onGoToCaseList, compact
               )}
             </button>
             {compact && (
-              <p className="submit-form-footnote">선정 한도: 월 3회 · 연 36회 · 상담 일시는 STT와 동일해야 매칭됩니다.</p>
+              <p className="submit-form-footnote">선정 한도: 월 3회 · 연 36회 · 통화 일시는 실제 상담 시각과 맞게 입력해 주세요.</p>
             )}
           </div>
         </form>
@@ -294,9 +294,9 @@ export default function SubmitCaseForm({ className = '', onGoToCaseList, compact
                   선정 한도: 월 <strong>{3}</strong>회 · 연 <strong>{36}</strong>회
                 </li>
                 <li>
-                  <strong>통화 일시</strong>는 STT에 찍힌 통화 시작 시각과 같아야 녹취가 연결됩니다.
+                  <strong>통화 일시</strong>는 실제 통화가 이루어진 시각을 선택해 주세요.
                 </li>
-                <li>관리자 측 녹취·STT 적재 후 매칭·AI 검토가 이어집니다.</li>
+                <li>별도 녹취 시스템에서 분석이 끝나면 AI 1차 판단이 저장되고, 관리자 검토가 이어집니다.</li>
                 <li>판정·피드백은 내 사례 상세에서 확인할 수 있습니다.</li>
               </ul>
             </div>
@@ -308,7 +308,7 @@ export default function SubmitCaseForm({ className = '', onGoToCaseList, compact
               </div>
               <ul className="guide-list">
                 <li>고객 감정·문제 상황을 먼저 짚어 주세요.</li>
-                <li>실제로 한 안내·조치를 순서대로 적으면 STT 대조에 유리합니다.</li>
+                <li>실제로 한 안내·조치를 순서대로 적어 두면 검토 시 참고에 도움이 됩니다.</li>
                 <li>고객 반응·만족 표현이 있다면 함께 적어 주세요.</li>
               </ul>
             </div>

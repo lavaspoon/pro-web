@@ -1,32 +1,35 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronDown, ChevronUp, Eye } from 'lucide-react';
-import StatusBadge from '../../components/common/StatusBadge';
+import { LayoutList } from 'lucide-react';
 import AdminMemberCasesModal from './AdminMemberCasesModal';
 import './TeamDetailPage.css';
 
-function formatDate(dateStr) {
-  if (!dateStr) return '-';
-  const d = new Date(dateStr);
-  return `${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()}`;
-}
-
 /**
- * 실(팀) 상세 — 구성원별 접기/펼치기 사례 목록 + 모달
+ * 실(팀) 상세 — 구성원 카드 클릭 시 사례 목록 모달
  * TeamDetailPage · Dashboard 공통
- * @param {boolean} embedReadOnly 대시보드 임베드: 판정 위저드 대신 접수·판정·AI 요약 상세만 표시
  */
-export default function AdminMemberDetailCard({ member, embedReadOnly = false }) {
-  const [expanded, setExpanded] = useState(false);
+export default function AdminMemberDetailCard({ member }) {
   const [casesModalOpen, setCasesModalOpen] = useState(false);
-  const limit = Number(member.monthlyLimit) > 0 ? Number(member.monthlyLimit) : 3;
-  const monthPct = Math.min((Number(member.monthlySelected || 0) / limit) * 100, 100);
   const totalSubmitted = Number(member.totalSubmitted ?? 0);
   const monthlySubmitted = Number(member.monthlySubmitted ?? 0);
+  const monthlySelected = Number(member.monthlySelected ?? 0);
+  const reflectCumulative = Number(member.reflectCumulativeCount ?? 0);
 
   return (
-    <div className={`member-detail-card member-detail-card--metrics ${expanded ? 'expanded' : ''}`}>
-      <div className="member-card-header" onClick={() => setExpanded(!expanded)}>
+    <div className="member-detail-card member-detail-card--metrics">
+      <div
+        className="member-card-header"
+        onClick={() => setCasesModalOpen(true)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setCasesModalOpen(true);
+          }
+        }}
+        role="button"
+        tabIndex={0}
+        aria-label={`${member.name} 사례 목록 열기`}
+      >
         <div className="member-card-left">
           <div className="member-avatar-lg">{member.name[0]}</div>
           <div>
@@ -36,80 +39,32 @@ export default function AdminMemberDetailCard({ member, embedReadOnly = false })
         </div>
 
         <div className="member-card-stats member-card-stats--metrics">
-          <div className="mcs-item">
+          <div className="mcs-item mcs-item--panel">
             <span className="mcs-label">연간 접수 건수</span>
             <span className="mcs-value">{totalSubmitted}건</span>
           </div>
-          <div className="mcs-item">
+          <div className="mcs-item mcs-item--panel">
             <span className="mcs-label">연간 선정 건수</span>
-            <span className="mcs-value">{member.totalSelected}건</span>
+            <span className="mcs-value">{Number(member.totalSelected ?? 0)}건</span>
           </div>
-          <div className="mcs-item">
+          <div className="mcs-item mcs-item--panel">
             <span className="mcs-label">이달 접수 건수</span>
             <span className="mcs-value">{monthlySubmitted}건</span>
           </div>
-          <div className="mcs-item mcs-item--with-bar">
+          <div className="mcs-item mcs-item--panel">
             <span className="mcs-label">이달 선정 건수</span>
-            <div className="mcs-monthly">
-              <span className="mcs-value blue">
-                {member.monthlySelected} / {limit}
-              </span>
-              <div className="mcs-bar">
-                <div className="mcs-bar-fill" style={{ width: `${monthPct}%` }} />
-              </div>
-            </div>
+            <span className="mcs-value">{monthlySelected}건</span>
           </div>
-          <div className="mcs-item">
-            <span className="mcs-label">대기중</span>
-            <span
-              className={`mcs-value ${Number(member.pendingCount) > 0 ? 'amber' : ''}`}
-            >
-              {member.pendingCount}건
-            </span>
+          <div className="mcs-item mcs-item--panel mcs-item--reflect">
+            <span className="mcs-label mcs-label--reflect">누적 인증 건수</span>
+            <span className="mcs-value mcs-value--reflect">{reflectCumulative}건</span>
           </div>
         </div>
 
-        <button type="button" className="expand-btn" aria-label="상세 보기">
-          {expanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-        </button>
+        <span className="expand-btn expand-btn--static" aria-hidden>
+          <LayoutList size={18} strokeWidth={2} />
+        </span>
       </div>
-
-      {expanded && (
-        <div className="member-cases-list fade-in-up">
-          <div className="member-cases-header">
-            <span>전체 사례 ({member.cases.length}건)</span>
-          </div>
-          {member.cases.length === 0 ? (
-            <p className="no-cases">접수된 사례가 없습니다</p>
-          ) : (
-            member.cases.map((c) => (
-              <div key={c.id} className="case-row">
-                <div className="case-row-left">
-                  <StatusBadge status={c.status} size="sm" />
-                  <div>
-                    <p className="case-row-title">{c.title}</p>
-                    <p className="case-row-meta">
-                      {c.month.replace('-', '년 ')}월 · 접수 {formatDate(c.submittedAt)}
-                      {c.judgedAt && ` · 판정 ${formatDate(c.judgedAt)}`}
-                    </p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  className="btn btn-secondary btn-sm review-btn"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setCasesModalOpen(true);
-                  }}
-                >
-                  <Eye size={14} />
-                  {embedReadOnly ? '상세' : c.status === 'pending' ? '판정하기' : '상세'}
-                </button>
-              </div>
-            ))
-          )}
-        </div>
-      )}
 
       {casesModalOpen &&
         createPortal(

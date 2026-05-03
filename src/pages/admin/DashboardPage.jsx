@@ -8,7 +8,6 @@ import {
   Clock,
   ChevronRight,
   X,
-  Calendar,
   BadgeCheck,
 } from 'lucide-react';
 import {
@@ -30,14 +29,14 @@ const RANK_BLOCKS = [
   { id: 'r11-15', title: '11 ~ 15위', startRank: 11, endRank: 15 },
 ];
 
-/** API 랭킹 항목 → 카드 행 (TB_YOU_PRO_CASE 접수 건수) */
+/** API 랭킹 항목 → 카드 행 (인센티브 반영 누적 선정 건수) */
 function rankRowsFromApi(entries) {
   if (!entries?.length) return [];
   return entries.map((e) => ({
     id: e.skid,
     name: e.memberName,
     teamName: e.teamName,
-    value: `${e.submittedCount}건`,
+    value: `${Number(e.cumulativeCount ?? 0)}건`,
   }));
 }
 
@@ -173,19 +172,27 @@ export default function DashboardPage() {
   const teamTableTotals = useMemo(() => {
     return sortedTeams.reduce(
       (acc, t) => ({
-        totalSubmitted: acc.totalSubmitted + Number(t.totalSubmitted ?? 0),
-        totalSelected: acc.totalSelected + Number(t.totalSelected ?? 0),
-        monthlySubmitted: acc.monthlySubmitted + Number(t.monthlySubmitted ?? 0),
-        monthlySelected: acc.monthlySelected + Number(t.monthlySelected ?? 0),
+        reflectCumulativeTotal:
+          acc.reflectCumulativeTotal + Number(t.reflectCumulativeTotal ?? 0),
+        evalTargetMemberSum: acc.evalTargetMemberSum + Number(t.memberCount ?? 0),
+        certifiedEvalTargetSum:
+          acc.certifiedEvalTargetSum + Number(t.certifiedEvalTargetCount ?? 0),
       }),
       {
-        totalSubmitted: 0,
-        totalSelected: 0,
-        monthlySubmitted: 0,
-        monthlySelected: 0,
+        reflectCumulativeTotal: 0,
+        evalTargetMemberSum: 0,
+        certifiedEvalTargetSum: 0,
       }
     );
   }, [sortedTeams]);
+
+  const teamTableFooterCertRate =
+    teamTableTotals.evalTargetMemberSum === 0
+      ? null
+      : Math.round(
+          (1000 * teamTableTotals.certifiedEvalTargetSum) /
+            teamTableTotals.evalTargetMemberSum
+        ) / 10;
 
   useEffect(() => {
     setSelectedTeamId((id) => {
@@ -264,13 +271,11 @@ export default function DashboardPage() {
 
   const {
     year,
-    totalSubmitted = 0,
-    totalSelected = 0,
     memberCount = 0,
     currentMonth = new Date().getMonth() + 1,
     monthlySubmitted = 0,
     monthlySelected = 0,
-    monthlyCertificationRate = null,
+    annualCertificationRate = null,
   } = data;
   const selectedTeam = teamsFiltered.find((t) => Number(t.id) === Number(selectedTeamId));
 
@@ -284,7 +289,7 @@ export default function DashboardPage() {
         <div className="adm-header-row">
           <div className="adm-header-text">
             <p className="adm-identity-kicker">YOU PRO · 관리</p>
-            <h1 className="adm-title">유프로 구성원 현황 대시보드</h1>
+            <h1 className="adm-title">YOU프로 대시보드</h1>
             <p className="adm-sub">
               {year}년 기준 실별·
               구성원별 선정 실적을 확인하세요.
@@ -334,107 +339,90 @@ export default function DashboardPage() {
                 현재 평가대상자
               </div>
             </div>
-            <div className="adm-kpi-card adm-kpi-card--tone-files">
-              <div className="adm-kpi-head">
-                <span className="adm-kpi-icon-wrap" aria-hidden>
-                  <FileText className="adm-kpi-ico" size={18} strokeWidth={2.25} />
-                </span>
-                <span className="adm-kpi-title">연간 선정</span>
-              </div>
-              <div
-                className="adm-kpi-value-row adm-kpi-value-row--with-aside"
-                aria-label={`연간 선정 ${totalSelected}건, 전체 접수 ${totalSubmitted}건`}
-              >
-                <div className="adm-kpi-value-main">
-                  <span className="adm-kpi-val">{totalSelected}</span>
-                  <span className="adm-kpi-suffix">건</span>
-                </div>
-                <div className="adm-kpi-value-aside">
-                  <span className="adm-kpi-aside-label">전체 접수</span>
-                  <span className="adm-kpi-aside-val">{totalSubmitted}</span>
-                  <span className="adm-kpi-aside-unit">건</span>
-                </div>
-              </div>
-              <div className="adm-kpi-unit">
-                <span className="adm-kpi-unit-line" />
-                {year}년 누적
-              </div>
-            </div>
-            <div className="adm-kpi-card adm-kpi-card--tone-award">
-              <div className="adm-kpi-head">
-                <span className="adm-kpi-icon-wrap" aria-hidden>
-                  <Calendar className="adm-kpi-ico" size={18} strokeWidth={2.25} />
-                </span>
-                <span className="adm-kpi-title">{currentMonth}월 선정</span>
-              </div>
-              <div
-                className="adm-kpi-value-row adm-kpi-value-row--with-aside"
-                aria-label={`${currentMonth}월 선정 ${monthlySelected}건, 전체 접수 ${monthlySubmitted}건`}
-              >
-                <div className="adm-kpi-value-main">
-                  <span className="adm-kpi-val">{monthlySelected}</span>
-                  <span className="adm-kpi-suffix">건</span>
-                </div>
-                <div className="adm-kpi-value-aside">
-                  <span className="adm-kpi-aside-label">전체 접수</span>
-                  <span className="adm-kpi-aside-val">{monthlySubmitted}</span>
-                  <span className="adm-kpi-aside-unit">건</span>
-                </div>
-              </div>
-              <div className="adm-kpi-unit">
-                <span className="adm-kpi-unit-line" />
-                {year}년 {currentMonth}월
-              </div>
-            </div>
             <div className="adm-kpi-card adm-kpi-card--tone-chart">
               <div className="adm-kpi-head">
                 <span className="adm-kpi-icon-wrap" aria-hidden>
                   <BadgeCheck className="adm-kpi-ico" size={18} strokeWidth={2.25} />
                 </span>
-                <span className="adm-kpi-title">{currentMonth}월 인증율</span>
+                <span className="adm-kpi-title">연간 인증률</span>
               </div>
               <div
                 className="adm-kpi-value-row"
                 aria-label={
-                  monthlyCertificationRate != null
-                    ? `${currentMonth}월 인증율 ${monthlyCertificationRate}%`
-                    : `${currentMonth}월 인증율 해당 없음`
+                  annualCertificationRate != null
+                    ? `연간 인증률 ${annualCertificationRate}%`
+                    : '연간 인증률 해당 없음'
                 }
               >
                 <span className="adm-kpi-val">
-                  {monthlyCertificationRate != null ? monthlyCertificationRate.toFixed(1) : '—'}
+                  {annualCertificationRate != null ? annualCertificationRate.toFixed(1) : '—'}
                 </span>
                 <span className="adm-kpi-suffix">%</span>
               </div>
               <div className="adm-kpi-unit">
                 <span className="adm-kpi-unit-line" />
-                이번 달 1건 이상 선정 인원 ÷ 연간 월별 평가대상자 스냅샷(1~9월) 평균 인원
+                인증 인원 ÷ {year}년 1~{currentMonth}월 평가대상자 평균
+              </div>
+            </div>
+            <div className="adm-kpi-card adm-kpi-card--tone-files">
+              <div className="adm-kpi-head">
+                <span className="adm-kpi-icon-wrap" aria-hidden>
+                  <FileText className="adm-kpi-ico" size={18} strokeWidth={2.25} />
+                </span>
+                <span className="adm-kpi-title">{currentMonth}월 접수</span>
+              </div>
+              <div
+                className="adm-kpi-value-row"
+                aria-label={`${currentMonth}월 접수 ${monthlySubmitted}건`}
+              >
+                <span className="adm-kpi-val">{monthlySubmitted}</span>
+                <span className="adm-kpi-suffix">건</span>
+              </div>
+              <div className="adm-kpi-unit">
+                <span className="adm-kpi-unit-line" />
+                {year}년 {currentMonth}월 · 사례 접수 건수
+              </div>
+            </div>
+            <div className="adm-kpi-card adm-kpi-card--tone-award">
+              <div className="adm-kpi-head">
+                <span className="adm-kpi-icon-wrap" aria-hidden>
+                  <Trophy className="adm-kpi-ico" size={18} strokeWidth={2.25} />
+                </span>
+                <span className="adm-kpi-title">{currentMonth}월 선정</span>
+              </div>
+              <div
+                className="adm-kpi-value-row"
+                aria-label={`${currentMonth}월 선정 ${monthlySelected}건`}
+              >
+                <span className="adm-kpi-val">{monthlySelected}</span>
+                <span className="adm-kpi-suffix">건</span>
+              </div>
+              <div className="adm-kpi-unit">
+                <span className="adm-kpi-unit-line" />
+                {year}년 {currentMonth}월 · 선정 건수
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* 누적 개인 랭킹 — TB_YOU_PRO_CASE 접수 건수 (센터 구분 없이 1~15위) */}
+      {/* 누적 개인 랭킹 — tb_you_incentive_reflect 최신 월 cumulative_count (센터 구분 없이 1~15위) */}
       <section className="adm-section adm-section--ranking">
         <div className="adm-section-title">
           <span className="adm-title-bar" />
           <div>
             <h2 className="adm-section-heading">랭킹</h2>
-            <p className="adm-section-hint adm-section-hint--ranking">
-              {year}년 사례 접수 건수 · 전체 센터 통합 상위 {RANK_TOP_N}위
-            </p>
           </div>
         </div>
         <div className="adm-rank-compact">
           <div className="adm-rank-compact__head">
             <Trophy className="adm-rank-compact__ico" size={19} strokeWidth={2.25} aria-hidden />
             <span>
-              전체 접수 <strong>{rankingData?.combined?.totalSubmitted ?? 0}</strong>건
+              누적 합계 <strong>{rankingData?.combined?.totalCumulative ?? 0}</strong>건
             </span>
           </div>
           {rankingRows.length === 0 ? (
-            <p className="adm-rank-compact__empty">해당 범위 구성원이 없거나 접수가 없습니다.</p>
+            <p className="adm-rank-compact__empty">해당 범위 구성원이 없거나 반영 실적이 없습니다.</p>
           ) : (
             <div className="adm-rank-compact__grid-wrap">
               <div className="adm-rank-compact__grid">
@@ -454,7 +442,7 @@ export default function DashboardPage() {
                             소속
                           </th>
                           <th scope="col" className="adm-rank-compact__th adm-rank-compact__th--num">
-                            접수
+                            누적
                           </th>
                         </tr>
                       </thead>
@@ -508,11 +496,7 @@ export default function DashboardPage() {
         <div className="adm-section-title">
           <span className="adm-title-bar" />
           <div>
-            <h2 className="adm-section-heading">실(부서)별 성과</h2>
-            <p className="adm-section-hint">
-              행을 클릭하면 해당 팀 구성원을 아래에 표시 ·{' '}
-              <strong>센터·그룹·스킬</strong>을 클릭하면 같은 값만 필터(다시 클릭하면 해제)
-            </p>
+            <h2 className="adm-section-heading">실별 성과</h2>
           </div>
         </div>
         {(filterCenter !== null || filterGroup !== null || filterSkill !== null) && (
@@ -585,26 +569,26 @@ export default function DashboardPage() {
                   onSort={handleSort}
                 />
                 <SortTh
-                  label="연간 접수 건수"
-                  sortKey="totalSubmitted"
+                  label="평가대상자"
+                  sortKey="memberCount"
                   sortConfig={sortConfig}
                   onSort={handleSort}
                 />
                 <SortTh
-                  label="연간 선정 건수"
-                  sortKey="totalSelected"
+                  label="인증자"
+                  sortKey="certifiedEvalTargetCount"
                   sortConfig={sortConfig}
                   onSort={handleSort}
                 />
                 <SortTh
-                  label="이달 접수 건수"
-                  sortKey="monthlySubmitted"
+                  label="인증률"
+                  sortKey="certificationRate"
                   sortConfig={sortConfig}
                   onSort={handleSort}
                 />
                 <SortTh
-                  label="이달 선정 건수"
-                  sortKey="monthlySelected"
+                  label="누적 인증 건수"
+                  sortKey="reflectCumulativeTotal"
                   sortConfig={sortConfig}
                   onSort={handleSort}
                 />
@@ -672,12 +656,15 @@ export default function DashboardPage() {
                     </td>
                     <td>
                       <span className="adm-team-name">{team.name}</span>
-                      <span className="adm-member-badge">{team.memberCount}명</span>
                     </td>
-                    <td>{Number(team.totalSubmitted ?? 0)}건</td>
-                    <td>{team.totalSelected}건</td>
-                    <td>{Number(team.monthlySubmitted ?? 0)}건</td>
-                    <td>{Number(team.monthlySelected ?? 0)}건</td>
+                    <td>{Number(team.memberCount ?? 0)}명</td>
+                    <td>{Number(team.certifiedEvalTargetCount ?? 0)}명</td>
+                    <td>
+                      {team.certificationRate != null
+                        ? `${Number(team.certificationRate).toFixed(1)}%`
+                        : '—'}
+                    </td>
+                    <td>{Number(team.reflectCumulativeTotal ?? 0)}건</td>
                   </tr>
                 ))
               )}
@@ -689,10 +676,14 @@ export default function DashboardPage() {
                     <span className="adm-table-total-label">합계</span>
                     <span className="adm-table-total-sublabel">{sortedTeams.length}개 실</span>
                   </td>
-                  <td>{teamTableTotals.totalSubmitted}건</td>
-                  <td>{teamTableTotals.totalSelected}건</td>
-                  <td>{teamTableTotals.monthlySubmitted}건</td>
-                  <td>{teamTableTotals.monthlySelected}건</td>
+                  <td>{teamTableTotals.evalTargetMemberSum}명</td>
+                  <td>{teamTableTotals.certifiedEvalTargetSum}명</td>
+                  <td>
+                    {teamTableFooterCertRate != null
+                      ? `${teamTableFooterCertRate.toFixed(1)}%`
+                      : '—'}
+                  </td>
+                  <td>{teamTableTotals.reflectCumulativeTotal}건</td>
                 </tr>
               </tfoot>
             )}
@@ -712,8 +703,8 @@ export default function DashboardPage() {
                 {!teamDetailLoading && teamDetailError && `${selectedTeam.name} · 정보를 불러오지 못했습니다.`}
                 {!teamDetailLoading && teamDetailData && (
                   <>
-                    {teamDetailData.team.name} · {teamDetailData.members?.length ?? 0}명 · 카드를 펼치면 사례
-                    목록과 판정을 이용할 수 있어요
+                    {teamDetailData.team.name} · 평가대상자 {teamDetailData.members?.length ?? 0}명 · 카드를 누르면 사례
+                    목록이 열려요
                   </>
                 )}
               </p>
@@ -735,11 +726,15 @@ export default function DashboardPage() {
         ) : teamDetailError ? (
           <p className="adm-team-detail-error">불러오기 실패: {teamDetailErr?.message ?? '알 수 없는 오류'}</p>
         ) : teamDetailData ? (
-          <div className="adm-team-detail-embed member-cards-list">
-            {teamDetailData.members.map((m) => (
-              <AdminMemberDetailCard key={m.id} member={m} embedReadOnly />
-            ))}
-          </div>
+          teamDetailData.members?.length > 0 ? (
+            <div className="adm-team-detail-embed member-cards-list">
+              {teamDetailData.members.map((m) => (
+                <AdminMemberDetailCard key={m.id} member={m} />
+              ))}
+            </div>
+          ) : (
+            <p className="adm-team-detail-empty">이 실에는 표시할 평가대상자가 없습니다.</p>
+          )
         ) : null}
       </section>
     </div>

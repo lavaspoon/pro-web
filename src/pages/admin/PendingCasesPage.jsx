@@ -12,7 +12,6 @@ import {
   ArrowDown,
   ArrowUpDown,
   RefreshCw,
-  ExternalLink,
 } from 'lucide-react';
 import { fetchAdminLeafTeams, fetchAdminReviewQueue, fetchCaseForReview } from '../../api/adminApi';
 import CaseReviewModal from './CaseReviewModal';
@@ -319,7 +318,7 @@ export default function PendingCasesPage() {
                   role="status"
                   aria-label={`전체 대기 ${pendingByCenter.totalAll}건`}
                 >
-                  <span className="pending-header-stat-label">전체 대기</span>
+                  <span className="pending-header-stat-label">전체 대기 건수</span>
                   <div className="pending-header-stat-figure">
                     <span className="pending-header-stat-value">{pendingByCenter.totalAll}</span>
                     <span className="pending-header-stat-unit">건</span>
@@ -335,7 +334,7 @@ export default function PendingCasesPage() {
                     aria-label={`${c.name} 대기 ${c.count}건`}
                   >
                     <span className="pending-header-stat-label" title={c.name}>
-                      {c.name} 대기
+                        {c.name ? `${c.name.slice(0, 4)} 대기 건수` : ''}
                     </span>
                     <div className="pending-header-stat-figure">
                       <span className="pending-header-stat-value">{c.count}</span>
@@ -438,7 +437,6 @@ export default function PendingCasesPage() {
                       <h2 className="pending-panel-title">
                         {isAllTeamsView ? '사례 목록' : selectedTeam.teamName}
                       </h2>
-                      <p className="pending-panel-sub">접수 월은 아래 테이블 상단에서 선택합니다.</p>
                     </div>
                     <div className="pending-panel-head-right">
                       <button
@@ -626,11 +624,6 @@ export default function PendingCasesPage() {
                               <SortGlyph active={tableSort.key === 'callDate'} direction={tableSort.direction} />
                             </button>
                           </th>
-                          <th
-                            scope="col"
-                            className="pending-th pending-th--selection"
-                            aria-label="상세"
-                          />
                         </tr>
                       </thead>
                       <tbody>
@@ -652,7 +645,6 @@ export default function PendingCasesPage() {
                               </span>
                             </td>
                             <td className="pending-td-member">
-                              <span className="pending-td-avatar">{c.memberName?.[0] ?? '?'}</span>
                               <span className="pending-td-name">{c.memberName}</span>
                             </td>
                             <td className="pending-td-title">
@@ -665,20 +657,6 @@ export default function PendingCasesPage() {
                               <span className="pending-td-call-val">
                                 {c.callDate ? formatCaseCallDateTime(c.callDate) : '—'}
                               </span>
-                            </td>
-                            <td className="pending-td-action pending-td-selection">
-                              <button
-                                type="button"
-                                className="pending-qbtn pending-qbtn--detail"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  openReview(c);
-                                }}
-                                disabled={loadingCaseId === c.id}
-                              >
-                                <ExternalLink size={13} aria-hidden />
-                                상세
-                              </button>
                             </td>
                           </tr>
                         ))}

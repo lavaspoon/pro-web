@@ -77,6 +77,19 @@
   background: var(--bg);
 }
 
+.member-card-header:focus {
+  outline: none;
+}
+
+.member-card-header:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.member-card-header[role='button'] .expand-btn--static {
+  pointer-events: none;
+}
+
 .member-card-left {
   display: flex;
   align-items: center;
@@ -122,17 +135,17 @@
 
 .member-card-stats--metrics {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, auto));
-  gap: 8px 14px;
-  align-items: start;
-  justify-items: end;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px 8px;
+  align-items: stretch;
+  justify-items: stretch;
   max-width: min(100%, 720px);
 }
 
 @media (max-width: 960px) {
   .member-card-stats--metrics {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    justify-items: end;
+    justify-items: stretch;
   }
 }
 
@@ -145,10 +158,27 @@
 .member-detail-card--metrics .member-card-header {
   flex-wrap: wrap;
   align-items: flex-start;
+  padding: 10px 12px;
+  gap: 8px;
 }
 
 .member-detail-card--metrics .member-card-left {
-  min-width: min(100%, 200px);
+  min-width: min(100%, 180px);
+  gap: 8px;
+}
+
+.member-detail-card--metrics .member-avatar-lg {
+  width: 34px;
+  height: 34px;
+  font-size: 14px;
+}
+
+.member-detail-card--metrics .member-card-name {
+  font-size: 14px;
+}
+
+.member-detail-card--metrics .member-card-pos {
+  font-size: 11px;
 }
 
 .mcs-item--with-bar {
@@ -160,6 +190,44 @@
   flex-direction: column;
   align-items: flex-end;
   gap: 2px;
+}
+
+/* 구성원 카드 지표 — 패널로 구분 */
+.member-card-stats--metrics .mcs-item--panel {
+  padding: 5px 8px 6px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(248, 250, 252, 0.88) 100%);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.88) inset,
+    0 1px 1px rgba(15, 23, 42, 0.03);
+  min-width: 0;
+}
+
+.member-card-stats--metrics .mcs-item--reflect {
+  border-color: rgba(234, 88, 12, 0.38);
+  background: linear-gradient(
+    165deg,
+    rgba(255, 247, 237, 0.92) 0%,
+    rgba(254, 243, 199, 0.48) 100%
+  );
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.7) inset,
+    0 0 0 1px rgba(234, 88, 12, 0.05),
+    0 1px 4px rgba(234, 88, 12, 0.06);
+}
+
+.member-card-stats--metrics .mcs-item--reflect .mcs-label--reflect {
+  color: #9a3412;
+  font-weight: 600;
+}
+
+.member-card-stats--metrics .mcs-value--reflect {
+  color: #ea580c;
+  font-size: 12px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
 }
 
 .mcs-label {
@@ -174,6 +242,14 @@
 
 .member-card-stats--metrics .mcs-label {
   text-transform: none;
+  font-size: 9px;
+  line-height: 1.2;
+  max-width: 6.5rem;
+}
+
+.member-card-stats--metrics .mcs-value {
+  font-size: 12px;
+  line-height: 1.15;
 }
 
 .mcs-value {
@@ -228,6 +304,11 @@
 .expand-btn:hover {
   background: var(--bg);
   color: var(--text-primary);
+}
+
+.member-detail-card--metrics .expand-btn {
+  width: 26px;
+  height: 26px;
 }
 
 /* Cases list (expanded) */

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   RefreshCw,
   ChevronLeft,
@@ -9,17 +9,19 @@ import {
   MapPinned,
   UserCircle2,
   CheckCircle2,
-  Trophy,
   Building2,
 } from 'lucide-react';
+import useAuthStore from '../../store/authStore';
 import AdminSatisfactionSetupModal from './AdminSatisfactionSetupModal';
 import AdminTargetMembersUploadModal from './AdminTargetMembersUploadModal';
 import {
   fetchCsSatisfactionCenterMonthDetail,
   fetchCsSatisfactionDashboardKpis,
   fetchCsSatisfactionMemberMonthlyRows,
-  fetchCsSatisfactionRanking,
   fetchCsSatisfactionSummary,
+  fetchCsSatisfactionTodayHourly,
+  fetchCsSatisfactionExcludeLog,
+  excludeCsSatisfactionEvalRange,
 } from '../../api/adminApi';
 import { mergeSecondDepthOptions } from '../../utils/adminSecondDepth';
 import Skeleton from '../../components/common/Skeleton';
@@ -51,51 +53,23 @@ function KpiOverviewSkeleton() {
   );
 }
 
-function RankingQuadSkeleton({ topN = 3 }) {
+function TodayHourlySkeleton() {
   return (
-    <div className="adm-rank-compact">
-      <div className="adm-rank-compact__head">
-        <Skeleton width={18} height={18} radius={6} />
-        <Skeleton variant="text" width={120} height={13} />
+    <div className="adm-hourly-skeleton">
+      <div className="adm-hourly-skeleton__filters">
+        <Skeleton height={36} radius={10} />
+        <Skeleton height={36} radius={10} />
       </div>
-      <div className="adm-rank-compact__grid-wrap">
-        <div className="adm-rank-compact__grid">
-      {[0, 1, 2].map((c) => (
-          <div key={c} className="adm-rank-compact__col">
-            <div className="adm-rank-compact__block-title">
-              <Skeleton variant="text" width={74} height={12} />
-            </div>
-            <table className="adm-rank-compact__table">
-              <thead>
-                <tr>
-                  <th className="adm-rank-compact__th adm-rank-compact__th--rank">순위</th>
-                  <th className="adm-rank-compact__th">소속</th>
-                  <th className="adm-rank-compact__th">이름</th>
-                  <th className="adm-rank-compact__th adm-rank-compact__th--num">건수</th>
-                </tr>
-              </thead>
-              <tbody>
-                {Array.from({ length: topN }).map((_, r) => (
-                  <tr key={r} className="adm-rank-compact__tr">
-                    <td className="adm-rank-compact__td adm-rank-compact__td--rank">
-                      <Skeleton width={22} height={22} radius={999} />
-                    </td>
-                    <td className="adm-rank-compact__td"><Skeleton variant="text" width={70} height={12} /></td>
-                    <td className="adm-rank-compact__td"><Skeleton variant="text" width={60} height={12} /></td>
-                    <td className="adm-rank-compact__td adm-rank-compact__td--val"><Skeleton variant="text" width={34} height={12} /></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-      ))}
-        </div>
+      <div className="adm-hourly-skeleton__grid">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <Skeleton key={i} height={140} radius={16} />
+        ))}
       </div>
     </div>
   );
 }
 
-function SummaryTableSkeletonRows({ rows = 6, cols = 8 }) {
+function SummaryTableSkeletonRows({ rows = 6, cols = 9 }) {
   return Array.from({ length: rows }).map((_, r) => (
     <tr key={`sk-${r}`}>
       {Array.from({ length: cols }).map((__, c) => (
@@ -107,17 +81,66 @@ function SummaryTableSkeletonRows({ rows = 6, cols = 8 }) {
   ));
 }
 
-const SAT_RANK_TOP_N = 3;
 const MEMBER_ROWS_PAGE_SIZE = 10;
+
+/** 금일 시간대별 카드 — 한 화면에 표시할 슬롯 수(나머지는 ◀ ▶ 로 이동) */
+const HOURLY_CAROUSEL_PAGE_SIZE = 5;
+
+/** 평가 제외 — TB_YOU_CS.스킬 과 동일한 4종 (고정) */
+const SAT_EXCLUDE_SKILLS = ['일반', '리텐션', '이관', '멀티/기술'];
+
+function pad2(n) {
+  return String(n).padStart(2, '0');
+}
+
+function toDatetimeLocalValue(d) {
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}T${pad2(d.getHours())}:${pad2(
+    d.getMinutes(),
+  )}`;
+}
+
+function monthRangeDatetimeLocal(y, m) {
+  const start = new Date(y, m - 1, 1, 0, 0, 0, 0);
+  const lastDay = new Date(y, m, 0).getDate();
+  const end = new Date(y, m - 1, lastDay, 23, 59, 0, 0);
+  return { start: toDatetimeLocalValue(start), end: toDatetimeLocalValue(end) };
+}
+
+/** datetime-local(분 단위) → API LocalDateTime용 항상 해당 분의 :00초 */
+function normalizeDatetimeLocalForApi(s) {
+  const t = String(s ?? '').trim();
+  if (!t) return '';
+  const minutePart = t.length >= 16 ? t.slice(0, 16) : t;
+  if (minutePart.length === 16) return `${minutePart}:00`;
+  return t;
+}
 
 function pct(v) {
   if (v == null || Number.isNaN(Number(v))) return '—';
   return `${Number(v).toFixed(1)}%`;
 }
 
+/** 문제해결 연간 목표 대비 역산 달성률(%), 서버와 동일 식 */
+function problemInverseAchievementPct(actualResolvedPct, targetResolvedPct) {
+  if (actualResolvedPct == null || targetResolvedPct == null) return null;
+  const t = Number(targetResolvedPct);
+  const a = Number(actualResolvedPct);
+  if (Number.isNaN(t) || Number.isNaN(a) || t <= 0 || t >= 100) return null;
+  const targetGap = 100 - t;
+  const actualGap = 100 - a;
+  if (actualGap <= 0) return 100;
+  if (targetGap <= 0) return null;
+  return Math.min(100, Math.round((100 * targetGap) / actualGap * 10) / 10);
+}
+
 function num(v) {
   if (v == null) return '—';
   return Number(v).toLocaleString('ko-KR');
+}
+
+function fmtHourlyPct(v) {
+  if (v == null || Number.isNaN(Number(v))) return '—';
+  return `${Number(v).toFixed(1)}%`;
 }
 
 function yesNo(v) {
@@ -159,32 +182,6 @@ function filterToneClass(v) {
   if (v === 'Y') return 'is-filter-y';
   if (v === 'N') return 'is-filter-n';
   return 'is-filter-all';
-}
-
-function TargetPerformanceCell({ targetPercent, satisfactionRate }) {
-  const targetText = pct(targetPercent);
-  const actualText = pct(satisfactionRate);
-  const met =
-    targetPercent != null && satisfactionRate != null
-      ? Number(satisfactionRate) >= Number(targetPercent)
-      : null;
-  return (
-    <div className="adm-sat-achv-cell">
-      <span className="adm-sat-achv-chip adm-sat-achv-chip--target">목표 {targetText}</span>
-      <span className="adm-sat-achv-slash">/</span>
-      <span
-        className={`adm-sat-achv-chip ${
-          met == null
-            ? 'adm-sat-achv-chip--actual'
-            : met
-              ? 'adm-sat-achv-chip--actual-ok'
-              : 'adm-sat-achv-chip--actual-no'
-        }`}
-      >
-        실적 {actualText}
-      </span>
-    </div>
-  );
 }
 
 function KpiScopeListCard({ title, icon: Icon, rows = [] }) {
@@ -284,27 +281,48 @@ function localeKoTrim(a, b) {
     .localeCompare(String(b ?? '').trim(), 'ko');
 }
 
-/** 필터된 행 기준 합계(중점추진과제 건수) */
+/** 필터된 행 기준 합계·가중 %용 분모(평가건) */
 function computeSummaryTotals(list) {
   let fiveMajorSum = 0;
   let gen5060Sum = 0;
   let problemResolvedSum = 0;
   let evalTargetMemberSum = 0;
+  let evalSum = 0;
+  let satSum = 0;
   for (const r of list) {
     evalTargetMemberSum += Number(r.evalTargetMemberCount) || 0;
     fiveMajorSum += Number(r.fiveMajorCitiesCount) || 0;
     gen5060Sum += Number(r.gen5060Count) || 0;
     problemResolvedSum += Number(r.problemResolvedCount) || 0;
+    evalSum += Number(r.evalCount) || 0;
+    satSum += Number(r.satisfiedCount) || 0;
   }
+  const satisfactionPct = evalSum === 0 ? null : Math.round((1000 * satSum) / evalSum) / 10;
+  const fivePct = evalSum === 0 ? null : Math.round((1000 * fiveMajorSum) / evalSum) / 10;
+  const genPct = evalSum === 0 ? null : Math.round((1000 * gen5060Sum) / evalSum) / 10;
+  const probPct = evalSum === 0 ? null : Math.round((1000 * problemResolvedSum) / evalSum) / 10;
   return {
     evalTargetMemberSum,
     fiveMajorSum,
     gen5060Sum,
     problemResolvedSum,
+    evalSum,
+    satSum,
+    satisfactionPct,
+    fivePct,
+    genPct,
+    probPct,
   };
 }
 
 export default function AdminSatisfactionPage() {
+  const queryClient = useQueryClient();
+  const authUser = useAuthStore((s) => s.user);
+  const adminSkid = authUser?.skid ?? authUser?.id ?? '';
+  const [hourlyTuned, setHourlyTuned] = useState(false);
+  const [hourlyCenter, setHourlyCenter] = useState(0);
+  const [hourlySkill, setHourlySkill] = useState('');
+  const [hourlyCarouselStart, setHourlyCarouselStart] = useState(0);
   const [baseMonth, setBaseMonth] = useState(() => {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
@@ -317,6 +335,12 @@ export default function AdminSatisfactionPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [setupModalOpen, setSetupModalOpen] = useState(false);
   const [targetUploadModalOpen, setTargetUploadModalOpen] = useState(false);
+  const [excludeModalOpen, setExcludeModalOpen] = useState(false);
+  const [excludeSkill, setExcludeSkill] = useState(SAT_EXCLUDE_SKILLS[0]);
+  const [excludeStartLocal, setExcludeStartLocal] = useState('');
+  const [excludeEndLocal, setExcludeEndLocal] = useState('');
+  const [excludeMsg, setExcludeMsg] = useState('');
+  const [excludeErr, setExcludeErr] = useState('');
 
   /** null = 미적용, 문자열(빈 문자열 포함) = 해당 값과 일치하는 행만 — Dashboard와 동일 */
   const [filterCenter, setFilterCenter] = useState(null);
@@ -326,8 +350,8 @@ export default function AdminSatisfactionPage() {
   const [selectedMemberSkid, setSelectedMemberSkid] = useState(null);
 
   const summaryQuery = useQuery({
-    queryKey: ['cs-satisfaction-summary', year, month],
-    queryFn: () => fetchCsSatisfactionSummary(year, undefined, month),
+    queryKey: ['cs-satisfaction-summary', 'rolling-mtd'],
+    queryFn: () => fetchCsSatisfactionSummary({ rollingThroughYesterday: true }),
   });
 
   const dashboardKpisQuery = useQuery({
@@ -335,10 +359,43 @@ export default function AdminSatisfactionPage() {
     queryFn: () => fetchCsSatisfactionDashboardKpis(year, month),
   });
 
-  const rankingQuery = useQuery({
-    queryKey: ['cs-satisfaction-ranking', year, month, SAT_RANK_TOP_N],
-    queryFn: () => fetchCsSatisfactionRanking(year, SAT_RANK_TOP_N, month),
+  const hourlyQuery = useQuery({
+    queryKey: ['cs-satisfaction-today-hourly', hourlyTuned, adminSkid, hourlyCenter, hourlySkill],
+    queryFn: () =>
+      hourlyTuned
+        ? fetchCsSatisfactionTodayHourly({
+            adminSkid: adminSkid || undefined,
+            secondDepthDeptId: hourlyCenter,
+            skill: hourlySkill,
+          })
+        : fetchCsSatisfactionTodayHourly({ adminSkid: adminSkid || undefined }),
   });
+
+  const hourlyCenterSelectValue = hourlyTuned
+    ? hourlyCenter
+    : hourlyQuery.data?.appliedSecondDepthDeptId ?? 0;
+  const hourlySkillSelectValue = hourlyTuned
+    ? hourlySkill
+    : hourlyQuery.data?.appliedSkill ?? '';
+
+  const hourlyHours = useMemo(() => hourlyQuery.data?.hours ?? [], [hourlyQuery.data?.hours]);
+  const hourlyHoursKey = useMemo(() => hourlyHours.map((h) => h.hour).join(','), [hourlyHours]);
+  const hourlyCarouselMaxStart = Math.max(0, hourlyHours.length - HOURLY_CAROUSEL_PAGE_SIZE);
+  const hourlyCarouselSafeStart = Math.min(hourlyCarouselStart, hourlyCarouselMaxStart);
+  const visibleHourlySlots = hourlyHours.slice(
+    hourlyCarouselSafeStart,
+    hourlyCarouselSafeStart + HOURLY_CAROUSEL_PAGE_SIZE,
+  );
+  const canGoHourlyPrev = hourlyCarouselSafeStart > 0;
+  const canGoHourlyNext = hourlyCarouselSafeStart < hourlyCarouselMaxStart;
+
+  useEffect(() => {
+    setHourlyCarouselStart(0);
+  }, [hourlyHoursKey]);
+
+  useEffect(() => {
+    setHourlyCarouselStart((s) => Math.min(s, hourlyCarouselMaxStart));
+  }, [hourlyCarouselMaxStart]);
 
   const filterMeta = summaryQuery.data?.filterMeta;
   const secondDepthOptions = useMemo(
@@ -360,9 +417,16 @@ export default function AdminSatisfactionPage() {
     selectedSecondDepthId > 0;
 
   const centerMonthDetailQuery = useQuery({
-    queryKey: ['cs-satisfaction-center-month-detail', selectedSecondDepthId, year, month],
-    queryFn: () => fetchCsSatisfactionCenterMonthDetail(selectedSecondDepthId, year, month),
+    queryKey: ['cs-satisfaction-center-month-detail', selectedSecondDepthId, 'rolling-mtd'],
+    queryFn: () =>
+      fetchCsSatisfactionCenterMonthDetail(selectedSecondDepthId, { rollingThroughYesterday: true }),
     enabled: centerDetailEnabled,
+  });
+
+  const excludeLogQuery = useQuery({
+    queryKey: ['cs-satisfaction-exclude-log'],
+    queryFn: () => fetchCsSatisfactionExcludeLog(40),
+    enabled: excludeModalOpen,
   });
 
   const memberMonthlyRowsQuery = useQuery({
@@ -407,6 +471,21 @@ export default function AdminSatisfactionPage() {
   }, [filteredRows]);
 
   const summaryTotals = useMemo(() => computeSummaryTotals(filteredRows), [filteredRows]);
+  const statPeriodHint = useMemo(() => {
+    const d = summaryQuery.data;
+    if (d?.statFrom && d?.statTo) {
+      return `${d.statFrom} ~ ${d.statTo} (KST · 1일이면 전월 전체, 아니면 당월 1일~전일)`;
+    }
+    return monthLabel;
+  }, [summaryQuery.data, monthLabel]);
+  const summaryFooterProblemInverse = useMemo(
+    () =>
+      problemInverseAchievementPct(
+        summaryTotals.probPct,
+        summaryQuery.data?.problemResolvedAnnualTargetPercent,
+      ),
+    [summaryTotals.probPct, summaryQuery.data?.problemResolvedAnnualTargetPercent],
+  );
   const memberRows = useMemo(
     () => centerMonthDetailQuery.data?.members ?? [],
     [centerMonthDetailQuery.data],
@@ -465,6 +544,27 @@ export default function AdminSatisfactionPage() {
     const start = (modalPage - 1) * MEMBER_ROWS_PAGE_SIZE;
     return modalFilteredRows.slice(start, start + MEMBER_ROWS_PAGE_SIZE);
   }, [modalFilteredRows, modalPage]);
+
+  const excludeTimeMutation = useMutation({
+    mutationFn: ({ skill, startAt, endAt, excludedBySkid }) =>
+      excludeCsSatisfactionEvalRange({ skill, startAt, endAt, excludedBySkid }),
+    onSuccess: (res) => {
+      setExcludeMsg(
+        `해당건을 평가 제외 했습니다.`,
+      );
+      setExcludeErr('');
+      summaryQuery.refetch();
+      centerMonthDetailQuery.refetch();
+      dashboardKpisQuery.refetch();
+      hourlyQuery.refetch();
+      queryClient.invalidateQueries({ queryKey: ['cs-satisfaction-summary'] });
+      queryClient.invalidateQueries({ queryKey: ['cs-satisfaction-exclude-log'] });
+    },
+    onError: (e) => {
+      setExcludeErr(e?.message ?? '평가 제외 처리 중 오류가 발생했습니다.');
+      setExcludeMsg('');
+    },
+  });
 
   const loading = summaryQuery.isLoading;
   const err = summaryQuery.error?.message;
@@ -526,6 +626,13 @@ export default function AdminSatisfactionPage() {
   }, [modalTotalPages]);
 
   useEffect(() => {
+    if (!excludeModalOpen) return;
+    if (!excludeSkill || !SAT_EXCLUDE_SKILLS.includes(excludeSkill)) {
+      setExcludeSkill(SAT_EXCLUDE_SKILLS[0]);
+    }
+  }, [excludeModalOpen, excludeSkill]);
+
+  useEffect(() => {
     if (selectedMemberSkid == null) return undefined;
     const onKeyDown = (e) => {
       if (e.key === 'Escape') {
@@ -564,17 +671,53 @@ export default function AdminSatisfactionPage() {
     setBaseMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() + delta, 1));
   };
 
+  const openExcludeModal = () => {
+    const { start, end } = monthRangeDatetimeLocal(year, month);
+    setExcludeSkill(SAT_EXCLUDE_SKILLS[0]);
+    setExcludeStartLocal(start);
+    setExcludeEndLocal(end);
+    setExcludeModalOpen(true);
+    setExcludeMsg('');
+    setExcludeErr('');
+  };
+
+  const closeExcludeModal = () => {
+    setExcludeModalOpen(false);
+    setExcludeMsg('');
+    setExcludeErr('');
+  };
+
+  const handleExcludeSubmit = () => {
+    const startAt = normalizeDatetimeLocalForApi(excludeStartLocal);
+    const endAt = normalizeDatetimeLocalForApi(excludeEndLocal);
+    if (!excludeSkill || !startAt || !endAt) {
+      setExcludeErr('스킬, 시작 일시, 종료 일시를 모두 입력해 주세요.');
+      setExcludeMsg('');
+      return;
+    }
+    if (new Date(startAt).getTime() > new Date(endAt).getTime()) {
+      setExcludeErr('시작 일시가 종료 일시보다 늦을 수 없습니다.');
+      setExcludeMsg('');
+      return;
+    }
+    excludeTimeMutation.mutate({
+      skill: excludeSkill,
+      startAt,
+      endAt,
+      excludedBySkid: adminSkid || undefined,
+    });
+  };
+
   return (
     <div className="page-container adm-dashboard adm-dashboard--yp fade-in adm-sat-page">
       <header className="adm-header adm-header--yp">
         <div className="adm-header-row">
           <div className="adm-header-text">
-            <p className="yadm-identity-kicker">YOU PRO · 관리</p>
+            <p className="adm-identity-kicker">YOU PRO · 관리</p>
             <h1 className="adm-title">CS 만족도 대시보드</h1>
             <p className="adm-sub">
-              {monthLabel} 기준 전체 센터 만족도와 실(부서)별 현황을
-              <br />
-              확인하세요.
+              상단 KPI는 <strong>{monthLabel}</strong>, 실별·구성원 표는{' '}
+              <strong>당월 1일~전일(KST·1일이면 전월)</strong> 누적 구간입니다.
             </p>
           </div>
           <div className="adm-sat-header-actions">
@@ -597,6 +740,13 @@ export default function AdminSatisfactionPage() {
                 <ChevronRight size={14} aria-hidden />
               </button>
             </div>
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm adm-sat-upload-entry"
+              onClick={openExcludeModal}
+            >
+              평가 제외
+            </button>
             <button
               type="button"
               className="btn btn-secondary btn-sm adm-sat-upload-entry"
@@ -652,140 +802,169 @@ export default function AdminSatisfactionPage() {
         </div>
       </section>
 
-      <section className="adm-section adm-section--ranking adm-sat-ranking-section" aria-labelledby="adm-sat-rank-title">
+      <section className="adm-section adm-hourly-section" aria-labelledby="adm-hourly-title">
         <div className="adm-section-title">
           <span className="adm-title-bar" />
           <div>
-            <h2 id="adm-sat-rank-title" className="adm-section-heading">
-              월간 랭킹
+            <h2 id="adm-hourly-title" className="adm-section-heading">
+              금일 시간대별 만족도
             </h2>
-            <p className="adm-section-hint adm-section-hint--ranking">
-              {monthLabel} · 만족(satisfied) Y이면서 해당 중점지표도 Y인 건수 기준 · 구성원별 상위 {SAT_RANK_TOP_N}
-              위 (전체 센터 통합)
-            </p>
           </div>
         </div>
-        {rankingQuery.isPending ? (
-          <RankingQuadSkeleton topN={SAT_RANK_TOP_N} />
-        ) : rankingQuery.isError ? (
-          <p className="adm-sat-query-err">{rankingQuery.error?.message ?? '랭킹을 불러오지 못했습니다.'}</p>
-        ) : (
-          <div className="adm-rank-compact">
-            <div className="adm-rank-compact__head">
-              <Trophy className="adm-rank-compact__ico" size={19} strokeWidth={2.25} aria-hidden />
-              <span>
-                전체 건수 <strong>{num(rankingQuery.data?.totalCount ?? 0)}</strong>건
-              </span>
+
+        <div className="adm-hourly-shell">
+          <div className="adm-hourly-toolbar">
+            <div className="adm-hourly-filters" aria-label="시간대별 만족도 필터">
+              <label className="adm-hourly-filter">
+                <span className="adm-hourly-filter-k">센터</span>
+                <select
+                  className="adm-hourly-select"
+                  value={hourlyCenterSelectValue}
+                  onChange={(e) => {
+                    setHourlyTuned(true);
+                    setHourlyCenter(Number(e.target.value));
+                  }}
+                  disabled={hourlyQuery.isPending}
+                >
+                  {(hourlyQuery.data?.centers ?? [{ id: 0, name: '전체' }]).map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="adm-hourly-filter">
+                <span className="adm-hourly-filter-k">스킬</span>
+                <select
+                  className="adm-hourly-select"
+                  value={hourlySkillSelectValue}
+                  onChange={(e) => {
+                    setHourlyTuned(true);
+                    setHourlySkill(e.target.value);
+                  }}
+                  disabled={hourlyQuery.isPending}
+                >
+                  <option value="">전체 스킬</option>
+                  {(hourlyQuery.data?.skillOptions ?? SAT_EXCLUDE_SKILLS).map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </select>
+              </label>
             </div>
-            <div className="adm-rank-compact__grid-wrap">
-              <div className="adm-rank-compact__grid">
-            {[
-              {
-                title: '5대도시',
-                entries: rankingQuery.data?.topByFiveMajorCities ?? [],
-                valueLabel: '건수',
-              },
-              { title: '5060', entries: rankingQuery.data?.topByGen5060 ?? [], valueLabel: '건수' },
-              {
-                title: '문제해결',
-                entries: rankingQuery.data?.topByProblemResolved ?? [],
-                valueLabel: '건수',
-              },
-            ].map((col) => (
-                  <div key={col.title} className="adm-rank-compact__col">
-                    <div className="adm-rank-compact__block-title">
-                      {col.title} · 1 ~ {SAT_RANK_TOP_N}위
-                    </div>
-                    <table className="adm-rank-compact__table" aria-label={`${year}년 ${col.title} 랭킹`}>
-                  <thead>
-                    <tr>
-                          <th scope="col" className="adm-rank-compact__th adm-rank-compact__th--rank">
-                        순위
-                      </th>
-                          <th scope="col" className="adm-rank-compact__th">
-                        소속
-                      </th>
-                          <th scope="col" className="adm-rank-compact__th">
-                        이름
-                      </th>
-                          <th scope="col" className="adm-rank-compact__th adm-rank-compact__th--num">
-                        {col.valueLabel}
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {Array.from({ length: SAT_RANK_TOP_N }, (_, i) => i + 1).map((rank) => {
-                      const row = col.entries[rank - 1];
-                      return (
-                            <tr
-                              key={`${col.title}-${rank}`}
-                              className={`adm-rank-compact__tr ${row ? '' : 'adm-rank-compact__tr--placeholder'}`}
-                            >
-                              <td className="adm-rank-compact__td adm-rank-compact__td--rank">
-                            <span className={`adm-rank-pill ${rank <= 3 ? `adm-rank-pill--${rank}` : 'adm-rank-pill--rest'}`}>
-                              {rank}
-                            </span>
-                          </td>
-                              <td className="adm-rank-compact__td adm-rank-compact__td--team">
-                                {row?.teamName?.trim() ? row.teamName : '—'}
-                              </td>
-                              <td className="adm-rank-compact__td adm-rank-compact__td--name">
-                            {row?.memberName?.trim() ? row.memberName : row?.skid ?? '—'}
-                          </td>
-                              <td className="adm-rank-compact__td adm-rank-compact__td--val">
-                                {row ? `${num(row.count)}건` : '—'}
-                              </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-                  </div>
-            ))}
-              </div>
+            <div className="adm-hourly-meta">
+              <button
+                type="button"
+                className="adm-hourly-nav-btn"
+                onClick={() =>
+                  setHourlyCarouselStart((s) => Math.max(0, s - HOURLY_CAROUSEL_PAGE_SIZE))
+                }
+                disabled={!canGoHourlyPrev || hourlyQuery.isPending}
+                aria-label="이전 시간대"
+              >
+                <ChevronLeft size={18} strokeWidth={2.25} aria-hidden />
+              </button>
+              <button
+                type="button"
+                className="adm-hourly-nav-btn"
+                onClick={() =>
+                  setHourlyCarouselStart((s) =>
+                    Math.min(hourlyCarouselMaxStart, s + HOURLY_CAROUSEL_PAGE_SIZE),
+                  )
+                }
+                disabled={!canGoHourlyNext || hourlyQuery.isPending}
+                aria-label="다음 시간대"
+              >
+                <ChevronRight size={18} strokeWidth={2.25} aria-hidden />
+              </button>
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm adm-sat-refresh"
+                onClick={() => {
+                  summaryQuery.refetch();
+                  centerMonthDetailQuery.refetch();
+                  dashboardKpisQuery.refetch();
+                  hourlyQuery.refetch();
+                }}
+                disabled={
+                  summaryQuery.isFetching ||
+                  centerMonthDetailQuery.isFetching ||
+                  dashboardKpisQuery.isFetching ||
+                  hourlyQuery.isFetching
+                }
+                aria-label="새로고침"
+              >
+                <RefreshCw
+                  size={14}
+                  className={
+                    summaryQuery.isFetching ||
+                    centerMonthDetailQuery.isFetching ||
+                    dashboardKpisQuery.isFetching ||
+                    hourlyQuery.isFetching
+                      ? 'adm-sat-spin'
+                      : ''
+                  }
+                  aria-hidden
+                />
+              </button>
             </div>
           </div>
-        )}
+
+          {hourlyQuery.isPending ? (
+            <TodayHourlySkeleton />
+          ) : hourlyQuery.isError ? (
+            <p className="adm-sat-query-err">{hourlyQuery.error?.message ?? '시간대별 데이터를 불러오지 못했습니다.'}</p>
+          ) : (hourlyQuery.data?.hours ?? []).length === 0 ? (
+            <p className="adm-hourly-empty">
+              아직 표시할 이전 시간대가 없습니다. (업무 시작 09시 이전이거나, 첫 시간대 진행 중일 수 있습니다.)
+            </p>
+          ) : (
+            <div className="adm-hourly-strip" role="list">
+              {visibleHourlySlots.map((slot) => (
+                <article key={slot.hour} className="adm-hourly-slot" role="listitem">
+                  <div className="adm-hourly-slot__head">
+                    <span className="adm-hourly-slot__time">{slot.label}</span>
+                    <span className="adm-hourly-slot__n">{num(slot.sampleCount)}건</span>
+                  </div>
+                  <dl className="adm-hourly-slot__metrics">
+                    <div className="adm-hourly-metric">
+                      <dt>만족</dt>
+                      <dd className="adm-hourly-metric-val adm-hourly-metric-val--pos">{fmtHourlyPct(slot.satisfiedPct)}</dd>
+                    </div>
+                    <div className="adm-hourly-metric">
+                      <dt>불만족</dt>
+                      <dd className="adm-hourly-metric-val adm-hourly-metric-val--neg">{fmtHourlyPct(slot.dissatisfiedPct)}</dd>
+                    </div>
+                    <div className="adm-hourly-metric">
+                      <dt>5대도시</dt>
+                      <dd className="adm-hourly-metric-val">{fmtHourlyPct(slot.fiveMajorCitiesPct)}</dd>
+                    </div>
+                    <div className="adm-hourly-metric">
+                      <dt>5060</dt>
+                      <dd className="adm-hourly-metric-val">{fmtHourlyPct(slot.gen5060Pct)}</dd>
+                    </div>
+                    <div className="adm-hourly-metric">
+                      <dt>문제해결</dt>
+                      <dd className="adm-hourly-metric-val">{fmtHourlyPct(slot.problemResolvedPct)}</dd>
+                    </div>
+                  </dl>
+                </article>
+              ))}
+            </div>
+          )}
+        </div>
       </section>
 
       <section className="adm-section" aria-labelledby="adm-sat-table-title">
-        <div className="adm-section-title adm-section-title--with-filter">
+        <div className="adm-section-title">
           <div className="adm-sat-section-heading">
             <span className="adm-title-bar" aria-hidden />
             <div className="adm-section-title-text">
               <h2 id="adm-sat-table-title" className="adm-section-heading">
-                실(부서)별 만족도
+                실별 만족도
               </h2>
-              <p className="adm-section-hint">
-                표 행은 설정(센터별 리프 팀 ID 목록) 순서로 고정됩니다. 만족/불만률은{' '}
-                <strong>평가대상자(you_yn=Y)</strong> 기준으로 계산합니다. 행을 클릭하면 해당 팀 구성원을 아래에 표시 ·{' '}
-                <strong>센터·그룹·스킬</strong>을 클릭하면 같은 값만 필터(다시 클릭하면 해제)
-              </p>
             </div>
-          </div>
-          <div className="adm-dept-filter adm-sat-filters">
-            <button
-              type="button"
-              className="btn btn-secondary btn-sm adm-sat-refresh"
-              onClick={() => {
-                summaryQuery.refetch();
-                centerMonthDetailQuery.refetch();
-                dashboardKpisQuery.refetch();
-                rankingQuery.refetch();
-              }}
-              disabled={summaryQuery.isFetching || dashboardKpisQuery.isFetching || rankingQuery.isFetching}
-              aria-label="새로고침"
-            >
-              <RefreshCw
-                size={14}
-                className={
-                  summaryQuery.isFetching || dashboardKpisQuery.isFetching || rankingQuery.isFetching
-                    ? 'adm-sat-spin'
-                    : ''
-                }
-                aria-hidden
-              />
-            </button>
           </div>
         </div>
 
@@ -850,16 +1029,19 @@ export default function AdminSatisfactionPage() {
                   팀명
                 </th>
                 <th scope="col" className="adm-th-cell">
-                  목표/실적
+                  만족도
                 </th>
                 <th scope="col" className="adm-th-cell">
-                  5대 도시건
+                  5대도시
                 </th>
                 <th scope="col" className="adm-th-cell">
-                  5060건
+                  5060
                 </th>
                 <th scope="col" className="adm-th-cell">
-                  문제해결건
+                  문제해결
+                </th>
+                <th scope="col" className="adm-th-cell">
+                  문제해결 달성(역산)
                 </th>
               </tr>
             </thead>
@@ -868,13 +1050,13 @@ export default function AdminSatisfactionPage() {
                 <SummaryTableSkeletonRows rows={6} cols={8} />
               ) : rows.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="adm-table-empty">
+                  <td colSpan={9} className="adm-table-empty">
                     데이터 없음
                   </td>
                 </tr>
               ) : filteredRows.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="adm-table-empty">
+                  <td colSpan={9} className="adm-table-empty">
                     조건에 맞는 실이 없습니다. 필터를 해제하거나 다른 값을 선택해 보세요.
                   </td>
                 </tr>
@@ -939,15 +1121,11 @@ export default function AdminSatisfactionPage() {
                         <span className="adm-team-name">{r.secondDepthName}</span>
                         <span className="adm-member-badge">{num(r.evalTargetMemberCount)}명</span>
                       </td>
-                      <td>
-                        <TargetPerformanceCell
-                          targetPercent={r.targetPercent}
-                          satisfactionRate={r.satisfactionRate}
-                        />
-                      </td>
-                      <td>{num(r.fiveMajorCitiesCount ?? 0)}</td>
-                      <td>{num(r.gen5060Count ?? 0)}</td>
-                      <td>{num(r.problemResolvedCount ?? 0)}</td>
+                      <td>{pct(r.satisfactionRate)}</td>
+                      <td>{pct(r.fiveMajorCitiesPct)}</td>
+                      <td>{pct(r.gen5060Pct)}</td>
+                      <td>{pct(r.problemResolvedPct)}</td>
+                      <td>{pct(r.problemResolvedInverseAchievementPct)}</td>
                     </tr>
                   );
                 })
@@ -959,13 +1137,15 @@ export default function AdminSatisfactionPage() {
                   <td colSpan={4} className="adm-sat-table-tfoot-label">
                     <span className="adm-table-total-label">합계</span>
                     <span className="adm-table-total-sublabel">
-                      {sortedRows.length}개 실 · 평가대상 {num(summaryTotals.evalTargetMemberSum)}명
+                      {sortedRows.length}개 실 · 평가대상 {num(summaryTotals.evalTargetMemberSum)}명 · 평가{' '}
+                      {num(summaryTotals.evalSum)}건
                     </span>
                   </td>
-                  <td>—</td>
-                  <td>{num(summaryTotals.fiveMajorSum)}</td>
-                  <td>{num(summaryTotals.gen5060Sum)}</td>
-                  <td>{num(summaryTotals.problemResolvedSum)}</td>
+                  <td>{pct(summaryTotals.satisfactionPct)}</td>
+                  <td>{pct(summaryTotals.fivePct)}</td>
+                  <td>{pct(summaryTotals.genPct)}</td>
+                  <td>{pct(summaryTotals.probPct)}</td>
+                  <td>{pct(summaryFooterProblemInverse)}</td>
                 </tr>
               </tfoot>
             ) : null}
@@ -977,15 +1157,6 @@ export default function AdminSatisfactionPage() {
             <span className="adm-title-bar" />
             <div>
               <h3 className="adm-section-heading">구성원 상세 현황</h3>
-              {selectedSecondDepthId != null ? (
-                <p className="adm-section-hint">
-                  {monthLabel} 기준 · 평가대상자 구성원별 중점추진과제 건수 (상단 표와 동일 월·집계 기준)
-                </p>
-              ) : (
-                <p className="adm-section-hint">
-                  표에서 실(부서) 행을 클릭하면 해당 팀의 구성원 만족도 상세를 리스트 형태로 확인할 수 있습니다.
-                </p>
-              )}
             </div>
           </div>
 
@@ -1007,16 +1178,12 @@ export default function AdminSatisfactionPage() {
           ) : memberRows.length === 0 ? (
             <div className="adm-select-prompt adm-sat-members-empty">
               <h3>구성원 데이터 없음</h3>
-              <p>선택한 팀에 해당 월 기준 평가대상자 구성원 데이터가 없습니다.</p>
+              <p>선택한 팀에 해당 구간 기준 평가대상자 구성원 데이터가 없습니다.</p>
             </div>
           ) : (
             <div className="adm-team-detail-embed member-cards-list adm-sat-members-list">
               {memberRows.map((m) => {
                 const selected = selectedMemberSkid === m.skid;
-                const targetMet =
-                  m.targetPercent != null && m.satisfactionRate != null
-                    ? Number(m.satisfactionRate) >= Number(m.targetPercent)
-                    : null;
                 return (
                   <article
                     key={m.skid}
@@ -1048,35 +1215,25 @@ export default function AdminSatisfactionPage() {
                       </div>
 
                       <div className="member-card-stats member-card-stats--metrics">
-                        <div className="mcs-item">
-                          <span className="mcs-label">목표%</span>
-                          <span className="mcs-value">{pct(m.targetPercent)}</span>
+                        <div className="mcs-item mcs-item--panel">
+                          <span className="mcs-label">만족도</span>
+                          <span className="mcs-value">{pct(m.satisfactionRate)}</span>
                         </div>
-                        <div className="mcs-item">
-                          <span className="mcs-label">실적%</span>
-                          <span
-                            className={`mcs-value ${
-                              targetMet == null
-                                ? ''
-                                : targetMet
-                                  ? 'adm-sat-member-actual--ok'
-                                  : 'adm-sat-member-actual--no'
-                            }`}
-                          >
-                            {pct(m.satisfactionRate)}
-                          </span>
+                        <div className="mcs-item mcs-item--panel">
+                          <span className="mcs-label">5대도시</span>
+                          <span className="mcs-value">{pct(m.fiveMajorCitiesPct)}</span>
                         </div>
-                        <div className="mcs-item">
-                          <span className="mcs-label">5대 도시건</span>
-                          <span className="mcs-value">{num(m.fiveMajorCitiesCount ?? 0)}건</span>
+                        <div className="mcs-item mcs-item--panel">
+                          <span className="mcs-label">5060</span>
+                          <span className="mcs-value">{pct(m.gen5060Pct)}</span>
                         </div>
-                        <div className="mcs-item">
-                          <span className="mcs-label">5060건</span>
-                          <span className="mcs-value">{num(m.gen5060Count ?? 0)}건</span>
+                        <div className="mcs-item mcs-item--panel">
+                          <span className="mcs-label">문제해결</span>
+                          <span className="mcs-value">{pct(m.problemResolvedPct)}</span>
                         </div>
-                        <div className="mcs-item">
-                          <span className="mcs-label">문제해결건</span>
-                          <span className="mcs-value">{num(m.problemResolvedCount ?? 0)}건</span>
+                        <div className="mcs-item mcs-item--panel">
+                          <span className="mcs-label">문제해결 달성(역산)</span>
+                          <span className="mcs-value">{pct(m.problemResolvedInverseAchievementPct)}</span>
                         </div>
                       </div>
                     </div>
@@ -1312,6 +1469,128 @@ export default function AdminSatisfactionPage() {
                   </div>
                 </div>
               )}
+            </div>
+          </section>
+        </div>
+      )}
+
+      {excludeModalOpen && (
+        <div className="adm-sat-exclude-backdrop" onClick={closeExcludeModal} role="presentation">
+          <section
+            className="adm-sat-exclude-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="평가 제외 설정"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <header className="adm-sat-exclude-head">
+              <h3>평가 제외</h3>
+              <button
+                type="button"
+                className="adm-sat-row-modal-close"
+                onClick={closeExcludeModal}
+                aria-label="평가 제외 닫기"
+              >
+                <X size={18} aria-hidden />
+              </button>
+            </header>
+            <div className="adm-sat-exclude-body">
+              <div className="adm-sat-exclude-grid adm-sat-exclude-grid--range">
+                <label className="adm-sat-exclude-field adm-sat-exclude-field--full">
+                  <span>스킬</span>
+                  <select
+                    className="adm-dept-filter-select"
+                    value={excludeSkill}
+                    onChange={(e) => {
+                      setExcludeSkill(e.target.value);
+                      setExcludeErr('');
+                      setExcludeMsg('');
+                    }}
+                  >
+                    {SAT_EXCLUDE_SKILLS.map((skill) => (
+                      <option key={skill} value={skill}>
+                        {skill}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="adm-sat-exclude-field">
+                  <span>시작 일시</span>
+                  <input
+                    type="datetime-local"
+                    className="adm-sat-exclude-datetime"
+                    step={60}
+                    value={excludeStartLocal}
+                    onChange={(e) => {
+                      setExcludeStartLocal(e.target.value);
+                      setExcludeErr('');
+                      setExcludeMsg('');
+                    }}
+                  />
+                </label>
+                <label className="adm-sat-exclude-field">
+                  <span>종료 일시</span>
+                  <input
+                    type="datetime-local"
+                    className="adm-sat-exclude-datetime"
+                    step={60}
+                    value={excludeEndLocal}
+                    onChange={(e) => {
+                      setExcludeEndLocal(e.target.value);
+                      setExcludeErr('');
+                      setExcludeMsg('');
+                    }}
+                  />
+                </label>
+              </div>
+              {excludeErr && <p className="adm-sat-query-err adm-sat-exclude-msg">{excludeErr}</p>}
+              {excludeMsg && <p className="adm-sat-exclude-msg adm-sat-exclude-msg--ok">{excludeMsg}</p>}
+              <div className="adm-sat-exclude-history">
+                <h4 className="adm-sat-exclude-history-title">최근 평가 제외 이력</h4>
+                {excludeLogQuery.isLoading ? (
+                  <p className="adm-sat-exclude-history-empty">불러오는 중…</p>
+                ) : excludeLogQuery.isError ? (
+                  <p className="adm-sat-exclude-history-empty">이력을 불러오지 못했습니다.</p>
+                ) : (excludeLogQuery.data?.entries ?? []).length === 0 ? (
+                  <p className="adm-sat-exclude-history-empty">
+                    저장된 이력이 없습니다. 제외를 적용하면 스킬·구간·건수가 기록됩니다.
+                  </p>
+                ) : (
+                  <ul className="adm-sat-exclude-history-list">
+                    {(excludeLogQuery.data?.entries ?? []).map((e) => (
+                      <li key={e.id} className="adm-sat-exclude-history-item">
+                        <span className="adm-sat-exclude-history-skill">{e.skill}</span>
+                        <span className="adm-sat-exclude-history-range">
+                          {formatDateTime(e.startAt)} ~ {formatDateTime(e.endAt)}
+                        </span>
+                        <span className="adm-sat-exclude-history-meta">
+                          {num(e.updatedRowCount)}건 · {e.excludedBySkid?.trim() ? e.excludedBySkid : '—'}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+              <div className="adm-sat-exclude-actions">
+                <button type="button" className="btn btn-secondary btn-sm" onClick={closeExcludeModal}>
+                  닫기
+                </button>
+                {!excludeMsg ? (
+                  <button
+                    type="button"
+                    className="btn btn-primary btn-sm"
+                    onClick={handleExcludeSubmit}
+                    disabled={
+                      excludeTimeMutation.isPending ||
+                      !excludeSkill ||
+                      !excludeStartLocal ||
+                      !excludeEndLocal
+                    }
+                  >
+                    {excludeTimeMutation.isPending ? '처리 중...' : '평가 제외 적용'}
+                  </button>
+                ) : null}
+              </div>
             </div>
           </section>
         </div>

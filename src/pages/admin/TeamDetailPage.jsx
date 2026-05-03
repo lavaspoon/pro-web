@@ -53,15 +53,17 @@ export default function TeamDetailPage() {
           <p className="team-detail-kicker">YOU PRO</p>
           <h1 className="page-title">{team.name} 구성원 현황</h1>
           <p className="page-sub">
-            총 {members.length}명 · {new Date().getFullYear()}년 기준 선정·접수 현황
+            평가대상자 {members.length}명 · {new Date().getFullYear()}년 기준 선정·접수 현황
           </p>
         </div>
       </div>
 
       <div className="member-cards-list">
-        {members.map((m) => (
-          <AdminMemberDetailCard key={m.id} member={m} />
-        ))}
+        {members.length === 0 ? (
+          <p className="adm-team-detail-empty">표시할 평가대상자가 없습니다.</p>
+        ) : (
+          members.map((m) => <AdminMemberDetailCard key={m.id} member={m} />)
+        )}
       </div>
     </div>
   );

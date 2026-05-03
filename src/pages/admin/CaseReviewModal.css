@@ -1565,8 +1565,61 @@
   margin: 0;
 }
 
-.review-step-pane--stt {
+.review-step-pane--stt,
+.review-step-pane--ai-first {
   gap: 12px;
+}
+
+.review-ai-first-body {
+  max-height: min(38vh, 320px);
+  overflow-y: auto;
+  padding: 2px 0;
+}
+
+.review-ai-first-plain {
+  margin: 0;
+}
+
+.review-ai-first-refresh-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.review-ai-first-refresh-btn--inline {
+  margin-left: auto;
+}
+
+.review-judge-ai-ref {
+  border-radius: 14px;
+  border: 1px solid rgba(99, 102, 241, 0.22);
+  background: linear-gradient(180deg, rgba(248, 250, 252, 0.98) 0%, var(--surface) 100%);
+  box-shadow: var(--rm-section-shadow);
+  overflow: hidden;
+}
+
+.review-judge-ai-ref__hd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 10px 14px;
+  font-size: var(--rm-fs-label);
+  font-weight: 700;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border);
+  background: rgba(99, 102, 241, 0.06);
+}
+
+.review-judge-ai-ref__hd svg {
+  color: #6366f1;
+  flex-shrink: 0;
+}
+
+.review-judge-ai-ref__bd {
+  padding: 12px 14px 14px;
+  max-height: min(28vh, 260px);
+  overflow-y: auto;
 }
 
 .review-stt-step-intro {
@@ -1768,7 +1821,7 @@
   gap: 4px;
 }
 
-/* ── 상세 전용(대시보드 임베드): 접수 · STT · 판정 · AI ───── */
+/* ── 상세 전용(대시보드 임베드): 접수 · AI 1차 · 판정 ───── */
 .review-modal--detail {
   max-width: min(760px, 96vw);
   max-height: 92vh;

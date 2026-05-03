@@ -6,7 +6,6 @@ import {
   Calendar,
   CalendarClock,
   Clock,
-  FileText,
 } from 'lucide-react';
 import { fetchCaseDetail } from '../../api/memberApi';
 import StatusBadge from '../common/StatusBadge';
@@ -38,7 +37,6 @@ export default function MemberCaseDetailPanel({ embedded = false }) {
 
   if (!caseDetailId) return null;
 
-  const hasTranscript = Boolean(caseData?.fullTranscript && caseData.fullTranscript.trim());
   const showDuration = Boolean(caseData?.callDuration && String(caseData.callDuration).trim());
 
   return (
@@ -94,12 +92,6 @@ export default function MemberCaseDetailPanel({ embedded = false }) {
                     녹취 길이 {caseData.callDuration}
                   </span>
                 )}
-                {hasTranscript && (
-                  <span className="meta-item meta-item-stt">
-                    <FileText size={13} />
-                    STT 전사 제공
-                  </span>
-                )}
               </div>
             </div>
 
@@ -123,15 +115,6 @@ export default function MemberCaseDetailPanel({ embedded = false }) {
               </div>
             )}
 
-            {hasTranscript && (
-              <section className="detail-section">
-                <h4 className="detail-section-title">
-                  <FileText size={17} />
-                  통화 STT 전사
-                </h4>
-                <div className="stt-transcript-box">{caseData.fullTranscript}</div>
-              </section>
-            )}
           </>
         )}
       </div>

@@ -23,7 +23,7 @@ export const fetchAdminLeafTeams = async (secondDepthDeptId) => {
 };
 
 /**
- * 랭킹 — 사례(TB_YOU_PRO_CASE) 접수 건수 기준 (combined 등 topN)
+ * 랭킹 — tb_you_incentive_reflect 해당 연 최신 반영 월 cumulative_count 기준 (combined 등 topN)
  * GET /api/admin/ranking?year=&topN=
  */
 export const fetchAdminRanking = async (year, topN = 15) => {
@@ -61,7 +61,7 @@ export const fetchAdminReviewQueue = async () => {
 };
 
 /**
- * 사례 상세 조회 (STT 포함)
+ * 사례 상세 조회
  * GET /api/admin/cases/{caseId}
  */
 export const fetchCaseForReview = async (caseId) => {
@@ -97,16 +97,22 @@ export const judgeCase = async ({
 };
 
 /**
- * CS 만족도 — 연간 실(2depth)별 요약
- * GET /api/admin/cs-satisfaction/summary?year=&secondDepthDeptId=
+ * CS 만족도 — 실(2depth)별 요약
+ * GET /api/admin/cs-satisfaction/summary?year=&month=&secondDepthDeptId=&rollingThroughYesterday=
  */
-export const fetchCsSatisfactionSummary = async (year, secondDepthDeptId, month) => {
+export const fetchCsSatisfactionSummary = async ({
+  year,
+  secondDepthDeptId,
+  month,
+  rollingThroughYesterday,
+} = {}) => {
   const params = {};
   if (year != null) params.year = year;
   if (month != null && month !== '') params.month = month;
   if (secondDepthDeptId != null && secondDepthDeptId !== '') {
     params.secondDepthDeptId = secondDepthDeptId;
   }
+  if (rollingThroughYesterday) params.rollingThroughYesterday = true;
   const { data } = await axiosInstance.get('/api/admin/cs-satisfaction/summary', { params });
   return data;
 };
@@ -146,6 +152,19 @@ export const fetchCsSatisfactionDashboardKpis = async (year, month) => {
 };
 
 /**
+ * CS 만족도 — 금일(09:00~18:59 KST) 시간대별 스냅샷
+ * GET /api/admin/cs-satisfaction/today-hourly?secondDepthDeptId=&skill=&adminSkid=
+ */
+export const fetchCsSatisfactionTodayHourly = async ({ adminSkid, secondDepthDeptId, skill } = {}) => {
+  const params = {};
+  if (adminSkid) params.adminSkid = adminSkid;
+  if (secondDepthDeptId !== undefined && secondDepthDeptId !== null) params.secondDepthDeptId = secondDepthDeptId;
+  if (skill !== undefined && skill !== null) params.skill = skill;
+  const { data } = await axiosInstance.get('/api/admin/cs-satisfaction/today-hourly', { params });
+  return data;
+};
+
+/**
  * CS 만족도 — 연간 구성원 랭킹(만족·5대도시·5060·문제해결 각 상위 N명)
  * GET /api/admin/cs-satisfaction/ranking?year=&topN=3
  */
@@ -158,13 +177,17 @@ export const fetchCsSatisfactionRanking = async (year, topN = 3, month) => {
 };
 
 /**
- * 선택 팀/센터 — 구성원별 만족도 (month 생략 시 해당 연도 전체, 지정 시 해당 월만)
- * GET /api/admin/cs-satisfaction/center-month-detail?secondDepthDeptId=&year=&month=
+ * 선택 팀/센터 — 구성원별 만족도
+ * GET /api/admin/cs-satisfaction/center-month-detail?secondDepthDeptId=&year=&month=&rollingThroughYesterday=
  */
-export const fetchCsSatisfactionCenterMonthDetail = async (secondDepthDeptId, year, month) => {
+export const fetchCsSatisfactionCenterMonthDetail = async (
+  secondDepthDeptId,
+  { year, month, rollingThroughYesterday } = {},
+) => {
   const params = { secondDepthDeptId };
   if (year != null) params.year = year;
   if (month != null && month !== '') params.month = month;
+  if (rollingThroughYesterday) params.rollingThroughYesterday = true;
   const { data } = await axiosInstance.get('/api/admin/cs-satisfaction/center-month-detail', { params });
   return data;
 };
@@ -177,6 +200,31 @@ export const fetchCsSatisfactionMemberMonthlyRows = async (skid, year) => {
   const params = { skid };
   if (year != null) params.year = year;
   const { data } = await axiosInstance.get('/api/admin/cs-satisfaction/member-monthly-rows', { params });
+  return data;
+};
+
+/**
+ * CS 만족도 — 스킬 + 상담일시 구간(시작·종료 포함) 평가 제외(useYn='N')
+ * POST /api/admin/cs-satisfaction/exclude-time
+ * @param {{ skill: string, startAt: string, endAt: string }} body — ISO-8601 로컬 일시 문자열
+ */
+export const excludeCsSatisfactionEvalRange = async ({ skill, startAt, endAt, excludedBySkid }) => {
+  const body = { skill, startAt, endAt };
+  if (excludedBySkid != null && String(excludedBySkid).trim() !== '') {
+    body.excludedBySkid = String(excludedBySkid).trim();
+  }
+  const { data } = await axiosInstance.post('/api/admin/cs-satisfaction/exclude-time', body);
+  return data;
+};
+
+/**
+ * 평가 제외 적용 이력 (최근 N건)
+ * GET /api/admin/cs-satisfaction/exclude-log?limit=
+ */
+export const fetchCsSatisfactionExcludeLog = async (limit = 50) => {
+  const { data } = await axiosInstance.get('/api/admin/cs-satisfaction/exclude-log', {
+    params: { limit },
+  });
   return data;
 };
 

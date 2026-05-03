@@ -19,7 +19,7 @@ export const fetchMyCases = async (skid) => {
 };
 
 /**
- * 사례 상세 조회 (STT 전체 전사·통화시간 등)
+ * 사례 상세 조회
  * GET /api/member/cases/{caseId}
  */
 export const fetchCaseDetail = async (caseId) => {

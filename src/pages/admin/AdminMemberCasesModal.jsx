@@ -64,7 +64,6 @@ function CaseDetailView({ caseId, onBack, onClose }) {
     enabled: !!caseId,
   });
 
-  const hasTranscript = Boolean(caseData?.fullTranscript && caseData.fullTranscript.trim());
   const showDuration = Boolean(caseData?.callDuration && String(caseData.callDuration).trim());
 
   return (
@@ -118,12 +117,6 @@ function CaseDetailView({ caseId, onBack, onClose }) {
                     녹취 길이 {caseData.callDuration}
                   </span>
                 )}
-                {hasTranscript && (
-                  <span className="meta-item meta-item-stt">
-                    <FileText size={13} />
-                    STT 전사 제공
-                  </span>
-                )}
               </div>
             </div>
 
@@ -147,15 +140,6 @@ function CaseDetailView({ caseId, onBack, onClose }) {
               </div>
             )}
 
-            {hasTranscript && (
-              <section className="detail-section">
-                <h4 className="detail-section-title">
-                  <FileText size={17} />
-                  통화 STT 전사
-                </h4>
-                <div className="stt-transcript-box">{caseData.fullTranscript}</div>
-              </section>
-            )}
           </>
         )}
       </div>
