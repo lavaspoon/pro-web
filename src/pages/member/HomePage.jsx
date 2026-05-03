@@ -85,7 +85,7 @@ function getReflectState(row) {
   return row.csTargetMet === true ? 'met' : 'no';
 }
 
-function ReflectTimeline({ rows, cumulative, onPickMonth }) {
+function ReflectTimeline({ rows, cumulative, totalReflectedWon, onPickMonth }) {
   const items = rows.map((row) => {
     const baseState = getReflectState(row);
     const raw = row.selectedCountRaw == null ? 0 : Number(row.selectedCountRaw);
@@ -96,7 +96,26 @@ function ReflectTimeline({ rows, cumulative, onPickMonth }) {
   });
 
   return (
-    <section className="hp-rfx" role="group" aria-label="1월부터 9월 반영 타임라인">
+    <section className="hp-rfx" role="group" aria-label="연간 적립 현황 요약">
+      <div className="hp-tier-summary">
+        <div className="hp-tier-summary-item hp-tier-summary-item--count">
+          <span className="hp-tier-summary-label">올해 인증 누적</span>
+          <span className="hp-tier-summary-val">
+            <strong>{cumulative}</strong>
+            <span className="hp-tier-summary-unit">건</span>
+          </span>
+        </div>
+        <span className="hp-tier-summary-arrow" aria-hidden>
+          <ChevronRight size={16} strokeWidth={2.5} />
+        </span>
+        <div className="hp-tier-summary-item hp-tier-summary-item--money">
+          <span className="hp-tier-summary-label">현재 누적 금액</span>
+          <span className="hp-tier-summary-val hp-tier-summary-val--money">
+            {formatWon(totalReflectedWon)}
+          </span>
+        </div>
+      </div>
+
       <header className="hp-rfx-hd">
         <h3 className="hp-rfx-title">월별 반영 현황</h3>
         <span className="hp-rfx-sub">1월 – 9월</span>
@@ -118,11 +137,11 @@ function ReflectTimeline({ rows, cumulative, onPickMonth }) {
                   {it.state === 'no' && <X size={9} strokeWidth={3.5} />}
                 </span>
               </div>
-              <div className="hp-r성fx-cell-body">
+              <div className="hp-rfx-cell-body">
                 <span className="hp-rfx-cell-num">{it.raw}건</span>
                 <span className="hp-rfx-cell-cap">
-                  {it.state === 'met' && `인증 완료`}
-                  {it.state === 'no' && '만족도 미달성'}
+                  {it.state === 'met' && `인증 · 만족도 달성`}
+                  {it.state === 'no' && '무효 · 만족도 미달성'}
                   {it.state === 'done' && '종료'}
                   {it.state === 'na' && '대기'}
                 </span>
@@ -132,18 +151,9 @@ function ReflectTimeline({ rows, cumulative, onPickMonth }) {
         ))}
       </ol>
 
-      <footer className="hp-rfx-ft">
-        <div className="hp-rfx-ft-l">
-          <span className="hp-rfx-ft-label">올해 인증 누적</span>
-          <span className="hp-rfx-ft-val">
-            <strong>{cumulative}</strong>
-            <span className="hp-rfx-ft-unit">건</span>
-          </span>
-        </div>
-        <p className="hp-rfx-ft-help">
-          만족도 달성한 달의 선정 건수만 인증으로 누적됩니다
-        </p>
-      </footer>
+      <p className="hp-rfx-help">
+        만족도 달성한 달의 선정 건수만 인증으로 누적됩니다
+      </p>
     </section>
   );
 }
@@ -319,9 +329,6 @@ export default function HomePage() {
                 </span>
               )}
             </div>
-            <Link to="/member/cases" className="hp-month-block-link">
-              접수이력 <ChevronRight size={12} strokeWidth={2.5} />
-            </Link>
           </div>
           <div className="hp-month-block-grid">
             <button
@@ -365,6 +372,9 @@ export default function HomePage() {
           <div className="hp-month-preview">
             <div className="hp-month-preview-head">
               <span className="hp-month-preview-label">최근 접수 이력</span>
+              <Link to="/member/cases" className="hp-month-block-link">
+                전체 접수 이력 <ChevronRight size={12} strokeWidth={2.5} />
+              </Link>
             </div>
             {monthPreviewCases.length === 0 ? (
               <p className="hp-month-preview-empty">이번 달 접수 내역이 없습니다.</p>
@@ -405,18 +415,14 @@ export default function HomePage() {
 
         <div className="hp-tier-main">
           <div className="hp-tier-main-left">
-            <div className="hp-tier-amount-card">
-              <span className="hp-tier-amount-label">현재 누적 금액</span>
-              <span className="hp-tier-amount-val">{formatWon(totalReflectedWon)}</span>
-
-              <ReflectTimeline
-                rows={reflectRows}
-                cumulative={cumulative}
-                onPickMonth={(m) =>
-                  openCaseList('선정', `${now.getFullYear()}-${String(m).padStart(2, '0')}`)
-                }
-              />
-            </div>
+            <ReflectTimeline
+              rows={reflectRows}
+              cumulative={cumulative}
+              totalReflectedWon={totalReflectedWon}
+              onPickMonth={(m) =>
+                openCaseList('선정', `${now.getFullYear()}-${String(m).padStart(2, '0')}`)
+              }
+            />
           </div>
 
           <aside className="hp-tier-rank-aside-v2" aria-label="등급표">
