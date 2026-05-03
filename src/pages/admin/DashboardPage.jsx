@@ -408,7 +408,7 @@ export default function DashboardPage() {
               </div>
               <div className="adm-kpi-unit">
                 <span className="adm-kpi-unit-line" />
-                해당 월 접수 대비 선정(인증) 건수 비율
+                이번 달 1건 이상 선정 인원 ÷ 연간 월별 평가대상자 스냅샷(1~9월) 평균 인원
               </div>
             </div>
           </div>

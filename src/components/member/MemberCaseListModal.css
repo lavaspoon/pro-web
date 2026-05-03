@@ -12,38 +12,29 @@
 
 .member-case-list-modal {
   position: relative;
-  padding-bottom: 6px;
-  background: linear-gradient(180deg, #fafbfc 0%, var(--surface) 28%);
-  border: 1px solid rgba(15, 23, 42, 0.08);
+  padding-bottom: 8px;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 18px;
   box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.65) inset,
-    0 24px 64px rgba(15, 23, 42, 0.12),
-    0 8px 24px rgba(15, 23, 42, 0.06);
+    0 30px 80px rgba(0, 0, 0, 0.18),
+    0 8px 24px rgba(0, 0, 0, 0.06);
 }
 
 .member-case-list-modal::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  border-radius: var(--r-xl) var(--r-xl) 0 0;
-  background: linear-gradient(90deg, #0e7490 0%, #0ea5e9 45%, #22d3ee 100%);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.35) inset;
-  pointer-events: none;
+  content: none;
 }
 
 /* ── 헤더 ─────────────────────────────────────────────────── */
 .member-case-list-head {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 12px 14px 10px;
+  padding: 18px 20px 14px;
   flex-shrink: 0;
-  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.85) 0%, transparent 100%);
+  background: transparent;
+  border-bottom: none;
 }
 
 .member-case-list-head-main {
@@ -53,72 +44,66 @@
 
 .member-case-list-title {
   margin: 0;
-  font-size: 1.25rem;
-  font-weight: 700;
-  letter-spacing: -0.04em;
-  line-height: 1.25;
-  color: var(--text-primary);
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.022em;
+  line-height: 1.3;
+  color: #1d1d1f;
+  text-align: left;
 }
 
 .member-case-list-lede {
-  margin: 4px 0 0;
-  font-size: 13.5px;
-  font-weight: 500;
+  margin: 2px 0 0;
+  font-size: 12.5px;
+  font-weight: 400;
   line-height: 1.4;
-  color: var(--text-secondary);
-  letter-spacing: -0.02em;
+  color: #86868b;
+  letter-spacing: -0.01em;
 }
 
-/* 닫기: 링 + 아이콘 (원형 터치 영역) */
+/* 닫기: Apple 스타일 원형 버튼 */
 .member-case-list-close {
   position: relative;
   flex-shrink: 0;
-  width: 44px;
-  height: 44px;
-  margin: -4px -6px -4px 0;
+  width: 30px;
+  height: 30px;
+  margin: 0;
   padding: 0;
   border: none;
   border-radius: 50%;
   background: transparent;
-  color: var(--text-secondary);
+  color: #6e6e73;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   transition:
-    color 0.2s ease,
-    transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    color 0.18s ease,
+    transform 0.15s ease;
 }
 
 .member-case-list-close__ring {
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  background: rgba(15, 23, 42, 0.04);
-  border: 1px solid rgba(15, 23, 42, 0.1);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.9) inset,
-    0 1px 2px rgba(15, 23, 42, 0.04);
-  transition:
-    background 0.2s ease,
-    border-color 0.2s ease,
-    box-shadow 0.2s ease;
+  background: rgba(120, 120, 128, 0.12);
+  border: none;
+  box-shadow: none;
+  transition: background 0.18s ease;
 }
 
 .member-case-list-close:hover {
-  color: var(--text-primary);
+  color: #1d1d1f;
 }
 
 .member-case-list-close:hover .member-case-list-close__ring {
-  background: rgba(14, 116, 144, 0.08);
-  border-color: rgba(14, 116, 144, 0.22);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 1) inset,
-    0 4px 14px rgba(14, 116, 144, 0.12);
+  background: rgba(120, 120, 128, 0.2);
+  border: none;
+  box-shadow: none;
 }
 
 .member-case-list-close:active .member-case-list-close__ring {
-  background: rgba(14, 116, 144, 0.12);
+  background: rgba(120, 120, 128, 0.28);
 }
 
 .member-case-list-close:active {
@@ -136,9 +121,7 @@
 }
 
 .member-case-list-close:focus-visible .member-case-list-close__ring {
-  box-shadow:
-    0 0 0 2px var(--surface),
-    0 0 0 4px rgba(14, 116, 144, 0.45);
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.35);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -156,21 +139,21 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  margin: 0 10px 8px;
-  padding: 6px 10px;
+  gap: 6px;
+  margin: 4px 16px 10px;
+  padding: 0;
   flex-shrink: 0;
-  border-radius: 14px;
-  background: rgba(15, 23, 42, 0.035);
-  border: 1px solid rgba(15, 23, 42, 0.06);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.75) inset;
+  border-radius: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
 }
 
 .member-case-month-label {
   font-size: 15px;
-  font-weight: 700;
-  color: var(--yp-ink, var(--text-primary));
-  letter-spacing: -0.03em;
+  font-weight: 600;
+  color: #1d1d1f;
+  letter-spacing: -0.022em;
   min-width: 8.5rem;
   text-align: center;
   font-variant-numeric: tabular-nums;
@@ -180,86 +163,102 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 9px;
-  border: 1px solid rgba(15, 23, 42, 0.1);
-  background: var(--surface);
-  color: var(--text-secondary);
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(120, 120, 128, 0.12);
+  color: #1d1d1f;
   cursor: pointer;
   transition:
     background 0.18s ease,
-    color 0.18s ease,
-    border-color 0.18s ease,
-    box-shadow 0.18s ease;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.85) inset;
+    transform 0.12s ease;
+  box-shadow: none;
 }
 
 .member-case-month-btn:hover:not(:disabled) {
-  background: var(--accent-lighter);
-  color: var(--accent);
-  border-color: rgba(10, 126, 164, 0.35);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 1) inset;
+  background: rgba(120, 120, 128, 0.2);
+  color: #1d1d1f;
+  border: none;
+  box-shadow: none;
+}
+
+.member-case-month-btn:active:not(:disabled) {
+  transform: scale(0.94);
 }
 
 .member-case-month-btn:disabled {
-  opacity: 0.32;
+  opacity: 0.3;
   cursor: not-allowed;
 }
 
 .member-case-list-meta {
-  padding: 0 14px 8px;
-  font-size: 13px;
-  font-weight: 500;
-  letter-spacing: -0.02em;
-  color: var(--text-secondary);
+  padding: 0 20px 12px;
+  font-size: 12.5px;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  color: #86868b;
   flex-shrink: 0;
 }
 
 .member-case-list-meta strong {
-  color: var(--accent);
-  font-weight: 700;
+  color: #1d1d1f;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
 
 /* ── 필터 (세그먼트) ─────────────────────────────────────── */
 .member-case-filter-tabs {
-  margin: 0 10px 8px;
+  margin: 0 16px 12px;
   flex-shrink: 0;
-  border-radius: 10px;
-  padding: 3px 4px;
-  gap: 3px;
-  background: rgba(15, 23, 42, 0.04);
-  border: 1px solid rgba(15, 23, 42, 0.07);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.75) inset;
+  border-radius: 9px;
+  padding: 2px;
+  gap: 0;
+  background: rgba(120, 120, 128, 0.12);
+  border: none;
+  box-shadow: none;
 }
 
 .member-case-list-modal .filter-tabs .filter-icon {
-  margin-left: 4px;
-  opacity: 0.65;
+  display: none;
 }
 
 .member-case-list-modal .filter-tab {
-  padding: 5px 10px;
-  border-radius: 8px;
+  padding: 6px 12px;
+  border-radius: 7px;
   font-size: 13px;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  border: 1px solid transparent;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: #1d1d1f;
+  border: none;
+  background: transparent;
+  transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.member-case-list-modal .filter-tab:hover:not(.active) {
+  color: #1d1d1f;
 }
 
 .member-case-list-modal .filter-tab.active {
-  background: var(--surface);
-  color: var(--accent);
+  background: #ffffff;
+  color: #1d1d1f;
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 1) inset,
-    0 2px 8px rgba(15, 23, 42, 0.06);
-  border: 1px solid rgba(10, 126, 164, 0.15);
+    0 3px 8px rgba(0, 0, 0, 0.08),
+    0 1px 2px rgba(0, 0, 0, 0.04);
+  border: none;
+  font-weight: 600;
+}
+
+.member-case-list-modal .filter-tab .filter-count {
+  background: transparent;
+  color: #86868b;
+  font-weight: 500;
+  margin-left: 4px;
 }
 
 .member-case-list-modal .filter-tab.active .filter-count {
-  background: rgba(10, 126, 164, 0.15);
-  color: var(--accent);
+  background: transparent;
+  color: #6e6e73;
 }
 
 /* ── 목록 슬롯 ───────────────────────────────────────────── */
@@ -269,13 +268,11 @@
   min-height: var(--member-list-slot-h);
   height: var(--member-list-slot-h);
   max-height: var(--member-list-slot-h);
-  margin: 0 10px 10px;
-  border-radius: 10px;
-  background: var(--surface);
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.98) inset,
-    0 8px 30px rgba(15, 23, 42, 0.05);
+  margin: 0 16px 12px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #f6f9ff 0%, #fbfcff 100%);
+  border: 1px solid rgba(0, 122, 255, 0.14);
+  box-shadow: 0 1px 2px rgba(0, 122, 255, 0.04);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -315,22 +312,45 @@
   position: sticky;
   top: 0;
   z-index: 2;
-  background: rgba(248, 250, 252, 0.97);
-  backdrop-filter: blur(4px);
-  border-bottom: 2px solid rgba(15, 23, 42, 0.08);
+  background: linear-gradient(180deg, rgba(214, 228, 250, 0.95) 0%, rgba(226, 237, 252, 0.92) 100%);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 1px solid rgba(0, 122, 255, 0.22);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.6) inset;
 }
 
 .member-case-table th {
-  padding: 10px 12px;
+  padding: 12px 14px;
   font-size: 12px;
   font-weight: 700;
-  color: var(--text-secondary);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  text-align: center;
+  color: #0a4ea0;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  text-align: left;
   white-space: nowrap;
   user-select: none;
+  position: relative;
 }
+
+.mct-col-no,
+.member-case-table th.mct-col-no,
+.member-case-table th.mct-col-status {
+  text-align: center;
+}
+
+.member-case-table th.mct-col-date {
+  text-align: right;
+}
+
+.mct-status {
+  text-align: center;
+  padding-left: 0;
+}
+
+.mct-status .status-badge {
+  margin: 0 auto;
+}
+
 
 /* 열 너비 */
 .mct-col-no {
@@ -356,7 +376,7 @@
 /* 데이터 행 */
 .mct-row {
   cursor: pointer;
-  border-bottom: 1px solid rgba(15, 23, 42, 0.055);
+  border-bottom: 1px solid rgba(0, 122, 255, 0.08);
   transition: background 0.14s ease;
 }
 
@@ -365,7 +385,7 @@
 }
 
 .mct-row:hover {
-  background: rgba(14, 116, 144, 0.04);
+  background: rgba(0, 122, 255, 0.05);
 }
 
 .mct-row:focus {
@@ -373,37 +393,37 @@
 }
 
 .mct-row:focus-visible {
-  background: rgba(14, 116, 144, 0.07);
-  outline: 2px solid rgba(14, 116, 144, 0.4);
+  background: rgba(0, 122, 255, 0.08);
+  outline: 2px solid rgba(0, 122, 255, 0.45);
   outline-offset: -2px;
 }
 
 .mct-row:active {
-  background: rgba(14, 116, 144, 0.09);
+  background: rgba(0, 122, 255, 0.09);
 }
 
-/* 짝수 행 줄무늬 */
+/* 짝수 행 줄무늬 제거 (Apple 스타일) */
 .mct-row:nth-child(even) {
-  background: rgba(15, 23, 42, 0.018);
+  background: transparent;
 }
 
 .mct-row:nth-child(even):hover {
-  background: rgba(14, 116, 144, 0.05);
+  background: rgba(0, 122, 255, 0.05);
 }
 
 /* 셀 공통 */
 .member-case-table td {
-  padding: 11px 12px;
+  padding: 13px 14px;
   vertical-align: middle;
   font-size: 14px;
-  color: var(--text-primary);
+  color: #1d1d1f;
 }
 
 /* 번호 열 */
 .mct-no {
   font-size: 13px;
-  font-weight: 600;
-  color: var(--text-tertiary);
+  font-weight: 400;
+  color: #c7c7cc;
   font-variant-numeric: tabular-nums;
   text-align: center;
   padding-right: 4px;
@@ -411,14 +431,16 @@
 
 /* 상태 열 */
 .mct-status {
-  padding-left: 8px;
+  padding-left: 0;
+  text-align: center;
 }
 
 /* 제목 열 */
 .mct-title {
-  font-weight: 600;
-  letter-spacing: -0.025em;
-  line-height: 1.35;
+  font-weight: 500;
+  letter-spacing: -0.022em;
+  line-height: 1.4;
+  color: #1d1d1f;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -428,22 +450,22 @@
 /* 날짜 열 */
 .mct-date {
   font-size: 13px;
-  font-weight: 500;
-  color: var(--text-secondary);
+  font-weight: 600;
+  color: #1d4f8c;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
   text-align: right;
-  padding-right: 6px;
+  padding-right: 8px;
 }
 
 /* 화살표 열 */
 .mct-action {
   text-align: center;
   padding-left: 2px;
-  padding-right: 8px;
-  color: var(--text-tertiary);
-  opacity: 0.45;
+  padding-right: 10px;
+  color: #9bbcec;
+  opacity: 1;
 }
 
 .member-case-list-loading {
@@ -492,16 +514,16 @@
   }
 
   .member-case-list-head {
-    padding: 18px 16px 14px;
+    padding: 16px 16px 12px;
   }
 
   .member-case-list-title {
-    font-size: 1.25rem;
+    font-size: 17px;
   }
 
   .member-case-month-bar {
-    margin-left: 12px;
-    margin-right: 12px;
+    margin-left: 14px;
+    margin-right: 14px;
   }
 
   .member-case-list-meta {

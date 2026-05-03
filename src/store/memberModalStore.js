@@ -6,11 +6,20 @@ import { create } from 'zustand';
 export const useMemberModalStore = create((set) => ({
   submitOpen: false,
   caseListOpen: false,
+  /** 목록 모달 진입 시 적용할 초기 상태 필터 ('전체' | '대기중' | '선정' | '비선정') */
+  caseListInitialFilter: '전체',
+  /** 목록 모달 진입 시 적용할 초기 월 (YYYY-MM). null이면 이번 달 */
+  caseListInitialMonth: null,
   /** 열려 있을 때 사례 ID (문자열) */
   caseDetailId: null,
   openSubmit: () => set({ submitOpen: true }),
   closeSubmit: () => set({ submitOpen: false }),
-  openCaseList: () => set({ caseListOpen: true }),
+  openCaseList: (initialFilter = '전체', initialMonth = null) =>
+    set({
+      caseListOpen: true,
+      caseListInitialFilter: initialFilter,
+      caseListInitialMonth: initialMonth,
+    }),
   closeCaseList: () => set({ caseListOpen: false }),
   openCaseDetail: (id) => set({ caseDetailId: id != null ? String(id) : null }),
   closeCaseDetail: () => set({ caseDetailId: null }),

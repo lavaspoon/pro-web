@@ -106,7 +106,7 @@
   width: 100%;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 16px;
   min-height: 52px;
   box-sizing: border-box;
@@ -116,7 +116,70 @@
   display: flex;
   align-items: center;
   min-width: 0;
+  flex: 0 0 auto;
+}
+
+.member-topbar-center {
   flex: 1;
+  min-width: 0;
+  display: flex;
+  justify-content: center;
+}
+
+.member-topbar-ment {
+  width: min(560px, 100%);
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(16, 185, 129, 0.26);
+  background: linear-gradient(180deg, rgba(240, 253, 250, 0.95) 0%, rgba(236, 253, 245, 0.92) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 2px 8px rgba(16, 185, 129, 0.1);
+  padding: 5px 14px;
+}
+
+.member-topbar-ment-kicker {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 700;
+  color: #047857;
+  letter-spacing: -0.01em;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  border-radius: 999px;
+  padding: 2px 7px;
+  background: rgba(236, 253, 245, 0.88);
+}
+
+.member-topbar-ment-text {
+  margin: 0;
+  max-width: calc(100% - 90px);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: #065f46;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.35;
+}
+
+.member-topbar-ment-q {
+  color: #10b981;
+  font-weight: 700;
+  margin: 0 2px;
+}
+
+.member-topbar-ment--empty {
+  opacity: 0.4;
+}
+
+.member-topbar-ment-quote {
+  font-size: 12px;
+  color: #94a3b8;
 }
 
 /* 구성원 상단 — 세그먼트형 카테고리 */
@@ -279,6 +342,7 @@
     color var(--duration-fast) var(--ease-out),
     background var(--duration-fast) var(--ease-out),
     border-color var(--duration-fast) var(--ease-out);
+  flex-shrink: 0;
 }
 
 .admin-topbar-logout:hover {
@@ -303,6 +367,11 @@
 
   .member-topbar-row {
     min-height: 48px;
+    gap: 10px;
+  }
+
+  .member-topbar-center {
+    display: none;
   }
 }
 

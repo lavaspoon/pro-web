@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   ThumbsUp,
+  ThumbsDown,
   CheckCircle2,
   MapPinned,
   UserCircle2,
@@ -13,8 +14,11 @@ import {
   X,
 } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
-import { fetchMemberSatisfaction, fetchMemberFocusTasks } from '../../api/memberApi';
+import { fetchMemberSatisfaction, fetchMemberCsInsightPromptMents } from '../../api/memberApi';
 import { fetchCsSatisfactionMemberMonthlyRows } from '../../api/adminApi';
+import { fetchCsSatisfactionInsight, LM_STUDIO_MODEL } from '../../api/lmStudioClient';
+import { finalizeInsightHtml } from '../../utils/sanitizeInsightHtml';
+import { parseInsightFeedback } from '../../utils/parseInsightFeedback';
 import Skeleton from '../../components/common/Skeleton';
 import '../admin/DashboardPage.css';
 import '../admin/AdminSatisfactionPage.css';
@@ -54,9 +58,6 @@ function useCountUpFloat(target, duration = 1200) {
 }
 
 const MEMBER_ROWS_PAGE_SIZE = 10;
-
-/** Good 멘트 티커 — 한 줄씩 자동 순환 */
-const GOOD_TICKER_INTERVAL_MS = 4500;
 
 function fmt(v, decimals = 1) {
   if (v == null || Number.isNaN(Number(v))) return '—';
@@ -170,56 +171,20 @@ function computeShortageVsTarget(d) {
   return { status: 'short', count: shortage, required, received };
 }
 
-/* ════════════════════════════════════════════════════════════
-   Good 멘트 티커
-   ════════════════════════════════════════════════════════════ */
-function GoodTicker({ comments }) {
-  const list = Array.isArray(comments) ? comments : [];
-  const [idx, setIdx] = useState(0);
+function normalizeCommentList(raw) {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((x) => (typeof x === 'string' ? x : x?.comment ?? x?.goodMent ?? x?.badMent ?? ''))
+    .map((s) => String(s).trim())
+    .filter(Boolean);
+}
 
-  useEffect(() => {
-    if (list.length <= 1) return undefined;
-    const t = setInterval(() => {
-      setIdx((prev) => (prev + 1) % list.length);
-    }, GOOD_TICKER_INTERVAL_MS);
-    return () => clearInterval(t);
-  }, [list.length]);
-
-  if (list.length === 0) {
-    return (
-      <div className="csx-ticker csx-ticker--empty">
-        <span className="csx-ticker-icon csx-ticker-icon--muted" aria-hidden>
-          <ThumbsUp size={13} strokeWidth={2.3} />
-        </span>
-        <span className="csx-ticker-tag csx-ticker-tag--muted">Good 멘트</span>
-        <p className="csx-ticker-text csx-ticker-text--muted">
-          아직 기록된 긍정 멘트가 없어요.
-        </p>
-      </div>
-    );
-  }
-
-  const current = list[idx] ?? list[0];
-  const text = current?.comment ?? current?.goodMent ?? '';
-
-  return (
-    <div className="csx-ticker" role="status" aria-live="polite">
-      <span className="csx-ticker-icon" aria-hidden>
-        <ThumbsUp size={13} strokeWidth={2.3} />
-      </span>
-      <span className="csx-ticker-tag">Good 멘트</span>
-      <p key={current.id ?? idx} className="csx-ticker-text">
-        <span className="csx-ticker-quote" aria-hidden>{'“'}</span>
-        {text}
-        <span className="csx-ticker-quote" aria-hidden>{'”'}</span>
-      </p>
-      {list.length > 1 ? (
-        <span className="csx-ticker-count" aria-label={`${idx + 1} / ${list.length}`}>
-          {idx + 1}/{list.length}
-        </span>
-      ) : null}
-    </div>
-  );
+/** API의 yyyy-MM-dd → 표시용 (예: 2026.5.3) */
+function formatInsightMentBasisDate(iso) {
+  if (!iso || typeof iso !== 'string') return '';
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso.trim());
+  if (!m) return iso.trim();
+  return `${Number(m[1])}.${Number(m[2])}.${Number(m[3])}`;
 }
 
 /* ════════════════════════════════════════════════════════════
@@ -227,61 +192,66 @@ function GoodTicker({ comments }) {
    ════════════════════════════════════════════════════════════ */
 function HeroSkeleton() {
   return (
-    <section className="csx-hero">
-      <div className="csx-hero-topbar" aria-hidden>
-        <Skeleton width={72} height={24} radius={999} />
-        <Skeleton height={44} radius={12} style={{ flex: 1 }} />
-      </div>
-      <div className="csx-gauge-wrap" style={{ alignItems: 'center', justifyContent: 'center' }} aria-hidden>
-        <Skeleton width={164} height={164} radius={999} />
-      </div>
-      <Skeleton height={40} radius={12} />
-      <Skeleton height={42} radius={12} />
-    </section>
-  );
-}
-
-function FocusSkeleton() {
-  return (
-    <section className="csx-focus">
-      <div className="csx-section-head">
-        <Skeleton variant="text" width={110} height={16} />
-        <Skeleton variant="text" width={180} height={11} />
-      </div>
-      <div className="csx-focus-grid">
-        {[0, 1, 2].map((i) => (
-          <div key={i} className="csx-focus-card">
-            <div className="csx-focus-card-head">
-              <Skeleton width={26} height={26} radius={8} />
-              <Skeleton variant="text" width={60} height={12} />
-            </div>
-            <Skeleton variant="text" width={50} height={26} />
-            <Skeleton variant="text" width={80} height={11} />
+    <>
+      <section className="csx-session csx-session--primary">
+        <section className="csx-hero csx-hero--unified">
+          <div className="csx-hero-topbar" aria-hidden>
+            <Skeleton width={72} height={24} radius={999} />
           </div>
-        ))}
-      </div>
-    </section>
+          <div className="csx-hero-highlight">
+            <div className="csx-hero-highlight-left">
+              <div className="csx-gauge-wrap" style={{ alignItems: 'center', justifyContent: 'center' }} aria-hidden>
+                <Skeleton width={184} height={184} radius={999} />
+              </div>
+              <Skeleton height={36} radius={10} style={{ width: '100%' }} />
+              <Skeleton height={28} radius={999} style={{ width: '72%' }} />
+            </div>
+            <div className="csx-ai-insight csx-ai-insight--skeleton" aria-hidden>
+              <Skeleton variant="text" width={120} height={14} />
+              <Skeleton variant="text" width="100%" height={12} />
+              <Skeleton variant="text" width="100%" height={12} />
+              <Skeleton variant="text" width="92%" height={12} />
+              <Skeleton variant="text" width="85%" height={12} />
+            </div>
+          </div>
+          <Skeleton height={42} radius={12} />
+        </section>
+      </section>
+      <section className="csx-session csx-session--secondary csx-session--skeleton csx-session--rates" aria-hidden>
+        <Skeleton variant="text" width={140} height={18} />
+        <Skeleton variant="text" width="95%" height={12} style={{ marginTop: 6 }} />
+        <ul className="csx-rate-deck csx-rate-deck--skeleton">
+          {[0, 1, 2, 3, 4].map((i) => (
+            <li key={i} className="csx-rate-deck-item">
+              <Skeleton height={64} radius={14} />
+            </li>
+          ))}
+        </ul>
+        <Skeleton height={42} radius={12} style={{ marginTop: 4 }} />
+      </section>
+    </>
   );
 }
 
 /* ════════════════════════════════════════════════════════════
    링 게이지 SVG
    ════════════════════════════════════════════════════════════ */
-const RING_R = 72;
-const RING_STROKE = 10;
 const RING_GAP = 4;
-const RING_SIZE = (RING_R + RING_STROKE) * 2;
-const RING_CX = RING_SIZE / 2;
-const RING_CY = RING_SIZE / 2;
-const CIRCUMFERENCE = 2 * Math.PI * RING_R;
 
-function GaugeRing({ actual, target, met }) {
+function GaugeRing({ actual, target, met, size = 'default' }) {
+  const ringR = size === 'large' ? 84 : 72;
+  const ringStroke = size === 'large' ? 11 : 10;
+  const ringSize = (ringR + ringStroke) * 2;
+  const ringCx = ringSize / 2;
+  const ringCy = ringSize / 2;
+  const circumference = 2 * Math.PI * ringR;
+
   const clampedActual = Math.min(Math.max(actual ?? 0, 0), 100);
   const clampedTarget = target != null ? Math.min(Math.max(target, 0), 100) : null;
 
-  const actualOffset = CIRCUMFERENCE * (1 - clampedActual / 100);
+  const actualOffset = circumference * (1 - clampedActual / 100);
   const targetOffset = clampedTarget != null
-    ? CIRCUMFERENCE * (1 - clampedTarget / 100)
+    ? circumference * (1 - clampedTarget / 100)
     : null;
 
   const trackColor = '#eef1f6';
@@ -293,10 +263,10 @@ function GaugeRing({ actual, target, met }) {
 
   return (
     <svg
-      className="csx-gauge-svg"
-      width={RING_SIZE}
-      height={RING_SIZE}
-      viewBox={`0 0 ${RING_SIZE} ${RING_SIZE}`}
+      className={`csx-gauge-svg csx-gauge-svg--${size}`}
+      width={ringSize}
+      height={ringSize}
+      viewBox={`0 0 ${ringSize} ${ringSize}`}
       aria-hidden
     >
       <defs>
@@ -323,40 +293,40 @@ function GaugeRing({ actual, target, met }) {
 
       {/* 트랙 */}
       <circle
-        cx={RING_CX} cy={RING_CY} r={RING_R}
+        cx={ringCx} cy={ringCy} r={ringR}
         fill="none"
         stroke={trackColor}
-        strokeWidth={RING_STROKE}
+        strokeWidth={ringStroke}
         strokeLinecap="round"
       />
 
       {/* 목표 마커 */}
       {clampedTarget != null && (
         <circle
-          cx={RING_CX} cy={RING_CY} r={RING_R}
+          cx={ringCx} cy={ringCy} r={ringR}
           fill="none"
           stroke="#dbeafe"
-          strokeWidth={RING_STROKE + RING_GAP}
+          strokeWidth={ringStroke + RING_GAP}
           strokeLinecap="butt"
-          strokeDasharray={`2 ${CIRCUMFERENCE - 2}`}
-          strokeDashoffset={CIRCUMFERENCE * 0.25 - targetOffset}
-          style={{ transform: 'rotate(-90deg)', transformOrigin: `${RING_CX}px ${RING_CY}px` }}
+          strokeDasharray={`2 ${circumference - 2}`}
+          strokeDashoffset={circumference * 0.25 - targetOffset}
+          style={{ transform: 'rotate(-90deg)', transformOrigin: `${ringCx}px ${ringCy}px` }}
         />
       )}
 
       {/* 실적 아크 */}
       {actual != null && (
         <circle
-          cx={RING_CX} cy={RING_CY} r={RING_R}
+          cx={ringCx} cy={ringCy} r={ringR}
           fill="none"
           stroke={actualGrad}
-          strokeWidth={RING_STROKE}
+          strokeWidth={ringStroke}
           strokeLinecap="round"
-          strokeDasharray={`${CIRCUMFERENCE} ${CIRCUMFERENCE}`}
+          strokeDasharray={`${circumference} ${circumference}`}
           strokeDashoffset={actualOffset}
           style={{
             transform: 'rotate(-90deg)',
-            transformOrigin: `${RING_CX}px ${RING_CY}px`,
+            transformOrigin: `${ringCx}px ${ringCy}px`,
             filter: met === true
               ? 'drop-shadow(0 0 5px rgba(16,185,129,0.5))'
               : 'drop-shadow(0 0 5px rgba(49,130,246,0.4))',
@@ -368,8 +338,8 @@ function GaugeRing({ actual, target, met }) {
       {clampedTarget != null && (() => {
         const angle = (clampedTarget / 100) * 360 - 90;
         const rad = (angle * Math.PI) / 180;
-        const px = RING_CX + RING_R * Math.cos(rad);
-        const py = RING_CY + RING_R * Math.sin(rad);
+        const px = ringCx + ringR * Math.cos(rad);
+        const py = ringCy + ringR * Math.sin(rad);
         return (
           <circle
             cx={px} cy={py} r={4}
@@ -383,10 +353,474 @@ function GaugeRing({ actual, target, met }) {
   );
 }
 
+function clipInsightLines(lines, maxItems = 8, maxChars = 120) {
+  return lines.slice(0, maxItems).map((s) => {
+    const t = String(s);
+    return t.length > maxChars ? `${t.slice(0, maxChars)}…` : t;
+  });
+}
+
+function SatisfactionLinearBar({
+  actualPct,
+  target,
+  met,
+  animatedActualPct,
+}) {
+  const fillPct = animatedActualPct != null
+    ? Math.min(100, Math.max(0, Number(animatedActualPct)))
+    : null;
+  const markerLeft = target != null ? Math.min(100, Math.max(0, Number(target))) : null;
+  const statusMod = met === true ? 'met' : met === false ? 'no' : 'none';
+
+  const ariaLabel = (() => {
+    const a = actualPct != null ? `${fmt(animatedActualPct ?? actualPct)}%` : '집계 전';
+    const t = target != null ? `목표 ${fmt(target)}%` : '목표 미설정';
+    return `이달 만족도 진행, 실적 ${a}, ${t}`;
+  })();
+
+  return (
+    <div
+      className={`csx-linear-bar csx-linear-bar--${statusMod}`}
+      role="group"
+      aria-label={ariaLabel}
+    >
+      <div className="csx-linear-bar-meta" aria-hidden>
+        {actualPct != null ? (
+          <>
+            <strong>{fmt(animatedActualPct ?? actualPct)}%</strong>
+            {target != null ? (
+              <span className="csx-linear-bar-slash"> / {fmt(target)}%</span>
+            ) : (
+              <span className="csx-linear-bar-muted"> · 목표 없음</span>
+            )}
+          </>
+        ) : (
+          <span className="csx-linear-bar-muted">집계 전</span>
+        )}
+      </div>
+      <div className="csx-linear-bar-track" aria-hidden>
+        {fillPct != null ? (
+          <div
+            className={`csx-linear-bar-fill csx-linear-bar-fill--${statusMod}`}
+            style={{ width: `${fillPct}%` }}
+          />
+        ) : (
+          <div className="csx-linear-bar-fill csx-linear-bar-fill--empty" style={{ width: '0%' }} />
+        )}
+        {markerLeft != null ? (
+          <span
+            className="csx-linear-bar-marker"
+            style={{ left: `${markerLeft}%` }}
+            title={`목표 ${fmt(target)}%`}
+          />
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function buildInsightStatsLines(d) {
+  const actualPct = computeActualPct(d);
+  const target = toNum(d.monthlyTargetPct ?? d.target);
+  const met = computeMet(d);
+  const received = toNum(d.receivedCount ?? d.totalSamples, 0) ?? 0;
+  const satisfied = toNum(d.satisfiedCount, 0) ?? 0;
+  const unsatisfied = toNum(d.unsatisfiedCount, 0) ?? 0;
+  const lines = [
+    `- 만족도 실적: ${actualPct != null ? `${fmt(actualPct)}%` : '—'}`,
+    target != null ? `- 목표: ${fmt(target)}%` : '- 목표: (미설정)',
+    `- 이번 달 달성 여부: ${met === true ? '달성' : met === false ? '미달성' : '판정 전'}`,
+    `- 접수 ${received}건 · 만족 ${satisfied} · 불만족 ${unsatisfied}`,
+  ];
+  const hot = (d.unsatisfiedCategories ?? [])
+    .filter((c) => toNum(c.count, 0) > 0)
+    .map((c) => `${c.label ?? ''} ${c.count}건`)
+    .filter((s) => s.trim());
+  if (hot.length) lines.push(`- 불만족 유형 요약: ${hot.join(', ')}`);
+  return lines;
+}
+
+/** Good/Bad 멘트 기반 코칭 카드 — 스크롤 없이 한 화면에 */
+function InsightFeedbackPanel({ fromGood, fromBad, nextStep, accent }) {
+  const goodText = fromGood?.trim() || '이번 달 수집된 Good 멘트가 없습니다.';
+  const badText = fromBad?.trim() || 'Bad 멘트가 없습니다. 좋은 패턴을 유지하면 됩니다.';
+
+  return (
+    <div
+      className={`csx-insight-fb csx-insight-fb--${accent}`}
+      role="region"
+      aria-label="Good·Bad 멘트 기준 개선 제안"
+    >
+      <div className="csx-insight-fb-row">
+        <div className="csx-insight-fb-cell csx-insight-fb-cell--good">
+          <span className="csx-insight-fb-label">
+            <ThumbsUp size={14} strokeWidth={2.4} aria-hidden />
+            Good 멘트에서
+          </span>
+          <p className="csx-insight-fb-body">{goodText}</p>
+        </div>
+        <div className="csx-insight-fb-cell csx-insight-fb-cell--watch">
+          <span className="csx-insight-fb-label csx-insight-fb-label--soft">
+            Bad 멘트 기준 보완
+          </span>
+          <p className="csx-insight-fb-body">{badText}</p>
+        </div>
+      </div>
+      <div className="csx-insight-fb-action">
+        <span className="csx-insight-fb-action-label">
+          <Sparkles size={13} strokeWidth={2.4} className="csx-insight-fb-action-ico" aria-hidden />
+          이렇게 개선해 보세요
+        </span>
+        <p className="csx-insight-fb-action-text">{nextStep}</p>
+      </div>
+    </div>
+  );
+}
+
+function CsAiInsight({
+  satData,
+  year,
+  month,
+  insightMents,
+  insightMentsPending,
+  fallbackContent,
+  shortageStatus,
+}) {
+  const [text, setText] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [errMsg, setErrMsg] = useState(null);
+
+  useEffect(() => {
+    if (!satData || insightMentsPending) return undefined;
+
+    let alive = true;
+    const ac = new AbortController();
+    setLoading(true);
+    setErrMsg(null);
+
+    (async () => {
+      try {
+        const goodLines = clipInsightLines(
+          [...new Set(normalizeCommentList(insightMents?.goodMents))],
+          14,
+          140,
+        );
+        const badLines = clipInsightLines(
+          [...new Set(normalizeCommentList(insightMents?.badMents))],
+          14,
+          140,
+        );
+        const statsLines = buildInsightStatsLines(satData);
+
+        const insightText = await fetchCsSatisfactionInsight({
+          year,
+          month,
+          statsLines,
+          goodLines,
+          badLines,
+          latestConsultDate: insightMents?.latestConsultDate ?? null,
+          signal: ac.signal,
+        });
+        if (!alive) return;
+        setText(insightText);
+      } catch (e) {
+        if (!alive || ac.signal.aborted || e?.name === 'AbortError') return;
+        setErrMsg(e?.message ?? String(e));
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+
+    return () => {
+      alive = false;
+      ac.abort();
+      setLoading(false);
+    };
+  }, [satData, year, month, insightMents, insightMentsPending]);
+
+  const mod = shortageStatus === 'met' ? 'met'
+    : shortageStatus === 'short' ? 'short'
+      : ['noData', 'noTarget'].includes(shortageStatus) ? 'muted' : 'neutral';
+
+  const feedback = useMemo(() => (text ? parseInsightFeedback(text) : null), [text]);
+  const safeInsightHtml = useMemo(() => (text ? finalizeInsightHtml(text) : ''), [text]);
+
+  const basisCaption = useMemo(() => {
+    if (insightMentsPending && insightMents == null) return null;
+    const iso = insightMents?.latestConsultDate;
+    if (iso) {
+      const disp = formatInsightMentBasisDate(iso);
+      return disp ? `멘트 분석 기준 상담일 ${disp}` : null;
+    }
+    if (!insightMentsPending) {
+      return '멘트 분석: 해당 월 평가시간 적용 전체 · 상담일시 없음';
+    }
+    return null;
+  }, [insightMents, insightMentsPending]);
+
+  return (
+    <aside className={`csx-ai-insight csx-ai-insight--${mod}`} aria-labelledby="csx-ai-insight-label">
+      <div className="csx-ai-insight-head">
+        <span
+          className="csx-ai-insight-icon"
+          title={`LM Studio · ${LM_STUDIO_MODEL}`}
+        >
+          <Sparkles size={18} strokeWidth={2.3} aria-hidden />
+        </span>
+        <div className="csx-ai-insight-head-text">
+          <h2 id="csx-ai-insight-label" className="csx-ai-insight-title">AI 인사이트</h2>
+          <p className="csx-ai-insight-tagline">Good·Bad 멘트 기준 개선</p>
+          {basisCaption ? (
+            <p className="csx-ai-insight-basis" role="note">
+              {basisCaption}
+            </p>
+          ) : null}
+        </div>
+      </div>
+
+      {insightMentsPending || loading ? (
+        <div className="csx-ai-insight-body csx-ai-insight-body--loading">
+          <div className="csx-ai-insight-shimmer" />
+          <p className="csx-ai-insight-wait">불러오는 중…</p>
+        </div>
+      ) : errMsg ? (
+        <div className="csx-ai-insight-body">
+          <p className="csx-ai-insight-prose" role="status">
+            {fallbackContent}
+          </p>
+          <p className="csx-ai-insight-err" role="alert">
+            LM Studio 확인 · {errMsg.length > 72 ? `${errMsg.slice(0, 72)}…` : errMsg}
+          </p>
+        </div>
+      ) : (
+        <div className="csx-ai-insight-body">
+          {text ? (
+            feedback ? (
+              <InsightFeedbackPanel
+                fromGood={feedback.fromGood}
+                fromBad={feedback.fromBad}
+                nextStep={feedback.nextStep}
+                accent={mod}
+              />
+            ) : safeInsightHtml.trim() ? (
+              <div
+                className="csx-ai-insight-html"
+                role="status"
+                aria-live="polite"
+                dangerouslySetInnerHTML={{ __html: safeInsightHtml }}
+              />
+            ) : (
+              <p className="csx-ai-insight-prose" role="status" aria-live="polite">{text}</p>
+            )
+          ) : (
+            <div className="csx-ai-insight-prose csx-ai-insight-fallback-wrap">{fallbackContent}</div>
+          )}
+        </div>
+      )}
+    </aside>
+  );
+}
+
+const DEFAULT_MODAL_FILTERS = {
+  satisfiedYn: 'ALL',
+  fiveMajorCitiesYn: 'ALL',
+  gen5060Yn: 'ALL',
+  problemResolvedYn: 'ALL',
+};
+
+const RATE_CARD_FILTERS = {
+  sat: { ...DEFAULT_MODAL_FILTERS, satisfiedYn: 'Y' },
+  unsat: { ...DEFAULT_MODAL_FILTERS, satisfiedYn: 'N' },
+  five: { ...DEFAULT_MODAL_FILTERS, fiveMajorCitiesYn: 'Y' },
+  gen: { ...DEFAULT_MODAL_FILTERS, gen5060Yn: 'Y' },
+  solve: { ...DEFAULT_MODAL_FILTERS, problemResolvedYn: 'Y' },
+};
+
 /* ════════════════════════════════════════════════════════════
-   ① 히어로
+   만족도 현황 — 5대 지표(%)
    ════════════════════════════════════════════════════════════ */
-function HeroPanel({ data, user, year, month, onShowAll }) {
+function SatisfactionRateDeck({ data, received, onOpenFiltered }) {
+  const d = data ?? {};
+  const hasBase = received > 0;
+
+  const items = [
+    {
+      key: 'sat',
+      label: '만족',
+      sub: '만족(Y)',
+      field: 'monthlyActualPct',
+      mod: 'sat',
+      Icon: ThumbsUp,
+      filter: RATE_CARD_FILTERS.sat,
+    },
+    {
+      key: 'unsat',
+      label: '불만족',
+      sub: '불만족(N)',
+      field: 'unsatisfiedPct',
+      mod: 'unsat',
+      Icon: ThumbsDown,
+      filter: RATE_CARD_FILTERS.unsat,
+    },
+    {
+      key: 'five',
+      label: '5대도시',
+      sub: '5대도시(Y)',
+      field: 'fiveMajorCitiesPct',
+      mod: 'five',
+      Icon: MapPinned,
+      filter: RATE_CARD_FILTERS.five,
+    },
+    {
+      key: 'gen',
+      label: '5060',
+      sub: '5060(Y)',
+      field: 'gen5060Pct',
+      mod: 'gen',
+      Icon: UserCircle2,
+      filter: RATE_CARD_FILTERS.gen,
+    },
+    {
+      key: 'solve',
+      label: '문제해결',
+      sub: '문제해결(Y)',
+      field: 'problemResolvedPct',
+      mod: 'solve',
+      Icon: CheckCircle2,
+      filter: RATE_CARD_FILTERS.solve,
+    },
+  ];
+
+  const rightItems = items.filter((it) => it.key !== 'sat' && it.key !== 'unsat');
+  const satPctRaw = hasBase ? toNum(d.monthlyActualPct) : null;
+  const unsatPctRaw = hasBase ? toNum(d.unsatisfiedPct) : null;
+  const satPct = satPctRaw == null || Number.isNaN(satPctRaw) ? null : Math.min(100, Math.max(0, satPctRaw));
+  const unsatPct = unsatPctRaw == null || Number.isNaN(unsatPctRaw) ? null : Math.min(100, Math.max(0, unsatPctRaw));
+
+  const renderCard = (it) => {
+    const Icon = it.Icon;
+    const raw = hasBase ? toNum(d[it.field]) : null;
+    const display = raw == null || Number.isNaN(raw) ? '—' : `${fmt(raw)}%`;
+    const width = raw != null && !Number.isNaN(raw) ? Math.min(100, Math.max(0, raw)) : 0;
+
+    return (
+      <li key={it.key} className="csx-rate-deck-item">
+        <button
+          type="button"
+          className={`csx-rate-card csx-rate-card--${it.mod}`}
+          onClick={() => onOpenFiltered(it.filter)}
+        >
+          <span className="csx-rate-card-icon" aria-hidden>
+            <Icon size={20} strokeWidth={2.15} />
+          </span>
+          <span className="csx-rate-card-main">
+            <span className="csx-rate-card-top">
+              <span className="csx-rate-card-label">{it.label}</span>
+              <span className="csx-rate-card-pct" title={`${it.sub} ÷ 이번 달 평가 건수`}>
+                {display}
+              </span>
+            </span>
+            <span className="csx-rate-card-sub">{it.sub}</span>
+            {hasBase && raw != null && !Number.isNaN(raw) ? (
+              <span className="csx-rate-meter" aria-hidden>
+                <span className="csx-rate-meter-fill" style={{ width: `${width}%` }} />
+              </span>
+            ) : null}
+          </span>
+        </button>
+      </li>
+    );
+  };
+
+  return (
+    <div className="csx-rate-deck-group-wrap">
+      <section className="csx-rate-group csx-rate-group--left" aria-label="만족/불만족">
+        <h3 className="csx-rate-group-title">만족/불만족</h3>
+        <button
+          type="button"
+          className="csx-satmix-card"
+          onClick={() => onOpenFiltered({ ...DEFAULT_MODAL_FILTERS })}
+          aria-label="만족도 통합 게이지"
+        >
+          <span className="csx-satmix-title">만족도</span>
+          <span className="csx-satmix-kpi-row">
+            <span className="csx-satmix-kpi-item">
+              <span className="csx-satmix-kpi-label">만족</span>
+              <strong className="csx-satmix-kpi-value csx-satmix-kpi-value--sat">
+                {satPct == null ? '—' : `${fmt(satPct)}%`}
+              </strong>
+            </span>
+            <span className="csx-satmix-kpi-sep">|</span>
+            <span className="csx-satmix-kpi-item">
+              <span className="csx-satmix-kpi-label">불만족</span>
+              <strong className="csx-satmix-kpi-value csx-satmix-kpi-value--unsat">
+                {unsatPct == null ? '—' : `${fmt(unsatPct)}%`}
+              </strong>
+            </span>
+          </span>
+        </button>
+      </section>
+      <section className="csx-rate-group csx-rate-group--right" aria-label="중점 항목">
+        <h3 className="csx-rate-group-title">5대도시 · 5060 · 문제해결</h3>
+        <ul className="csx-rate-deck csx-rate-deck--right">
+          {rightItems.map(renderCard)}
+        </ul>
+      </section>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════
+   하단 세션 — 만족도 현황 (%)
+   ════════════════════════════════════════════════════════════ */
+function ReceptionFocusSection({
+  data,
+  onShowAll,
+  onOpenFiltered,
+}) {
+  const d = data ?? {};
+  const received = toNum(d.receivedCount ?? d.totalSamples, 0) ?? 0;
+
+  return (
+    <section
+      className="csx-session csx-session--secondary csx-session--rates"
+      aria-labelledby="csx-session-reception-focus-title"
+    >
+      <header className="csx-session-head-main csx-session-head-main--rates">
+        <h2 id="csx-session-reception-focus-title" className="csx-session-title-main">
+          만족도 현황
+        </h2>
+        <p className="csx-session-desc-main">
+          기준: <strong>해당 지표 건수 ÷ 이달 평가 건수(useYn=Y)</strong>
+          <span className="csx-session-desc-divider">·</span>
+          분모 {received > 0 ? <strong>{received}건</strong> : <strong>0건</strong>}
+        </p>
+      </header>
+
+      <SatisfactionRateDeck
+        data={d}
+        received={received}
+        onOpenFiltered={onOpenFiltered}
+      />
+
+      <button type="button" className="csx-rates-all-btn" onClick={onShowAll}>
+        전체 접수 보기
+      </button>
+    </section>
+  );
+}
+
+/* ════════════════════════════════════════════════════════════
+   ① 히어로 (만족도 · AI — 상단 세션)
+   ════════════════════════════════════════════════════════════ */
+function HeroPanel({
+  data,
+  user,
+  year,
+  month,
+  insightMents,
+  insightMentsPending,
+}) {
   const d = data ?? {};
   const actualPct = computeActualPct(d);
   const target = toNum(d.monthlyTargetPct ?? d.target);
@@ -394,210 +828,83 @@ function HeroPanel({ data, user, year, month, onShowAll }) {
 
   const animatedActualPct = useCountUpFloat(actualPct ?? 0, 1300);
 
-  const received = toNum(d.receivedCount ?? d.totalSamples, 0) ?? 0;
-  const satisfied = toNum(d.satisfiedCount, 0) ?? 0;
-  const unsatisfied = toNum(d.unsatisfiedCount, 0) ?? 0;
-
-  const skillText = (d.skill ?? user?.skill ?? '').toString().trim();
   const shortage = computeShortageVsTarget(d);
 
-  const aiMessage = (() => {
+  const fallbackInsight = (() => {
     switch (shortage.status) {
       case 'met':
-        return <>이달 목표를 <strong>달성</strong>했어요. 끝까지 유지해봐요.</>;
+        return <>목표 <strong>달성</strong>. 긍정 피드백을 이어가 보세요.</>;
       case 'short':
         return (
-          <>만족 <strong className="csx-hero-kpi-ai-strong">{shortage.count}건</strong> 더 필요해요.</>
+          <>만족 <strong className="csx-hero-kpi-ai-strong">{shortage.count}건</strong> 더 필요합니다.</>
         );
       case 'noData':
-        return <>이번 달 접수 데이터를 기다리고 있어요.</>;
+        return <>이번 달 접수가 없습니다.</>;
       case 'noTarget':
       default:
-        return <>이번 달 목표가 설정되지 않았어요.</>;
+        return <>당월 목표%가 없습니다.</>;
     }
   })();
 
   const statusMod = met === true ? 'met' : met === false ? 'no' : 'none';
 
+  const compactStatus = (() => {
+    if (met === true) return '달성';
+    if (met === false && shortage.status === 'short') return `미달성 · 만족 ${shortage.count}건 부족`;
+    if (met === false) return '미달성';
+    if (shortage.status === 'noData') return '접수 대기';
+    if (shortage.status === 'noTarget') return '목표 없음';
+    return '집계 전';
+  })();
+
   return (
-    <section className="csx-hero">
-      {/* 상단: 스킬 칩 + 월 현황 버튼 */}
-      <div className="csx-hero-topbar">
+    <section className="csx-hero csx-hero--unified">
+      <div className="csx-hero-topbar csx-hero-topbar--solo">
         <span className="csx-hero-chip csx-hero-chip--skill">
-          {skillText || '스킬 미지정'}
-        </span>
-        <button
-          type="button"
-          className="csx-month-strip"
-          onClick={onShowAll}
-          aria-label={`${month}월 접수/만족/불만족 현황 전체보기`}
-        >
-          <span className="csx-month-strip-title">{month}월 현황</span>
-          <span className="csx-month-stats">
-            <span className="csx-month-stat csx-month-stat--received">
-              <span className="csx-month-stat-dot" />
-              <span className="csx-month-stat-label">접수</span>
-              <strong className="csx-month-stat-val">{received}</strong>
-            </span>
-            <span className="csx-month-stat csx-month-stat--satisfied">
-              <span className="csx-month-stat-dot" />
-              <span className="csx-month-stat-label">만족</span>
-              <strong className="csx-month-stat-val">{satisfied}</strong>
-            </span>
-            <span className="csx-month-stat csx-month-stat--unsatisfied">
-              <span className="csx-month-stat-dot" />
-              <span className="csx-month-stat-label">불만족</span>
-              <strong className="csx-month-stat-val">{unsatisfied}</strong>
-            </span>
-          </span>
-          <span className="csx-month-strip-link">
-            전체보기
-            <ChevronRight size={13} strokeWidth={2.5} />
-          </span>
-        </button>
-      </div>
-
-      {/* 중앙: 링 게이지 */}
-      <div className={`csx-gauge-wrap csx-gauge-wrap--${statusMod}`}>
-        <GaugeRing actual={animatedActualPct} target={target} met={met} />
-        <div className="csx-gauge-center">
-          <p className="csx-gauge-period">{year}.{String(month).padStart(2, '0')}</p>
-          <div className="csx-gauge-value">
-            <span className={`csx-gauge-num csx-gauge-num--${statusMod}`}>
-              {actualPct != null ? fmt(animatedActualPct) : '—'}
-            </span>
-            <span className="csx-gauge-unit">%</span>
-          </div>
-          {target != null && (
-            <p className="csx-gauge-target">
-              목표 <strong>{fmt(target)}%</strong>
-            </p>
-          )}
-        </div>
-      </div>
-
-      {/* 하단: AI 가이드 + 달성 배지 */}
-      <div className={`csx-hero-footer csx-hero-footer--${shortage.status}`}>
-        <span className="csx-hero-footer-icon" aria-hidden>
-          <Sparkles size={12} strokeWidth={2.4} />
-        </span>
-        <span className="csx-hero-footer-text" role="status" aria-live="polite">
-          {aiMessage}
-        </span>
-        <span className={`csx-hero-chip csx-hero-chip--${statusMod}`}>
-          {met === true ? '달성' : met === false ? '미달성' : '집계 전'}
+          {month}월 만족도
         </span>
       </div>
 
-      <GoodTicker comments={d.goodComments} />
-    </section>
-  );
-}
-
-/* ════════════════════════════════════════════════════════════
-   ② 중점추진과제 3카드
-   ════════════════════════════════════════════════════════════ */
-function FocusAchievementCards({ data, focusPending, focusError, onCardClick }) {
-  const items = [
-    {
-      key: 'five',
-      title: '5대 도시',
-      icon: MapPinned,
-      count: toNum(data?.fiveMajorCitiesCount),
-      target: toNum(data?.fiveMajorCitiesTargetPct),
-      filterOverride: { fiveMajorCitiesYn: 'Y' },
-    },
-    {
-      key: 'gen',
-      title: '5060',
-      icon: UserCircle2,
-      count: toNum(data?.gen5060Count),
-      target: toNum(data?.gen5060TargetPct),
-      filterOverride: { gen5060Yn: 'Y' },
-    },
-    {
-      key: 'solve',
-      title: '문제해결',
-      icon: CheckCircle2,
-      count: toNum(data?.problemResolvedCount),
-      target: toNum(data?.problemResolvedTargetPct),
-      filterOverride: { problemResolvedYn: 'Y' },
-    },
-  ];
-
-  const total = items.reduce((s, it) => s + (it.count ?? 0), 0);
-
-  const handleClick = (it) => {
-    if (!onCardClick) return;
-    onCardClick({
-      satisfiedYn: 'ALL',
-      fiveMajorCitiesYn: 'ALL',
-      gen5060Yn: 'ALL',
-      problemResolvedYn: 'ALL',
-      ...it.filterOverride,
-    });
-  };
-
-  return (
-    <section className="csx-focus">
-      <div className="csx-section-head">
-        <span className="csx-section-title">중점추진과제</span>
-        <span className="csx-section-hint">
-          {focusError
-            ? '데이터를 불러오지 못했습니다'
-            : focusPending
-              ? '불러오는 중…'
-              : (
-                <>
-                  만족(Y)이면서 해당 중점지표도 Y인 건수 · 총 <strong>{total}건</strong>
-                </>
-              )}
-        </span>
-      </div>
-      <div className="csx-focus-grid">
-        {items.map((it) => {
-          const Icon = it.icon;
-          const hasCount = it.count != null;
-          const hasTarget = it.target != null && it.target > 0;
-          return (
-            <div
-              key={it.key}
-              className={`csx-focus-card csx-focus-card--${it.key} csx-focus-card--clickable`}
-              onClick={() => handleClick(it)}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  handleClick(it);
-                }
-              }}
-              aria-label={`${it.title} 접수 상세 보기`}
-            >
-              <div className="csx-focus-card-head">
-                <span className="csx-focus-card-icon" aria-hidden>
-                  <Icon size={16} strokeWidth={2.2} />
+      <div className="csx-hero-highlight">
+        <div className="csx-hero-highlight-left">
+          <div className={`csx-gauge-featured csx-gauge-wrap csx-gauge-wrap--${statusMod}`}>
+            <GaugeRing actual={animatedActualPct} target={target} met={met} size="large" />
+            <div className="csx-gauge-center">
+              <p className="csx-gauge-period">
+                목표: {target != null ? `${fmt(target)}%` : '—'}
+              </p>
+              <div className="csx-gauge-value">
+                <span className={`csx-gauge-num csx-gauge-num--${statusMod}`}>
+                  {actualPct != null ? fmt(animatedActualPct) : '—'}
                 </span>
-                <span className="csx-focus-card-title">{it.title}</span>
-                <span className="csx-focus-card-arrow" aria-hidden>
-                  <ChevronRight size={13} strokeWidth={2.5} />
-                </span>
-              </div>
-              <div className="csx-focus-card-body">
-                <span className="csx-focus-card-num">{hasCount ? it.count : '—'}</span>
-                <span className="csx-focus-card-unit">건</span>
-              </div>
-              <div className="csx-focus-card-foot">
-                {hasTarget ? (
-                  <>목표 <strong>{fmt(it.target)}%</strong></>
-                ) : (
-                  <span className="csx-focus-card-foot--muted">개인 목표 미설정</span>
-                )}
+                <span className="csx-gauge-unit">%</span>
               </div>
             </div>
-          );
-        })}
+          </div>
+
+          <SatisfactionLinearBar
+            actualPct={actualPct}
+            target={target}
+            met={met}
+            animatedActualPct={animatedActualPct}
+          />
+
+          <p className={`csx-hero-status-compact csx-hero-status-compact--${statusMod}`} role="status">
+            {compactStatus}
+          </p>
+        </div>
+
+        <CsAiInsight
+          satData={d}
+          year={year}
+          month={month}
+          insightMents={insightMents}
+          insightMentsPending={insightMentsPending}
+          fallbackContent={fallbackInsight}
+          shortageStatus={shortage.status}
+        />
       </div>
+
     </section>
   );
 }
@@ -614,12 +921,7 @@ export default function CsSatisfactionPage() {
   const [showModal, setShowModal] = useState(false);
   const [modalDate, setModalDate] = useState(null);
   const [modalPage, setModalPage] = useState(1);
-  const [modalYnFilters, setModalYnFilters] = useState({
-    satisfiedYn: 'ALL',
-    fiveMajorCitiesYn: 'ALL',
-    gen5060Yn: 'ALL',
-    problemResolvedYn: 'ALL',
-  });
+  const [modalYnFilters, setModalYnFilters] = useState(() => ({ ...DEFAULT_MODAL_FILTERS }));
 
   const satQuery = useQuery({
     queryKey: ['member-satisfaction', user?.skid, year, month],
@@ -628,33 +930,21 @@ export default function CsSatisfactionPage() {
     retry: false,
   });
 
-  const focusQuery = useQuery({
-    queryKey: ['member-focus-tasks', user?.skid, year, month],
-    queryFn: () => fetchMemberFocusTasks({ skid: user.skid, year, month }),
-    enabled: !!user?.skid,
-    retry: false,
+  const satData = satQuery.data ?? null;
+
+  const insightMentsQuery = useQuery({
+    queryKey: ['member-cs-ai-insight-ments', user?.skid, year, month],
+    queryFn: () => fetchMemberCsInsightPromptMents({ skid: user.skid, year, month }),
+    enabled: !!user?.skid && !!satData && !satQuery.isError,
+    staleTime: 60_000,
   });
 
   const memberRowsQuery = useQuery({
     queryKey: ['member-sat-rows', user?.skid, year],
     queryFn: () => fetchCsSatisfactionMemberMonthlyRows(user.skid, year),
-    enabled: showModal && !!user?.skid,
+    enabled: !!user?.skid && !!satData && !satQuery.isError,
+    staleTime: 60_000,
   });
-
-  const satData = useMemo(() => {
-    const base = satQuery.data ?? null;
-    const f = focusQuery.data ?? null;
-    if (!base && !f) return null;
-    return {
-      ...(base ?? {}),
-      fiveMajorCitiesCount: f?.fiveMajorCitiesCount ?? base?.fiveMajorCitiesCount,
-      gen5060Count: f?.gen5060Count ?? base?.gen5060Count,
-      problemResolvedCount: f?.problemResolvedCount ?? base?.problemResolvedCount,
-      fiveMajorCitiesTargetPct: base?.fiveMajorCitiesTargetPct,
-      gen5060TargetPct: base?.gen5060TargetPct,
-      problemResolvedTargetPct: base?.problemResolvedTargetPct,
-    };
-  }, [satQuery.data, focusQuery.data]);
 
   /* ── 모달 파생 데이터 ── */
   const modalDateBuckets = useMemo(() => {
@@ -702,7 +992,7 @@ export default function CsSatisfactionPage() {
     if (!showModal) {
       setModalDate(null);
       setModalPage(1);
-      setModalYnFilters({ satisfiedYn: 'ALL', fiveMajorCitiesYn: 'ALL', gen5060Yn: 'ALL', problemResolvedYn: 'ALL' });
+      setModalYnFilters({ ...DEFAULT_MODAL_FILTERS });
       return;
     }
     if (modalDateBuckets.length === 0) return;
@@ -722,21 +1012,23 @@ export default function CsSatisfactionPage() {
 
   const isLoading = satQuery.isPending;
   const isError = satQuery.isError;
+  const headerName = user?.name ?? user?.skid ?? '구성원';
+  const headerSkill = (satData?.skill ?? satQuery.data?.skill ?? user?.skill ?? '').toString().trim();
 
   return (
     <div className="page-container adm-dashboard adm-dashboard--yp cs-sat-page yp-home hp-home fade-in csx-page">
       <header className="hp-header">
         <div className="hp-header-text">
           <h1 className="hp-header-title">나의 CS 만족도</h1>
-          <p className="hp-header-sub">현황을 한눈에 확인하세요.</p>
+          <p className="csx-header-meta" aria-label="구성원 정보">
+            <span className="csx-header-skill-badge">{headerSkill || '스킬 미지정'}</span>
+            <span className="csx-header-name">{headerName}</span>
+          </p>
         </div>
       </header>
 
       {isLoading ? (
-        <>
-          <HeroSkeleton />
-          <FocusSkeleton />
-        </>
+        <HeroSkeleton />
       ) : isError ? (
         <div className="csx-error">
           <AlertCircle size={20} strokeWidth={2.2} />
@@ -755,18 +1047,23 @@ export default function CsSatisfactionPage() {
         </div>
       ) : (
         <>
-          <HeroPanel
+          <section className="csx-session csx-session--primary">
+            <HeroPanel
+              data={satData}
+              user={user}
+              year={year}
+              month={month}
+              insightMents={insightMentsQuery.data}
+              insightMentsPending={insightMentsQuery.isPending || insightMentsQuery.isFetching}
+            />
+          </section>
+          <ReceptionFocusSection
             data={satData}
-            user={user}
-            year={year}
-            month={month}
-            onShowAll={() => setShowModal(true)}
-          />
-          <FocusAchievementCards
-            data={satData}
-            focusPending={focusQuery.isPending}
-            focusError={focusQuery.isError}
-            onCardClick={(filters) => {
+            onShowAll={() => {
+              setModalYnFilters({ ...DEFAULT_MODAL_FILTERS });
+              setShowModal(true);
+            }}
+            onOpenFiltered={(filters) => {
               setModalYnFilters(filters);
               setShowModal(true);
             }}
@@ -901,13 +1198,12 @@ export default function CsSatisfactionPage() {
                             </button>
                           </th>
                           <th><span className="adm-sat-modal-th-wrap">Good 멘트</span></th>
-                          <th><span className="adm-sat-modal-th-wrap">Bad 멘트</span></th>
                         </tr>
                       </thead>
                       <tbody>
                         {modalPagedRows.length === 0 ? (
                           <tr>
-                            <td colSpan={8} className="adm-table-empty">
+                            <td colSpan={7} className="adm-table-empty">
                               선택한 조건에 맞는 접수 내역이 없습니다.
                             </td>
                           </tr>
@@ -925,7 +1221,6 @@ export default function CsSatisfactionPage() {
                               <td><span className={`adm-sat-yn-chip ${ynClass(row.gen5060Yn)}`}>{yesNo(row.gen5060Yn)}</span></td>
                               <td><span className={`adm-sat-yn-chip ${ynClass(row.problemResolvedYn)}`}>{yesNo(row.problemResolvedYn)}</span></td>
                               <td className="adm-sat-modal-cell-ment">{row.goodMent?.trim() ? row.goodMent : '—'}</td>
-                              <td className="adm-sat-modal-cell-ment">{row.badMent?.trim() ? row.badMent : '—'}</td>
                             </tr>
                           ))
                         )}

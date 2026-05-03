@@ -67,6 +67,17 @@ export const fetchMemberFocusTasks = async ({ skid, year, month }) => {
 };
 
 /**
+ * AI 인사이트 프롬프트용 멘트 — 평가시간(Y)만, 해당 월 중 상담일이 가장 최근인 날짜 행에서 추출
+ * GET /api/member/satisfaction/ai-insight-ments?skid=&year=&month=
+ */
+export const fetchMemberCsInsightPromptMents = async ({ skid, year, month }) => {
+  const { data } = await axiosInstance.get('/api/member/satisfaction/ai-insight-ments', {
+    params: { skid, year, month },
+  });
+  return data;
+};
+
+/**
  * 구성원 당월 불만족 유형(1~5)별 상담 상세
  * GET /api/member/satisfaction/unsatisfied-details?skid=&year=&month=&dissatisfactionType=
  */

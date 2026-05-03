@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useMemberModalStore } from '../../store/memberModalStore';
-import { Sparkles, ChevronRight, Medal, Zap, Trophy } from 'lucide-react';
+import { Plus, ChevronRight, Medal, Zap, Trophy, Check, X, BadgeCheck, ShieldAlert } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
 import { fetchMemberHome, fetchMyCases } from '../../api/memberApi';
 import Skeleton from '../../components/common/Skeleton';
@@ -52,20 +52,6 @@ function formatWon(won) {
   return `${n.toLocaleString('ko-KR')}원`;
 }
 
-function TierSatBadge({ met, hasTarget }) {
-  const base = 'hp-tier-sat-badge hp-tier-sat-badge--apple';
-  if (!hasTarget) {
-    return <span className={`${base} hp-tier-sat-badge--muted`}>목표 없음</span>;
-  }
-  if (met === true) {
-    return <span className={`${base} hp-tier-sat-badge--met`}>달성</span>;
-  }
-  if (met === false) {
-    return <span className={`${base} hp-tier-sat-badge--no`}>미달</span>;
-  }
-  return null;
-}
-
 function reflectCsDotClass(met) {
   if (met === true) return 'hp-reflect-dot hp-reflect-dot--met';
   if (met === false) return 'hp-reflect-dot hp-reflect-dot--no';
@@ -92,6 +78,74 @@ function reflectCsTitle(met) {
 function reflectPickTitle(raw) {
   if (raw == null) return '반영 전';
   return `선정 raw ${Number(raw)}건`;
+}
+
+function getReflectState(row) {
+  if (row.csTargetMet == null) return 'na';
+  return row.csTargetMet === true ? 'met' : 'no';
+}
+
+function ReflectTimeline({ rows, cumulative, onPickMonth }) {
+  const items = rows.map((row) => {
+    const baseState = getReflectState(row);
+    const raw = row.selectedCountRaw == null ? 0 : Number(row.selectedCountRaw);
+    const certified = baseState === 'met' ? (raw > 0 ? raw : 0) : 0;
+    const isPast = row.month < currentMonthNum;
+    const state = baseState === 'na' && isPast ? 'done' : baseState;
+    return { month: row.month, raw, certified, state };
+  });
+
+  return (
+    <section className="hp-rfx" role="group" aria-label="1월부터 9월 반영 타임라인">
+      <header className="hp-rfx-hd">
+        <h3 className="hp-rfx-title">월별 반영 현황</h3>
+        <span className="hp-rfx-sub">1월 – 9월</span>
+      </header>
+
+      <ol className="hp-rfx-track">
+        {items.map((it) => (
+          <li key={it.month} className={`hp-rfx-cell hp-rfx-cell--${it.state}`}>
+            <button
+              type="button"
+              className="hp-rfx-cell-btn"
+              onClick={() => onPickMonth?.(it.month)}
+              aria-label={`${it.month}월 사례 보기`}
+            >
+              <div className="hp-rfx-cell-head">
+                <span className="hp-rfx-cell-month">{it.month}월</span>
+                <span className="hp-rfx-cell-glyph" aria-hidden>
+                  {it.state === 'met' && <Check size={9} strokeWidth={3.5} />}
+                  {it.state === 'no' && <X size={9} strokeWidth={3.5} />}
+                </span>
+              </div>
+              <div className="hp-r성fx-cell-body">
+                <span className="hp-rfx-cell-num">{it.raw}건</span>
+                <span className="hp-rfx-cell-cap">
+                  {it.state === 'met' && `인증 완료`}
+                  {it.state === 'no' && '만족도 미달성'}
+                  {it.state === 'done' && '종료'}
+                  {it.state === 'na' && '대기'}
+                </span>
+              </div>
+            </button>
+          </li>
+        ))}
+      </ol>
+
+      <footer className="hp-rfx-ft">
+        <div className="hp-rfx-ft-l">
+          <span className="hp-rfx-ft-label">올해 인증 누적</span>
+          <span className="hp-rfx-ft-val">
+            <strong>{cumulative}</strong>
+            <span className="hp-rfx-ft-unit">건</span>
+          </span>
+        </div>
+        <p className="hp-rfx-ft-help">
+          만족도 달성한 달의 선정 건수만 인증으로 누적됩니다
+        </p>
+      </footer>
+    </section>
+  );
 }
 
 function HomeSkeleton({ userName }) {
@@ -140,19 +194,21 @@ function HomeSkeleton({ userName }) {
         </div>
       </section>
 
-      <section className="hp-card hp-tier-dash hp-tier-dash--loading">
-        <div className="hp-tier-dash-hd">
+      <section className="hp-tier-block hp-tier-block--loading">
+        <div className="hp-tier-block-header">
           <Skeleton variant="text" width={120} height={14} />
         </div>
-        <div className="hp-tier-sheet hp-tier-sheet--loading">
-          <div className="hp-tier-main-grid">
-            <div className="hp-tier-main-col">
-              <Skeleton height={88} radius={12} />
-              <Skeleton height={56} radius={10} />
-              <Skeleton height={80} radius={10} />
-            </div>
-            <Skeleton width={118} height={108} radius={10} />
+        <div className="hp-tier-main">
+          <div className="hp-tier-main-left">
+            <Skeleton height={220} radius={12} />
           </div>
+          <aside className="hp-tier-rank-aside-v2">
+            <div className="hp-tier-rank-rows">
+              {[0, 1, 2].map((i) => (
+                <Skeleton key={i} height={56} radius={10} />
+              ))}
+            </div>
+          </aside>
         </div>
       </section>
     </div>
@@ -162,6 +218,7 @@ function HomeSkeleton({ userName }) {
 export default function HomePage() {
   const { user } = useAuthStore();
   const openSubmit = useMemberModalStore((s) => s.openSubmit);
+  const openCaseList = useMemberModalStore((s) => s.openCaseList);
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['member-home', user?.skid],
@@ -235,66 +292,79 @@ export default function HomePage() {
           <p className="hp-header-sub">{user?.name ?? '구성원'}님</p>
         </div>
         <div className="hp-header-actions">
-          <button type="button" className="hp-btn hp-btn--primary" onClick={openSubmit}>
-            <Sparkles size={15} strokeWidth={2.25} />
+          <button type="button" className="hp-btn hp-btn--submit" onClick={openSubmit}>
+            <Plus size={15} strokeWidth={2.5} />
             사례 접수
           </button>
         </div>
       </header>
 
-      <aside className="hp-program-note" aria-label="인센티브 반영 안내">
-        <p className="hp-program-note-title">인센티브 반영 안내</p>
-        <ul className="hp-program-note-list">
-          {PAYOUT_POLICY_LINES.map((line, i) => (
-            <li key={i}>{line}</li>
-          ))}
-        </ul>
-      </aside>
-
       <section className="hp-hero">
+        <span className="hp-corner-tr" aria-hidden />
+        <span className="hp-corner-bl" aria-hidden />
         <div className="hp-month-block hp-month-block--main">
           <div className="hp-month-block-header">
             <div className="hp-month-block-title-wrap">
               <span className="hp-month-block-title">{currentMonthNum}월 접수 현황</span>
               {currentMonthCsTargetMet === true && (
-                <span className="hp-month-cs hp-month-cs--met">만족도 달성 완료</span>
+                <span className="hp-month-cs hp-month-cs--met hp-month-cs--seal">
+                  <BadgeCheck size={13} strokeWidth={2.5} aria-hidden />
+                  만족도 달성 완료
+                </span>
               )}
               {currentMonthCsTargetMet === false && (
-                <span className="hp-month-cs hp-month-cs--no">만족도 달성 필요</span>
+                <span className="hp-month-cs hp-month-cs--no hp-month-cs--seal">
+                  <ShieldAlert size={13} strokeWidth={2.5} aria-hidden />
+                  만족도 달성 필요
+                </span>
               )}
             </div>
             <Link to="/member/cases" className="hp-month-block-link">
-              전체보기 <ChevronRight size={12} strokeWidth={2.5} />
+              접수이력 <ChevronRight size={12} strokeWidth={2.5} />
             </Link>
           </div>
           <div className="hp-month-block-grid">
-            <div className="hp-month-block-item hp-month-block-item--selected">
+            <button
+              type="button"
+              className="hp-month-block-item hp-month-block-item--selected hp-month-block-item--btn"
+              onClick={() => openCaseList('선정')}
+              aria-label="선정 사례만 보기"
+            >
               <span className="hp-month-block-item-label-top">선정</span>
               <div className="hp-month-block-num-row">
                 <span className="hp-month-block-val">{monthStats.selected}</span>
                 <span className="hp-month-block-unit">건</span>
               </div>
-            </div>
-            <div className="hp-month-block-item hp-month-block-item--pending">
-              <span className="hp-month-block-item-label-top">심사 중</span>
+            </button>
+            <button
+              type="button"
+              className="hp-month-block-item hp-month-block-item--pending hp-month-block-item--btn"
+              onClick={() => openCaseList('대기중')}
+              aria-label="대기 중 사례만 보기"
+            >
+              <span className="hp-month-block-item-label-top">대기 중</span>
               <div className="hp-month-block-num-row">
                 <span className="hp-month-block-val">{monthStats.pending}</span>
                 <span className="hp-month-block-unit">건</span>
               </div>
-            </div>
-            <div className="hp-month-block-item hp-month-block-item--rejected">
+            </button>
+            <button
+              type="button"
+              className="hp-month-block-item hp-month-block-item--rejected hp-month-block-item--btn"
+              onClick={() => openCaseList('비선정')}
+              aria-label="비선정 사례만 보기"
+            >
               <span className="hp-month-block-item-label-top">비선정</span>
               <div className="hp-month-block-num-row">
                 <span className="hp-month-block-val">{monthStats.rejected}</span>
                 <span className="hp-month-block-unit">건</span>
               </div>
-            </div>
+            </button>
           </div>
 
           <div className="hp-month-preview">
             <div className="hp-month-preview-head">
-              <span className="hp-month-preview-label">이달 접수 미리보기</span>
-              <span className="hp-month-preview-hint">최신순 최대 3건</span>
+              <span className="hp-month-preview-label">최근 접수 이력</span>
             </div>
             {monthPreviewCases.length === 0 ? (
               <p className="hp-month-preview-empty">이번 달 접수 내역이 없습니다.</p>
@@ -303,14 +373,14 @@ export default function HomePage() {
                 {monthPreviewCases.map((c) => (
                   <li key={c.id}>
                     <Link to="/member/cases" className="hp-month-preview-row" aria-label={`${c.title || '사례'} 상세 목록으로 이동`}>
-                      <span className="hp-month-preview-date">{formatPreviewDate(c.submittedAt)}</span>
-                      <span className="hp-month-preview-title" title={c.title || ''}>
-                        {c.title?.trim() ? c.title : '제목 없음'}
-                      </span>
-                      <ChevronRight size={14} strokeWidth={2.25} className="hp-month-preview-chev" aria-hidden />
                       <span className="hp-month-preview-badge">
                         <StatusBadge status={c.status} size="sm" />
                       </span>
+                      <span className="hp-month-preview-title" title={c.title || ''}>
+                        {c.title?.trim() ? c.title : '제목 없음'}
+                      </span>
+                      <span className="hp-month-preview-date">{formatPreviewDate(c.submittedAt)}</span>
+                      <ChevronRight size={14} strokeWidth={2.25} className="hp-month-preview-chev" aria-hidden />
                     </Link>
                   </li>
                 ))}
@@ -320,111 +390,61 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="hp-card hp-tier-dash" aria-label="등급과 인센티브">
-        <header className="hp-tier-dash-hd">
-          <h2 className="hp-tier-dash-title">등급 · 인센티브</h2>
-        </header>
+      <section className="hp-tier-block" aria-label="등급과 인센티브">
+        <span className="hp-corner-tr" aria-hidden />
+        <span className="hp-corner-bl" aria-hidden />
+        <div className="hp-tier-block-header">
+          <span className="hp-tier-block-title">등급 · 인센티브</span>
+          {currentMonthCsTargetMet === true && csHasTarget && (
+            <span className="hp-month-cs hp-month-cs--met">{currentMonthNum}월 만족도 달성</span>
+          )}
+          {!csHasTarget && (
+            <span className="hp-month-cs hp-month-cs--muted">만족도 목표 없음</span>
+          )}
+        </div>
 
-        <div className="hp-tier-sheet">
-          <div className="hp-tier-main-grid">
-            <div className="hp-tier-main-col">
-              <div className="hp-tier-kpis">
-                <div className="hp-tier-kpi hp-tier-kpi--combined">
-                  <span className="hp-tier-kpi-label">현재 누적 금액</span>
-                  <span className="hp-tier-kpi-value">{formatWon(totalReflectedWon)}</span>
-                  <span className="hp-tier-kpi-sub">
-                    반영 누적{' '}
-                    <span className="hp-tier-kpi-sub-num">{cumulative}</span>
-                    건
-                  </span>
-                </div>
-                <div className="hp-tier-kpi">
-                  <span className="hp-tier-kpi-label">{currentMonthNum}월 만족도</span>
-                  <span className="hp-tier-kpi-value hp-tier-kpi-value--badge">
-                    <TierSatBadge met={currentMonthCsTargetMet} hasTarget={csHasTarget} />
-                  </span>
-                </div>
-              </div>
+        <div className="hp-tier-main">
+          <div className="hp-tier-main-left">
+            <div className="hp-tier-amount-card">
+              <span className="hp-tier-amount-label">현재 누적 금액</span>
+              <span className="hp-tier-amount-val">{formatWon(totalReflectedWon)}</span>
 
-              <p className="hp-tier-policy" role="note">
-                만족도 목표에 <strong>미달</strong>한 달의 선정 건수는 인센티브 반영 기준으로{' '}
-                <strong>무효</strong> 처리되어 누적 실적·지급에 포함되지 않습니다.
-              </p>
-
-              <div className="hp-tier-month" role="group" aria-label="1월부터 9월 반영">
-                <div className="hp-tier-month-hd">
-                  <span className="hp-tier-month-title">1–9월</span>
-                  <span className="hp-tier-month-legend">
-                    <span className="hp-tier-month-legend-i">
-                      <span className="hp-reflect-dot hp-reflect-dot--met" />달성
-                    </span>
-                    <span className="hp-tier-month-legend-i">
-                      <span className="hp-reflect-dot hp-reflect-dot--no" />미달
-                    </span>
-                    <span className="hp-tier-month-legend-i">
-                      <span className="hp-reflect-dot hp-reflect-dot--na" />대기
-                    </span>
-                    <span className="hp-tier-month-legend-sep">·</span>
-                    <span>숫자 = raw</span>
-                    <span className="hp-tier-month-legend-sep">·</span>
-                    <span className="hp-tier-month-legend-note">미달 시 선정 무효</span>
-                  </span>
-                </div>
-
-                <div className="hp-reflect-rail-scroll">
-                  <div className="hp-reflect-rail hp-reflect-rail--inset">
-                    {reflectRows.map((row) => (
-                      <div
-                        key={row.month}
-                        className="hp-reflect-node"
-                        title={`${row.month}월 · ${reflectCsTitle(row.csTargetMet)} · ${reflectPickTitle(row.selectedCountRaw)}`}
-                      >
-                        <span className="hp-reflect-node-month">{row.month}</span>
-                        <span className={reflectCsDotClass(row.csTargetMet)} />
-                        <span className={reflectRawRowClass(row.selectedCountRaw)}>
-                          {reflectPickSegText(row.selectedCountRaw)}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
+              <ReflectTimeline
+                rows={reflectRows}
+                cumulative={cumulative}
+                onPickMonth={(m) =>
+                  openCaseList('선정', `${now.getFullYear()}-${String(m).padStart(2, '0')}`)
+                }
+              />
             </div>
-
-            <aside className="hp-tier-rank-aside" aria-label="등급표">
-              <span className="hp-tier-rank-aside-title">등급</span>
-              <ul className="hp-tier-rank-list">
-                {TIERS.map((tier, i) => {
-                  const TierIcon = TIER_ICONS[tier.id];
-                  return (
-                    <li
-                      key={tier.id}
-                      className={`hp-tier-rank-row hp-tier-rank-row--${tier.id}${i === tierIdx ? ' is-current' : ''}`}
-                    >
-                      <span className="hp-tier-rank-icon-wrap" aria-hidden>
-                        <TierIcon className="hp-tier-rank-icon" size={15} strokeWidth={2.25} />
-                      </span>
-                      <div className="hp-tier-rank-body">
-                        <span className="hp-tier-rank-name">{tier.name.replace('YOU ', '')}</span>
-                        <span className="hp-tier-rank-line">
-                          <span className="hp-tier-rank-range">{tier.range.replace(' 이상', '')}</span>
-                          <span className="hp-tier-rank-sep">·</span>
-                          <span className="hp-tier-rank-won">{tier.rateWon / 10000}만</span>
-                        </span>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            </aside>
           </div>
 
-          <p className="hp-tier-footnote">
-            금액은 반영된 지급 합계이며, 건수는 최근 반영 월{' '}
-            <code className="hp-tier-code">cumulative_count</code>입니다. 월별은 반영 후{' '}
-            <code className="hp-tier-code">cs_target_met</code> ·{' '}
-            <code className="hp-tier-code">selected_count_raw</code>. 미달 월은 선정이 반영되지 않습니다.
-          </p>
+          <aside className="hp-tier-rank-aside-v2" aria-label="등급표">
+            <div className="hp-tier-rank-rows">
+              {TIERS.map((tier, i) => {
+                const TierIcon = TIER_ICONS[tier.id];
+                const isCurrent = i === tierIdx;
+                return (
+                  <div
+                    key={tier.id}
+                    className={`hp-tier-rank-card hp-tier-rank-card--${tier.id}${isCurrent ? ' is-current' : ''}`}
+                  >
+                    <span className="hp-tier-rank-card-icon" aria-hidden>
+                      <TierIcon size={14} strokeWidth={2.5} />
+                    </span>
+                    <div className="hp-tier-rank-card-body">
+                      <span className="hp-tier-rank-card-name">{tier.name}</span>
+                      <span className="hp-tier-rank-card-range">{tier.range}</span>
+                    </div>
+                    <span className="hp-tier-rank-card-rate">
+                      {tier.rateWon / 10000}만원
+                      {isCurrent && <span className="hp-tier-rank-card-now">현재</span>}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </aside>
         </div>
       </section>
 

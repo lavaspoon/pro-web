@@ -53,6 +53,8 @@ function formatMonthBarLabel(ym) {
 export default function MemberCaseListModal() {
   const { user } = useAuthStore();
   const open = useMemberModalStore((s) => s.caseListOpen);
+  const initialFilter = useMemberModalStore((s) => s.caseListInitialFilter);
+  const initialMonth = useMemberModalStore((s) => s.caseListInitialMonth);
   const caseDetailId = useMemberModalStore((s) => s.caseDetailId);
   const closeCaseList = useMemberModalStore((s) => s.closeCaseList);
   const closeCaseDetail = useMemberModalStore((s) => s.closeCaseDetail);
@@ -89,8 +91,14 @@ export default function MemberCaseListModal() {
   }, [open, closeCaseList, closeCaseDetail, caseDetailId]);
 
   useEffect(() => {
-    if (open) setMonthKey(currentMonthKey());
-  }, [open]);
+    if (!open) return;
+    if (initialMonth && /^\d{4}-\d{2}$/.test(initialMonth)) setMonthKey(initialMonth);
+    else setMonthKey(currentMonthKey());
+  }, [open, initialMonth]);
+
+  useEffect(() => {
+    if (open) setActiveFilter(STATUS_FILTER.includes(initialFilter) ? initialFilter : '전체');
+  }, [open, initialFilter]);
 
   const { minMonthKey, maxMonthKey } = useMemo(() => {
     const max = currentMonthKey();
@@ -163,7 +171,7 @@ export default function MemberCaseListModal() {
             aria-label="내 사례 목록 닫기"
           >
             <span className="member-case-list-close__ring" aria-hidden />
-            <X className="member-case-list-close__icon" size={20} strokeWidth={2} aria-hidden />
+            <X className="member-case-list-close__icon" size={15} strokeWidth={2.4} aria-hidden />
           </button>
         </div>
 
@@ -187,10 +195,6 @@ export default function MemberCaseListModal() {
           >
             <ChevronRight size={20} strokeWidth={2.25} />
           </button>
-        </div>
-
-        <div className="member-case-list-meta">
-          해당 월 접수 <strong>{casesInMonth.length}</strong>건 · 전체 누적 <strong>{cases.length}</strong>건
         </div>
 
         {isLoading ? (
@@ -241,7 +245,7 @@ export default function MemberCaseListModal() {
                   <table className="member-case-table">
                     <thead>
                       <tr>
-                        <th className="mct-col-no">#</th>
+                        <th className="mct-col-no">순번</th>
                         <th className="mct-col-status">상태</th>
                         <th className="mct-col-title">사례 제목</th>
                         <th className="mct-col-date">접수일</th>
