@@ -394,7 +394,7 @@ export default function HomePage() {
         <span className="hp-corner-tr" aria-hidden />
         <span className="hp-corner-bl" aria-hidden />
         <div className="hp-tier-block-header">
-          <span className="hp-tier-block-title">등급 · 인센티브</span>
+          <span className="hp-tier-block-title">YOU니버스 적립식 적금</span>
           {currentMonthCsTargetMet === true && csHasTarget && (
             <span className="hp-month-cs hp-month-cs--met">{currentMonthNum}월 만족도 달성</span>
           )}
