@@ -680,29 +680,60 @@ function SatisfactionRateDeck({ data, received, onOpenFiltered }) {
     <div className="csx-rate-deck-group-wrap">
       <section className="csx-rate-group csx-rate-group--left" aria-label="만족/불만족">
         <h3 className="csx-rate-group-title">만족/불만족</h3>
-        <button
-          type="button"
-          className="csx-satmix-card"
-          onClick={() => onOpenFiltered({ ...DEFAULT_MODAL_FILTERS })}
-          aria-label="만족도 통합 게이지"
-        >
-          <span className="csx-satmix-title">만족도</span>
-          <span className="csx-satmix-kpi-row">
-            <span className="csx-satmix-kpi-item">
-              <span className="csx-satmix-kpi-label">만족</span>
-              <strong className="csx-satmix-kpi-value csx-satmix-kpi-value--sat">
-                {satPct == null ? '—' : `${fmt(satPct)}%`}
-              </strong>
+        <div className="csx-satmix-grid" role="group" aria-label="만족 및 불만족 비율">
+          <button
+            type="button"
+            className="csx-satmix-tile csx-satmix-tile--sat"
+            onClick={() => onOpenFiltered(RATE_CARD_FILTERS.sat)}
+          >
+            <span className="csx-satmix-tile-icon" aria-hidden>
+              <ThumbsUp size={20} strokeWidth={2.15} />
             </span>
-            <span className="csx-satmix-kpi-sep">|</span>
-            <span className="csx-satmix-kpi-item">
-              <span className="csx-satmix-kpi-label">불만족</span>
-              <strong className="csx-satmix-kpi-value csx-satmix-kpi-value--unsat">
-                {unsatPct == null ? '—' : `${fmt(unsatPct)}%`}
-              </strong>
+            <span className="csx-satmix-tile-main">
+              <span className="csx-satmix-tile-top">
+                <span className="csx-satmix-tile-label">만족</span>
+                <span className="csx-satmix-tile-pct" title="만족(Y) ÷ 이번 달 평가 건수">
+                  {satPct == null ? '—' : `${fmt(satPct)}%`}
+                </span>
+              </span>
+              <span className="csx-satmix-tile-sub">만족(Y)</span>
+              {hasBase && satPct != null ? (
+                <span className="csx-satmix-tile-meter" aria-hidden>
+                  <span
+                    className="csx-satmix-tile-meter-fill csx-satmix-tile-meter-fill--sat"
+                    style={{ width: `${satPct}%` }}
+                  />
+                </span>
+              ) : null}
             </span>
-          </span>
-        </button>
+          </button>
+          <button
+            type="button"
+            className="csx-satmix-tile csx-satmix-tile--unsat"
+            onClick={() => onOpenFiltered(RATE_CARD_FILTERS.unsat)}
+          >
+            <span className="csx-satmix-tile-icon" aria-hidden>
+              <ThumbsDown size={20} strokeWidth={2.15} />
+            </span>
+            <span className="csx-satmix-tile-main">
+              <span className="csx-satmix-tile-top">
+                <span className="csx-satmix-tile-label">불만족</span>
+                <span className="csx-satmix-tile-pct" title="불만족(N) ÷ 이번 달 평가 건수">
+                  {unsatPct == null ? '—' : `${fmt(unsatPct)}%`}
+                </span>
+              </span>
+              <span className="csx-satmix-tile-sub">불만족(N)</span>
+              {hasBase && unsatPct != null ? (
+                <span className="csx-satmix-tile-meter" aria-hidden>
+                  <span
+                    className="csx-satmix-tile-meter-fill csx-satmix-tile-meter-fill--unsat"
+                    style={{ width: `${unsatPct}%` }}
+                  />
+                </span>
+              ) : null}
+            </span>
+          </button>
+        </div>
       </section>
       <section className="csx-rate-group csx-rate-group--right" aria-label="중점 항목">
         <h3 className="csx-rate-group-title">5대도시 · 5060 · 문제해결</h3>

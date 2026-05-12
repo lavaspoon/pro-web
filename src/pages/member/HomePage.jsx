@@ -98,20 +98,20 @@ function ReflectTimeline({ rows, cumulative, totalReflectedWon, onPickMonth }) {
   return (
     <section className="hp-rfx" role="group" aria-label="연간 적립 현황 요약">
       <div className="hp-tier-summary">
-        <div className="hp-tier-summary-item hp-tier-summary-item--count">
-          <span className="hp-tier-summary-label">올해 인증 누적</span>
-          <span className="hp-tier-summary-val">
-            <strong>{cumulative}</strong>
-            <span className="hp-tier-summary-unit">건</span>
+        <div className="hp-tier-summary-item">
+          <span className="hp-tier-summary-label">현재 누적 금액</span>
+          <span className="hp-tier-summary-val hp-tier-summary-val--money">
+            {formatWon(totalReflectedWon)}
           </span>
         </div>
         <span className="hp-tier-summary-arrow" aria-hidden>
           <ChevronRight size={16} strokeWidth={2.5} />
         </span>
-        <div className="hp-tier-summary-item hp-tier-summary-item--money">
-          <span className="hp-tier-summary-label">현재 누적 금액</span>
-          <span className="hp-tier-summary-val hp-tier-summary-val--money">
-            {formatWon(totalReflectedWon)}
+        <div className="hp-tier-summary-item">
+          <span className="hp-tier-summary-label">올해 인증 누적</span>
+          <span className="hp-tier-summary-val">
+            <strong>{cumulative}</strong>
+            <span className="hp-tier-summary-unit">건</span>
           </span>
         </div>
       </div>

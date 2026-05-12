@@ -152,19 +152,6 @@ export const fetchCsSatisfactionDashboardKpis = async (year, month) => {
 };
 
 /**
- * CS 만족도 — 금일(09:00~18:59 KST) 시간대별 스냅샷
- * GET /api/admin/cs-satisfaction/today-hourly?secondDepthDeptId=&skill=&adminSkid=
- */
-export const fetchCsSatisfactionTodayHourly = async ({ adminSkid, secondDepthDeptId, skill } = {}) => {
-  const params = {};
-  if (adminSkid) params.adminSkid = adminSkid;
-  if (secondDepthDeptId !== undefined && secondDepthDeptId !== null) params.secondDepthDeptId = secondDepthDeptId;
-  if (skill !== undefined && skill !== null) params.skill = skill;
-  const { data } = await axiosInstance.get('/api/admin/cs-satisfaction/today-hourly', { params });
-  return data;
-};
-
-/**
  * CS 만족도 — 연간 구성원 랭킹(만족·5대도시·5060·문제해결 각 상위 N명)
  * GET /api/admin/cs-satisfaction/ranking?year=&topN=3
  */

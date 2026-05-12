@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  RefreshCw,
   ChevronLeft,
   ChevronRight,
   X,
@@ -19,7 +18,6 @@ import {
   fetchCsSatisfactionDashboardKpis,
   fetchCsSatisfactionMemberMonthlyRows,
   fetchCsSatisfactionSummary,
-  fetchCsSatisfactionTodayHourly,
   fetchCsSatisfactionExcludeLog,
   excludeCsSatisfactionEvalRange,
 } from '../../api/adminApi';
@@ -53,22 +51,6 @@ function KpiOverviewSkeleton() {
   );
 }
 
-function TodayHourlySkeleton() {
-  return (
-    <div className="adm-hourly-skeleton">
-      <div className="adm-hourly-skeleton__filters">
-        <Skeleton height={36} radius={10} />
-        <Skeleton height={36} radius={10} />
-      </div>
-      <div className="adm-hourly-skeleton__grid">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <Skeleton key={i} height={140} radius={16} />
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function SummaryTableSkeletonRows({ rows = 6, cols = 9 }) {
   return Array.from({ length: rows }).map((_, r) => (
     <tr key={`sk-${r}`}>
@@ -82,9 +64,6 @@ function SummaryTableSkeletonRows({ rows = 6, cols = 9 }) {
 }
 
 const MEMBER_ROWS_PAGE_SIZE = 10;
-
-/** 금일 시간대별 카드 — 한 화면에 표시할 슬롯 수(나머지는 ◀ ▶ 로 이동) */
-const HOURLY_CAROUSEL_PAGE_SIZE = 5;
 
 /** 평가 제외 — TB_YOU_CS.스킬 과 동일한 4종 (고정) */
 const SAT_EXCLUDE_SKILLS = ['일반', '리텐션', '이관', '멀티/기술'];
@@ -136,11 +115,6 @@ function problemInverseAchievementPct(actualResolvedPct, targetResolvedPct) {
 function num(v) {
   if (v == null) return '—';
   return Number(v).toLocaleString('ko-KR');
-}
-
-function fmtHourlyPct(v) {
-  if (v == null || Number.isNaN(Number(v))) return '—';
-  return `${Number(v).toFixed(1)}%`;
 }
 
 function yesNo(v) {
@@ -319,10 +293,6 @@ export default function AdminSatisfactionPage() {
   const queryClient = useQueryClient();
   const authUser = useAuthStore((s) => s.user);
   const adminSkid = authUser?.skid ?? authUser?.id ?? '';
-  const [hourlyTuned, setHourlyTuned] = useState(false);
-  const [hourlyCenter, setHourlyCenter] = useState(0);
-  const [hourlySkill, setHourlySkill] = useState('');
-  const [hourlyCarouselStart, setHourlyCarouselStart] = useState(0);
   const [baseMonth, setBaseMonth] = useState(() => {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
@@ -358,44 +328,6 @@ export default function AdminSatisfactionPage() {
     queryKey: ['cs-satisfaction-dashboard-kpis', year, month],
     queryFn: () => fetchCsSatisfactionDashboardKpis(year, month),
   });
-
-  const hourlyQuery = useQuery({
-    queryKey: ['cs-satisfaction-today-hourly', hourlyTuned, adminSkid, hourlyCenter, hourlySkill],
-    queryFn: () =>
-      hourlyTuned
-        ? fetchCsSatisfactionTodayHourly({
-            adminSkid: adminSkid || undefined,
-            secondDepthDeptId: hourlyCenter,
-            skill: hourlySkill,
-          })
-        : fetchCsSatisfactionTodayHourly({ adminSkid: adminSkid || undefined }),
-  });
-
-  const hourlyCenterSelectValue = hourlyTuned
-    ? hourlyCenter
-    : hourlyQuery.data?.appliedSecondDepthDeptId ?? 0;
-  const hourlySkillSelectValue = hourlyTuned
-    ? hourlySkill
-    : hourlyQuery.data?.appliedSkill ?? '';
-
-  const hourlyHours = useMemo(() => hourlyQuery.data?.hours ?? [], [hourlyQuery.data?.hours]);
-  const hourlyHoursKey = useMemo(() => hourlyHours.map((h) => h.hour).join(','), [hourlyHours]);
-  const hourlyCarouselMaxStart = Math.max(0, hourlyHours.length - HOURLY_CAROUSEL_PAGE_SIZE);
-  const hourlyCarouselSafeStart = Math.min(hourlyCarouselStart, hourlyCarouselMaxStart);
-  const visibleHourlySlots = hourlyHours.slice(
-    hourlyCarouselSafeStart,
-    hourlyCarouselSafeStart + HOURLY_CAROUSEL_PAGE_SIZE,
-  );
-  const canGoHourlyPrev = hourlyCarouselSafeStart > 0;
-  const canGoHourlyNext = hourlyCarouselSafeStart < hourlyCarouselMaxStart;
-
-  useEffect(() => {
-    setHourlyCarouselStart(0);
-  }, [hourlyHoursKey]);
-
-  useEffect(() => {
-    setHourlyCarouselStart((s) => Math.min(s, hourlyCarouselMaxStart));
-  }, [hourlyCarouselMaxStart]);
 
   const filterMeta = summaryQuery.data?.filterMeta;
   const secondDepthOptions = useMemo(
@@ -556,7 +488,6 @@ export default function AdminSatisfactionPage() {
       summaryQuery.refetch();
       centerMonthDetailQuery.refetch();
       dashboardKpisQuery.refetch();
-      hourlyQuery.refetch();
       queryClient.invalidateQueries({ queryKey: ['cs-satisfaction-summary'] });
       queryClient.invalidateQueries({ queryKey: ['cs-satisfaction-exclude-log'] });
     },
@@ -797,160 +728,6 @@ export default function AdminSatisfactionPage() {
               <KpiScopeListCard title="5대 도시" icon={MapPinned} rows={kpiData?.fiveMajorCities ?? []} />
               <KpiScopeListCard title="5060" icon={UserCircle2} rows={kpiData?.gen5060 ?? []} />
               <KpiScopeListCard title="문제해결" icon={CheckCircle2} rows={kpiData?.problemResolved ?? []} />
-            </div>
-          )}
-        </div>
-      </section>
-
-      <section className="adm-section adm-hourly-section" aria-labelledby="adm-hourly-title">
-        <div className="adm-section-title">
-          <span className="adm-title-bar" />
-          <div>
-            <h2 id="adm-hourly-title" className="adm-section-heading">
-              금일 시간대별 만족도
-            </h2>
-          </div>
-        </div>
-
-        <div className="adm-hourly-shell">
-          <div className="adm-hourly-toolbar">
-            <div className="adm-hourly-filters" aria-label="시간대별 만족도 필터">
-              <label className="adm-hourly-filter">
-                <span className="adm-hourly-filter-k">센터</span>
-                <select
-                  className="adm-hourly-select"
-                  value={hourlyCenterSelectValue}
-                  onChange={(e) => {
-                    setHourlyTuned(true);
-                    setHourlyCenter(Number(e.target.value));
-                  }}
-                  disabled={hourlyQuery.isPending}
-                >
-                  {(hourlyQuery.data?.centers ?? [{ id: 0, name: '전체' }]).map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="adm-hourly-filter">
-                <span className="adm-hourly-filter-k">스킬</span>
-                <select
-                  className="adm-hourly-select"
-                  value={hourlySkillSelectValue}
-                  onChange={(e) => {
-                    setHourlyTuned(true);
-                    setHourlySkill(e.target.value);
-                  }}
-                  disabled={hourlyQuery.isPending}
-                >
-                  <option value="">전체 스킬</option>
-                  {(hourlyQuery.data?.skillOptions ?? SAT_EXCLUDE_SKILLS).map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-            <div className="adm-hourly-meta">
-              <button
-                type="button"
-                className="adm-hourly-nav-btn"
-                onClick={() =>
-                  setHourlyCarouselStart((s) => Math.max(0, s - HOURLY_CAROUSEL_PAGE_SIZE))
-                }
-                disabled={!canGoHourlyPrev || hourlyQuery.isPending}
-                aria-label="이전 시간대"
-              >
-                <ChevronLeft size={18} strokeWidth={2.25} aria-hidden />
-              </button>
-              <button
-                type="button"
-                className="adm-hourly-nav-btn"
-                onClick={() =>
-                  setHourlyCarouselStart((s) =>
-                    Math.min(hourlyCarouselMaxStart, s + HOURLY_CAROUSEL_PAGE_SIZE),
-                  )
-                }
-                disabled={!canGoHourlyNext || hourlyQuery.isPending}
-                aria-label="다음 시간대"
-              >
-                <ChevronRight size={18} strokeWidth={2.25} aria-hidden />
-              </button>
-              <button
-                type="button"
-                className="btn btn-secondary btn-sm adm-sat-refresh"
-                onClick={() => {
-                  summaryQuery.refetch();
-                  centerMonthDetailQuery.refetch();
-                  dashboardKpisQuery.refetch();
-                  hourlyQuery.refetch();
-                }}
-                disabled={
-                  summaryQuery.isFetching ||
-                  centerMonthDetailQuery.isFetching ||
-                  dashboardKpisQuery.isFetching ||
-                  hourlyQuery.isFetching
-                }
-                aria-label="새로고침"
-              >
-                <RefreshCw
-                  size={14}
-                  className={
-                    summaryQuery.isFetching ||
-                    centerMonthDetailQuery.isFetching ||
-                    dashboardKpisQuery.isFetching ||
-                    hourlyQuery.isFetching
-                      ? 'adm-sat-spin'
-                      : ''
-                  }
-                  aria-hidden
-                />
-              </button>
-            </div>
-          </div>
-
-          {hourlyQuery.isPending ? (
-            <TodayHourlySkeleton />
-          ) : hourlyQuery.isError ? (
-            <p className="adm-sat-query-err">{hourlyQuery.error?.message ?? '시간대별 데이터를 불러오지 못했습니다.'}</p>
-          ) : (hourlyQuery.data?.hours ?? []).length === 0 ? (
-            <p className="adm-hourly-empty">
-              아직 표시할 이전 시간대가 없습니다. (업무 시작 09시 이전이거나, 첫 시간대 진행 중일 수 있습니다.)
-            </p>
-          ) : (
-            <div className="adm-hourly-strip" role="list">
-              {visibleHourlySlots.map((slot) => (
-                <article key={slot.hour} className="adm-hourly-slot" role="listitem">
-                  <div className="adm-hourly-slot__head">
-                    <span className="adm-hourly-slot__time">{slot.label}</span>
-                    <span className="adm-hourly-slot__n">{num(slot.sampleCount)}건</span>
-                  </div>
-                  <dl className="adm-hourly-slot__metrics">
-                    <div className="adm-hourly-metric">
-                      <dt>만족</dt>
-                      <dd className="adm-hourly-metric-val adm-hourly-metric-val--pos">{fmtHourlyPct(slot.satisfiedPct)}</dd>
-                    </div>
-                    <div className="adm-hourly-metric">
-                      <dt>불만족</dt>
-                      <dd className="adm-hourly-metric-val adm-hourly-metric-val--neg">{fmtHourlyPct(slot.dissatisfiedPct)}</dd>
-                    </div>
-                    <div className="adm-hourly-metric">
-                      <dt>5대도시</dt>
-                      <dd className="adm-hourly-metric-val">{fmtHourlyPct(slot.fiveMajorCitiesPct)}</dd>
-                    </div>
-                    <div className="adm-hourly-metric">
-                      <dt>5060</dt>
-                      <dd className="adm-hourly-metric-val">{fmtHourlyPct(slot.gen5060Pct)}</dd>
-                    </div>
-                    <div className="adm-hourly-metric">
-                      <dt>문제해결</dt>
-                      <dd className="adm-hourly-metric-val">{fmtHourlyPct(slot.problemResolvedPct)}</dd>
-                    </div>
-                  </dl>
-                </article>
-              ))}
             </div>
           )}
         </div>

@@ -238,76 +238,178 @@
   grid-template-columns: 1fr;
 }
 
-.csx-satmix-card {
-  width: 100%;
-  border: 1px solid #e6ebf1;
-  border-radius: 12px;
-  padding: 10px 12px;
-  background: linear-gradient(180deg, #ffffff 0%, #f9fbfd 100%);
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
-  text-align: left;
-  cursor: pointer;
-  font-family: inherit;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.csx-satmix-card:hover {
-  border-color: #ced8e4;
-  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
-}
-
-.csx-satmix-title {
-  font-size: 12px;
-  font-weight: 700;
-  color: #64748b;
-  letter-spacing: -0.02em;
-  flex-shrink: 0;
-}
-
-.csx-satmix-kpi-row {
-  display: flex;
-  align-items: baseline;
+.csx-satmix-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 9px;
   min-width: 0;
 }
 
-.csx-satmix-kpi-item {
+.csx-satmix-tile {
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 9px 10px;
+  border-radius: 12px;
+  border: 1px solid #eceff3;
+  background: linear-gradient(180deg, #ffffff 0%, #f9fafb 100%);
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.03),
+    0 6px 18px rgba(15, 23, 42, 0.03);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease, transform 0.08s ease;
+  font-family: inherit;
+}
+
+.csx-satmix-tile:hover {
+  border-color: #d7dee8;
+  box-shadow:
+    0 8px 20px rgba(15, 23, 42, 0.08),
+    0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.csx-satmix-tile:active {
+  transform: scale(0.992);
+}
+
+.csx-satmix-tile:focus-visible {
+  outline: 2px solid #7c8aa0;
+  outline-offset: 2px;
+}
+
+/* 오른쪽 3대 카드와 같은 리듬, 상태만 초록·로즈로 구분 */
+.csx-satmix-tile--sat {
+  border-color: rgba(16, 185, 129, 0.28);
+  background: linear-gradient(165deg, #f0fdf4 0%, #ecfdf5 55%, #f8fafc 100%);
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.03),
+    0 6px 18px rgba(16, 185, 129, 0.08);
+}
+
+.csx-satmix-tile--sat:hover {
+  border-color: rgba(5, 150, 105, 0.45);
+  box-shadow:
+    0 8px 22px rgba(16, 185, 129, 0.14),
+    0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.csx-satmix-tile--unsat {
+  border-color: rgba(244, 63, 94, 0.28);
+  background: linear-gradient(165deg, #fff1f2 0%, #ffe4e6 48%, #fafafa 100%);
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.03),
+    0 6px 18px rgba(244, 63, 94, 0.07);
+}
+
+.csx-satmix-tile--unsat:hover {
+  border-color: rgba(225, 29, 72, 0.38);
+  box-shadow:
+    0 8px 22px rgba(244, 63, 94, 0.12),
+    0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.csx-satmix-tile-icon {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  justify-content: center;
+  align-self: flex-start;
 }
 
-.csx-satmix-kpi-label {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  color: #94a3b8;
+.csx-satmix-tile--sat .csx-satmix-tile-icon {
+  background: var(--csx-met-soft);
+  color: var(--csx-met-strong);
+  border: 1px solid var(--csx-met-border);
 }
 
-.csx-satmix-kpi-value {
-  font-size: 20px;
+.csx-satmix-tile--unsat .csx-satmix-tile-icon {
+  background: rgba(244, 63, 94, 0.12);
+  color: #be123c;
+  border: 1px solid rgba(244, 63, 94, 0.28);
+}
+
+.csx-satmix-tile-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.csx-satmix-tile-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.csx-satmix-tile-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: #334155;
+}
+
+.csx-satmix-tile--sat .csx-satmix-tile-label {
+  color: #065f46;
+}
+
+.csx-satmix-tile--unsat .csx-satmix-tile-label {
+  color: #9f1239;
+}
+
+.csx-satmix-tile-pct {
+  font-size: 24px;
   font-weight: 900;
-  letter-spacing: -0.04em;
-  line-height: 1;
+  letter-spacing: -0.045em;
   font-variant-numeric: tabular-nums;
+  line-height: 1;
+  flex-shrink: 0;
 }
 
-.csx-satmix-kpi-value--sat {
+.csx-satmix-tile--sat .csx-satmix-tile-pct {
   color: var(--csx-met-strong);
 }
 
-.csx-satmix-kpi-value--unsat {
-  color: var(--csx-no-strong);
+.csx-satmix-tile--unsat .csx-satmix-tile-pct {
+  color: #9f1239;
 }
 
-.csx-satmix-kpi-sep {
-  color: #cbd5e1;
-  font-weight: 700;
-  font-size: 12px;
+.csx-satmix-tile-sub {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: #9aa3af;
+}
+
+.csx-satmix-tile-meter {
+  display: block;
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.25);
+  margin-top: 4px;
+  overflow: hidden;
+}
+
+.csx-satmix-tile-meter-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.csx-satmix-tile-meter-fill--sat {
+  background: linear-gradient(90deg, #10b981, #34d399);
+}
+
+.csx-satmix-tile-meter-fill--unsat {
+  background: linear-gradient(90deg, #f43f5e, #fb7185);
 }
 
 .csx-rate-deck--right {

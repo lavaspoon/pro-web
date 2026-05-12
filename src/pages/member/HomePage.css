@@ -1537,6 +1537,7 @@ button.hp-month-block-item--btn:focus-visible {
   font-variant-numeric: tabular-nums;
   line-height: 1;
   font-feature-settings: 'tnum';
+  padding: 5px 0;
 }
 
 .hp-home .hp-rfx-cell-cap {
@@ -1638,26 +1639,27 @@ button.hp-month-block-item--btn:focus-visible {
 .hp-home .hp-tier-summary-item {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 3px;
   flex: 1;
   min-width: 0;
-}
-
-.hp-home .hp-tier-summary-item--money {
-  align-items: flex-end;
-  text-align: right;
+  text-align: center;
 }
 
 .hp-home .hp-tier-summary-label {
+  display: block;
+  width: 100%;
   font-size: 11px;
   font-weight: 700;
   color: #2563b0;
   letter-spacing: -0.01em;
+  text-align: center;
 }
 
 .hp-home .hp-tier-summary-val {
   display: inline-flex;
   align-items: baseline;
+  justify-content: center;
   gap: 1px;
   font-variant-numeric: tabular-nums;
   line-height: 1.1;
@@ -1679,7 +1681,7 @@ button.hp-month-block-item--btn:focus-visible {
 }
 
 .hp-home .hp-tier-summary-val--money {
-  font-size: clamp(20px, 5vw, 24px);
+  font-size: 22px;
   font-weight: 800;
   letter-spacing: -0.03em;
   color: #3182f6;
