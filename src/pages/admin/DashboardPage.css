@@ -295,6 +295,17 @@
   gap: 1.1rem;
 }
 
+/* 연간 인증률 카드 — CS 만족도 상단 KPI와 동일한 센터 행 패턴, 열 3개 */
+.adm-dashboard--yp .adm-kpi-card--annual-by-center .adm-sat-kpi-center-head,
+.adm-dashboard--yp .adm-kpi-card--annual-by-center .adm-sat-kpi-center-row {
+  grid-template-columns: minmax(2.6rem, 1fr) minmax(2.75rem, 0.85fr) minmax(2.9rem, 1fr);
+}
+
+.adm-dashboard--yp .adm-kpi-card--center-metrics-2 .adm-sat-kpi-center-head,
+.adm-dashboard--yp .adm-kpi-card--center-metrics-2 .adm-sat-kpi-center-row {
+  grid-template-columns: minmax(2.6rem, 1fr) minmax(3rem, 1fr);
+}
+
 .adm-dashboard--yp .adm-kpi-card[class*='adm-kpi-card--tone-'] {
   position: relative;
   overflow: hidden;

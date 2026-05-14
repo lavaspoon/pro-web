@@ -16,35 +16,39 @@ export async function fetchCsSatisfactionInsight({
   goodLines,
   badLines,
   latestConsultDate,
+  mentWindowStartDate,
   signal,
 }) {
   const base = stripBase(process.env.REACT_APP_LM_STUDIO_URL || DEFAULT_BASE);
   const url = `${base}/v1/chat/completions`;
 
   const system = [
-    '당신은 통신사 콜센터 상담사를 코칭하는 슈퍼바이저입니다.',
-    'Good/Bad 멘트는 상담 통화가 끝난 뒤 고객이 MMS로 받은 만족도 설문지에 직접 적은 내용입니다. 사용자 메시지에 실린 목록은 원본에서 평가시간 적용(평가시간=Y) 건만 쓰였고, 같은 달 안에서 상담일자(상담일시 기준)가 가장 최근인 날짜의 접수 건만 모았습니다. 통계 숫자는 맥락 참고만 하고, 분석의 중심은 이 설문 글입니다.',
-    'Good 멘트: 고객이 설문에 긍정적으로 적어 준 내용에서 반복되는 강점을 한 줄로 요약하세요.',
-    'Bad 멘트의 의미를 반드시 구분하세요. Bad 멘트는 상담사가 통화 중 한 발언이 아니라, 고객이 MMS 설문에서 “상담이 별로였다”고 느낀 점을 고객이 스스로 적은 불만·아쉬움입니다. 원문 복사·따옴표 인용 금지. 고객 경험 관점에서 상담을 어떻게 개선하면 좋을지, 상담사를 비난하지 않고 한 줄로 요약하세요.',
+    '당신은 통신사 콜센터 상담사를 코칭하는 슈퍼바이저입니다. 말투는 항상 따뜻하고 존중하며, 상담사를 비난하지 않습니다.',
+    'Good/Bad 멘트는 통화 후 고객이 MMS 만족도 설문에 직접 적은 내용입니다. 목록은 평가시간 적용(Y) 건만 쓰였고, 사용자 메시지에 적힌 날짜 구간(최근 10일) 안의 멘트입니다. 통계 숫자는 보조 참고만 하고, 분석의 중심은 설문 글입니다.',
+    'fromGood: 위 Good 멘트들에 대해, 고객이 칭찬한 점·고마워한 점을 **짧게 칭찬**하세요. 원문 복사·따옴표 인용 금지.',
+    'fromBad: Bad 멘트는 설문에 적은 고객의 아쉬움입니다. **따뜻한 말투**로 짧게 **개선 한 가지**만 제안하세요. Good 멘트 맥락을 참고해도 됩니다. 원문 복사·비난 금지.',
     '출력은 유효한 JSON 객체 하나만. 앞뒤 설명·마크다운·코드펜스 금지.',
-    '스키마 고정: {"fromGood":"…","fromBad":"…","nextStep":"…"}',
-    '각 값은 한 문장·최대 약 52자. nextStep은 설문 피드백을 바탕으로 오늘부터 실천할 구체적 행동 한 가지.',
-    'Good 멘트가 없으면 fromGood에 짧게 없음 안내, Bad 없으면 fromBad에 유지 안내.',
+    '스키마 고정(두 필드만): {"fromGood":"…","fromBad":"…"}',
+    '반드시 짧게: 각 값 **최대 2문장**, **줄바꿈 금지(한 줄로만)**. 공백 포함 **각 72자 이내**.',
+    'Good 멘트가 없으면 fromGood에 한 문장으로 없음 안내, Bad 없으면 fromBad에 한 문장으로 유지 안내.',
   ].join(' ');
 
-  const batchHint = latestConsultDate
-    ? `평가시간=Y만 사용 · 최신 상담일 ${latestConsultDate} 접수 건의 멘트입니다.`
-    : '평가시간=Y만 사용 · 상담일시 없으면 해당 월 적용 건 전체에서 멘트를 모았습니다.';
+  const batchHint =
+    mentWindowStartDate && latestConsultDate
+      ? `평가시간=Y만 사용 · 멘트는 상담(평가)일 기준 최근 10일(${mentWindowStartDate} ~ ${latestConsultDate}) 구간에서 수집했습니다.`
+      : latestConsultDate
+        ? `평가시간=Y만 사용 · 멘트 기준일 ${latestConsultDate} 전후(해당 월 내 최근 10일)입니다.`
+        : '평가시간=Y만 사용 · 상담일시 없으면 해당 월 적용 건 전체에서 멘트를 모았습니다.';
   const userPayload = [
     `${year}년 ${month}월 · ${batchHint} MMS 설문형 Good/Bad 텍스트 분석.`,
     '',
     '【참고 통계(간단) — 보조만】',
-    statsLines.slice(0, 4).join('\n'),
+    statsLines.slice(0, 6).join('\n'),
     '',
-    '【Good 멘트 — 통화 후 MMS 설문지에 고객이 적은 원문. 만족·칭찬 표현에서 패턴을 찾을 것】',
-    goodLines.length ? goodLines.map((t, i) => `${i + 1}. ${t}`).join('\n') : '(이번 달 없음)',
+    '【Good 멘트 — 최근 10일 구간. 고객이 설문에 적은 긍정·칭찬 원문. fromGood 작성 시 이 목록을 근거로 칭찬하세요】',
+    goodLines.length ? goodLines.map((t, i) => `${i + 1}. ${t}`).join('\n') : '(해당 구간 없음)',
     '',
-    '【Bad 멘트 — 통화 후 MMS 설문지에 고객이 적은 원문. 상담사의 통화 발언이 아니라, 고객이 상담이 아쉬웠다고 느낀 점을 고객이 직접 쓴 내용임. 요약 시 원문 복사 금지】',
+    '【Bad 멘트 — 최근 10일 구간. 고객이 설문에 적은 아쉬움 원문. fromBad 작성 시 이 목록과 Good 목록을 함께 고려하세요. 원문 복사 금지】',
     badLines.length ? badLines.map((t, i) => `${i + 1}. ${t}`).join('\n') : '(없음)',
   ].join('\n');
 
@@ -54,7 +58,7 @@ export async function fetchCsSatisfactionInsight({
     body: JSON.stringify({
       model: LM_STUDIO_MODEL,
       temperature: 0.42,
-      max_tokens: 280,
+      max_tokens: 180,
       messages: [
         { role: 'system', content: system },
         { role: 'user', content: userPayload },

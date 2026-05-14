@@ -12,6 +12,7 @@ import {
   ChevronLeft,
   ChevronRight,
   X,
+  Lightbulb,
 } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
 import { fetchMemberSatisfaction, fetchMemberCsInsightPromptMents } from '../../api/memberApi';
@@ -177,14 +178,6 @@ function normalizeCommentList(raw) {
     .map((x) => (typeof x === 'string' ? x : x?.comment ?? x?.goodMent ?? x?.badMent ?? ''))
     .map((s) => String(s).trim())
     .filter(Boolean);
-}
-
-/** API의 yyyy-MM-dd → 표시용 (예: 2026.5.3) */
-function formatInsightMentBasisDate(iso) {
-  if (!iso || typeof iso !== 'string') return '';
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso.trim());
-  if (!m) return iso.trim();
-  return `${Number(m[1])}.${Number(m[2])}.${Number(m[3])}`;
 }
 
 /* ════════════════════════════════════════════════════════════
@@ -384,38 +377,36 @@ function buildInsightStatsLines(d) {
   return lines;
 }
 
-/** Good/Bad 멘트 기반 코칭 카드 — 스크롤 없이 한 화면에 */
-function InsightFeedbackPanel({ fromGood, fromBad, nextStep, accent }) {
-  const goodText = fromGood?.trim() || '이번 달 수집된 Good 멘트가 없습니다.';
-  const badText = fromBad?.trim() || 'Bad 멘트가 없습니다. 좋은 패턴을 유지하면 됩니다.';
+/** Good/Bad 멘트 기반 코칭 — 고객 칭찬 · 개선 제안 두 행 */
+function InsightFeedbackPanel({ fromGood, fromBad, accent }) {
+  const goodText = fromGood?.trim() || '최근 10일 구간에 수집된 Good 멘트가 없습니다.';
+  const badText = fromBad?.trim() || '해당 구간에 Bad 멘트가 없습니다. 지금 흐름을 이어 가도 좋아요.';
 
   return (
     <div
       className={`csx-insight-fb csx-insight-fb--${accent}`}
       role="region"
-      aria-label="Good·Bad 멘트 기준 개선 제안"
+      aria-label="최근 10일 멘트 기준 고객 칭찬과 개선 제안"
     >
-      <div className="csx-insight-fb-row">
-        <div className="csx-insight-fb-cell csx-insight-fb-cell--good">
-          <span className="csx-insight-fb-label">
-            <ThumbsUp size={14} strokeWidth={2.4} aria-hidden />
-            Good 멘트에서
+      <div className="csx-insight-fb-stack">
+        <div className="csx-insight-fb-band csx-insight-fb-band--praise">
+          <span className="csx-insight-fb-band-ico" aria-hidden>
+            <ThumbsUp size={18} strokeWidth={2.2} />
           </span>
-          <p className="csx-insight-fb-body">{goodText}</p>
+          <div className="csx-insight-fb-band-main">
+            <span className="csx-insight-fb-band-title">고객 칭찬</span>
+            <p className="csx-insight-fb-band-body">{goodText}</p>
+          </div>
         </div>
-        <div className="csx-insight-fb-cell csx-insight-fb-cell--watch">
-          <span className="csx-insight-fb-label csx-insight-fb-label--soft">
-            Bad 멘트 기준 보완
+        <div className="csx-insight-fb-band csx-insight-fb-band--improve">
+          <span className="csx-insight-fb-band-ico" aria-hidden>
+            <Lightbulb size={18} strokeWidth={2.2} />
           </span>
-          <p className="csx-insight-fb-body">{badText}</p>
+          <div className="csx-insight-fb-band-main">
+            <span className="csx-insight-fb-band-title">개선 제안</span>
+            <p className="csx-insight-fb-band-body">{badText}</p>
+          </div>
         </div>
-      </div>
-      <div className="csx-insight-fb-action">
-        <span className="csx-insight-fb-action-label">
-          <Sparkles size={13} strokeWidth={2.4} className="csx-insight-fb-action-ico" aria-hidden />
-          이렇게 개선해 보세요
-        </span>
-        <p className="csx-insight-fb-action-text">{nextStep}</p>
       </div>
     </div>
   );
@@ -446,13 +437,13 @@ function CsAiInsight({
       try {
         const goodLines = clipInsightLines(
           [...new Set(normalizeCommentList(insightMents?.goodMents))],
-          14,
-          140,
+          24,
+          160,
         );
         const badLines = clipInsightLines(
           [...new Set(normalizeCommentList(insightMents?.badMents))],
-          14,
-          140,
+          24,
+          160,
         );
         const statsLines = buildInsightStatsLines(satData);
 
@@ -463,6 +454,7 @@ function CsAiInsight({
           goodLines,
           badLines,
           latestConsultDate: insightMents?.latestConsultDate ?? null,
+          mentWindowStartDate: insightMents?.mentWindowStartDate ?? null,
           signal: ac.signal,
         });
         if (!alive) return;
@@ -489,19 +481,6 @@ function CsAiInsight({
   const feedback = useMemo(() => (text ? parseInsightFeedback(text) : null), [text]);
   const safeInsightHtml = useMemo(() => (text ? finalizeInsightHtml(text) : ''), [text]);
 
-  const basisCaption = useMemo(() => {
-    if (insightMentsPending && insightMents == null) return null;
-    const iso = insightMents?.latestConsultDate;
-    if (iso) {
-      const disp = formatInsightMentBasisDate(iso);
-      return disp ? `멘트 분석 기준 상담일 ${disp}` : null;
-    }
-    if (!insightMentsPending) {
-      return '멘트 분석: 해당 월 평가시간 적용 전체 · 상담일시 없음';
-    }
-    return null;
-  }, [insightMents, insightMentsPending]);
-
   return (
     <aside className={`csx-ai-insight csx-ai-insight--${mod}`} aria-labelledby="csx-ai-insight-label">
       <div className="csx-ai-insight-head">
@@ -513,12 +492,7 @@ function CsAiInsight({
         </span>
         <div className="csx-ai-insight-head-text">
           <h2 id="csx-ai-insight-label" className="csx-ai-insight-title">AI 인사이트</h2>
-          <p className="csx-ai-insight-tagline">Good·Bad 멘트 기준 개선</p>
-          {basisCaption ? (
-            <p className="csx-ai-insight-basis" role="note">
-              {basisCaption}
-            </p>
-          ) : null}
+          <p className="csx-ai-insight-tagline">최근 10일 멘트 기반</p>
         </div>
       </div>
 
@@ -543,7 +517,6 @@ function CsAiInsight({
               <InsightFeedbackPanel
                 fromGood={feedback.fromGood}
                 fromBad={feedback.fromBad}
-                nextStep={feedback.nextStep}
                 accent={mod}
               />
             ) : safeInsightHtml.trim() ? (

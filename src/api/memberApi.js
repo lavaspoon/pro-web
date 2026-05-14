@@ -67,7 +67,8 @@ export const fetchMemberFocusTasks = async ({ skid, year, month }) => {
 };
 
 /**
- * AI 인사이트 프롬프트용 멘트 — 평가시간(Y)만, 해당 월 중 상담일이 가장 최근인 날짜 행에서 추출
+ * AI 인사이트 프롬프트용 멘트 — 평가시간(Y)만, 해당 월 내 상담(평가)일 최신일 포함 최근 10일 구간에서 추출
+ * 응답: goodMents, badMents, latestConsultDate(구간 말일), mentWindowStartDate(구간 첫날, 없을 수 있음)
  * GET /api/member/satisfaction/ai-insight-ments?skid=&year=&month=
  */
 export const fetchMemberCsInsightPromptMents = async ({ skid, year, month }) => {

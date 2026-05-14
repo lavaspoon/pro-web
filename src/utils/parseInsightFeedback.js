@@ -25,9 +25,17 @@ function clip(s, max) {
   return t.length > max ? `${t.slice(0, max)}…` : t;
 }
 
+/** LM이 줄바꿈을 넣어도 UI·길이 제한은 한 줄로 맞춤 */
+function singleLine(s) {
+  return String(s ?? '')
+    .replace(/\r\n|\r|\n/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 /**
  * @param {string} raw
- * @returns {{ fromGood: string, fromBad: string, nextStep: string } | null}
+ * @returns {{ fromGood: string, fromBad: string } | null}
  */
 export function parseInsightFeedback(raw) {
   if (!raw || typeof raw !== 'string') return null;
@@ -35,13 +43,12 @@ export function parseInsightFeedback(raw) {
     const jsonStr = unwrapJsonFence(raw);
     const obj = JSON.parse(jsonStr);
 
-    const fromGood = clip(firstString(obj.fromGood, obj.goodInsight, obj.goodSummary, obj.keepDoing), 160);
-    const fromBad = clip(firstString(obj.fromBad, obj.badInsight, obj.improveFromBad, obj.gap, obj.softGap), 160);
-    const nextStep = clip(firstString(obj.nextStep, obj.tryThis, obj.action, obj.oneThing, obj.improveAction), 140);
+    const fromGood = clip(singleLine(firstString(obj.fromGood, obj.goodInsight, obj.goodSummary, obj.keepDoing)), 72);
+    const fromBad = clip(singleLine(firstString(obj.fromBad, obj.badInsight, obj.improveFromBad, obj.gap, obj.softGap)), 72);
 
-    if (!nextStep) return null;
+    if (!fromGood && !fromBad) return null;
 
-    return { fromGood, fromBad, nextStep };
+    return { fromGood, fromBad };
   } catch {
     return null;
   }

@@ -99,19 +99,6 @@ function pct(v) {
   return `${Number(v).toFixed(1)}%`;
 }
 
-/** 문제해결 연간 목표 대비 역산 달성률(%), 서버와 동일 식 */
-function problemInverseAchievementPct(actualResolvedPct, targetResolvedPct) {
-  if (actualResolvedPct == null || targetResolvedPct == null) return null;
-  const t = Number(targetResolvedPct);
-  const a = Number(actualResolvedPct);
-  if (Number.isNaN(t) || Number.isNaN(a) || t <= 0 || t >= 100) return null;
-  const targetGap = 100 - t;
-  const actualGap = 100 - a;
-  if (actualGap <= 0) return 100;
-  if (targetGap <= 0) return null;
-  return Math.min(100, Math.round((100 * targetGap) / actualGap * 10) / 10);
-}
-
 function num(v) {
   if (v == null) return '—';
   return Number(v).toLocaleString('ko-KR');
@@ -410,14 +397,6 @@ export default function AdminSatisfactionPage() {
     }
     return monthLabel;
   }, [summaryQuery.data, monthLabel]);
-  const summaryFooterProblemInverse = useMemo(
-    () =>
-      problemInverseAchievementPct(
-        summaryTotals.probPct,
-        summaryQuery.data?.problemResolvedAnnualTargetPercent,
-      ),
-    [summaryTotals.probPct, summaryQuery.data?.problemResolvedAnnualTargetPercent],
-  );
   const memberRows = useMemo(
     () => centerMonthDetailQuery.data?.members ?? [],
     [centerMonthDetailQuery.data],
@@ -817,9 +796,6 @@ export default function AdminSatisfactionPage() {
                 <th scope="col" className="adm-th-cell">
                   문제해결
                 </th>
-                <th scope="col" className="adm-th-cell">
-                  문제해결 달성(역산)
-                </th>
               </tr>
             </thead>
             <tbody>
@@ -827,13 +803,13 @@ export default function AdminSatisfactionPage() {
                 <SummaryTableSkeletonRows rows={6} cols={8} />
               ) : rows.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="adm-table-empty">
+                  <td colSpan={8} className="adm-table-empty">
                     데이터 없음
                   </td>
                 </tr>
               ) : filteredRows.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="adm-table-empty">
+                  <td colSpan={8} className="adm-table-empty">
                     조건에 맞는 실이 없습니다. 필터를 해제하거나 다른 값을 선택해 보세요.
                   </td>
                 </tr>
@@ -902,7 +878,6 @@ export default function AdminSatisfactionPage() {
                       <td>{pct(r.fiveMajorCitiesPct)}</td>
                       <td>{pct(r.gen5060Pct)}</td>
                       <td>{pct(r.problemResolvedPct)}</td>
-                      <td>{pct(r.problemResolvedInverseAchievementPct)}</td>
                     </tr>
                   );
                 })
@@ -922,7 +897,6 @@ export default function AdminSatisfactionPage() {
                   <td>{pct(summaryTotals.fivePct)}</td>
                   <td>{pct(summaryTotals.genPct)}</td>
                   <td>{pct(summaryTotals.probPct)}</td>
-                  <td>{pct(summaryFooterProblemInverse)}</td>
                 </tr>
               </tfoot>
             ) : null}
@@ -1007,10 +981,6 @@ export default function AdminSatisfactionPage() {
                         <div className="mcs-item mcs-item--panel">
                           <span className="mcs-label">문제해결</span>
                           <span className="mcs-value">{pct(m.problemResolvedPct)}</span>
-                        </div>
-                        <div className="mcs-item mcs-item--panel">
-                          <span className="mcs-label">문제해결 달성(역산)</span>
-                          <span className="mcs-value">{pct(m.problemResolvedInverseAchievementPct)}</span>
                         </div>
                       </div>
                     </div>

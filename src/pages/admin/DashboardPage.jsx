@@ -19,6 +19,7 @@ import {
 import { mergeSecondDepthOptions } from '../../utils/adminSecondDepth';
 import AdminMemberDetailCard from './AdminMemberDetailCard';
 import './DashboardPage.css';
+import './AdminSatisfactionPage.css';
 
 const RANK_TOP_N = 15;
 
@@ -51,6 +52,14 @@ function enrichTeam(team) {
 /** 센터·그룹 필터용 정규화 (빈 값은 '') */
 function normFilterKey(v) {
   return String(v ?? '').trim();
+}
+
+/** 만족도 상단 KPI와 동일 — 센터명 앞 2글자 표시(종합은 그대로) */
+function shortCenterLabel(name) {
+  const s = String(name ?? '').trim();
+  if (!s) return '—';
+  if (s === '종합') return '종합';
+  return [...s].slice(0, 2).join('');
 }
 
 /** 동차 시 항상 센터 → 그룹 → 실명(팀명) 오름차순 */
@@ -250,6 +259,19 @@ export default function DashboardPage() {
     setFilterSkill(null);
   };
 
+  const centerOverviewTotals = useMemo(() => {
+    const list = data?.centerOverview ?? [];
+    return {
+      memberCount: list.reduce((s, c) => s + Number(c.memberCount ?? 0), 0),
+      monthlySubmitted: list.reduce((s, c) => s + Number(c.monthlySubmitted ?? 0), 0),
+      monthlySelected: list.reduce((s, c) => s + Number(c.monthlySelected ?? 0), 0),
+      priorMonthReflectedCount: list.reduce(
+        (s, c) => s + Number(c.priorMonthReflectedCount ?? 0),
+        0
+      ),
+    };
+  }, [data?.centerOverview]);
+
   if (isLoading || !data) {
     return (
       <div className="page-container">
@@ -271,12 +293,19 @@ export default function DashboardPage() {
 
   const {
     year,
-    memberCount = 0,
     currentMonth = new Date().getMonth() + 1,
-    monthlySubmitted = 0,
-    monthlySelected = 0,
-    annualCertificationRate = null,
+    priorReflectMonth: priorReflectMonthRaw,
+    centerOverview = [],
+    overallAnnualCertificationRate = null,
   } = data;
+
+  const priorReflectMonth =
+    priorReflectMonthRaw != null
+      ? Number(priorReflectMonthRaw)
+      : currentMonth === 1
+        ? 12
+        : currentMonth - 1;
+
   const selectedTeam = teamsFiltered.find((t) => Number(t.id) === Number(selectedTeamId));
 
   const secondDepthLabelHint =
@@ -323,83 +352,178 @@ export default function DashboardPage() {
         </div>
         <div className="adm-overview-shell">
           <div className="adm-overview-grid adm-overview-grid--four">
-            <div className="adm-kpi-card adm-kpi-card--tone-users">
+            <div className="adm-kpi-card adm-kpi-card--tone-users adm-sat-kpi-card--centers adm-kpi-card--center-metrics-2">
               <div className="adm-kpi-head">
                 <span className="adm-kpi-icon-wrap" aria-hidden>
                   <Users className="adm-kpi-ico" size={18} strokeWidth={2.25} />
                 </span>
                 <span className="adm-kpi-title">평가 대상자</span>
               </div>
-              <div className="adm-kpi-value-row" aria-label={`평가 대상자 ${memberCount}명`}>
-                <span className="adm-kpi-val">{memberCount}</span>
-                <span className="adm-kpi-suffix">명</span>
-              </div>
-              <div className="adm-kpi-unit">
-                <span className="adm-kpi-unit-line" />
-                현재 평가대상자
+              <div className="adm-sat-kpi-center-list" aria-label="센터별 평가 대상자">
+                <div className="adm-sat-kpi-center-head" aria-hidden>
+                  <span>센터</span>
+                  <span>명</span>
+                </div>
+                {centerOverview.length === 0 ? (
+                  <p className="adm-sat-kpi-empty">센터별 지표를 불러올 수 없습니다.</p>
+                ) : (
+                  <>
+                    <div className="adm-sat-kpi-center-row">
+                      <span className="adm-sat-kpi-center-name" title="종합">
+                        종합
+                      </span>
+                      <span className="adm-sat-kpi-center-pct adm-sat-kpi-center-pct--actual">
+                        {centerOverviewTotals.memberCount}명
+                      </span>
+                    </div>
+                    {centerOverview.map((c) => (
+                      <div key={`eval-${c.secondDepthDeptId}`} className="adm-sat-kpi-center-row">
+                        <span className="adm-sat-kpi-center-name" title={c.centerName}>
+                          {shortCenterLabel(c.centerName)}
+                        </span>
+                        <span className="adm-sat-kpi-center-pct adm-sat-kpi-center-pct--actual">
+                          {c.memberCount}명
+                        </span>
+                      </div>
+                    ))}
+                  </>
+                )}
               </div>
             </div>
-            <div className="adm-kpi-card adm-kpi-card--tone-chart">
+            <div className="adm-kpi-card adm-kpi-card--tone-chart adm-sat-kpi-card--centers adm-kpi-card--annual-by-center">
               <div className="adm-kpi-head">
                 <span className="adm-kpi-icon-wrap" aria-hidden>
                   <BadgeCheck className="adm-kpi-ico" size={18} strokeWidth={2.25} />
                 </span>
                 <span className="adm-kpi-title">연간 인증률</span>
               </div>
-              <div
-                className="adm-kpi-value-row"
-                aria-label={
-                  annualCertificationRate != null
-                    ? `연간 인증률 ${annualCertificationRate}%`
-                    : '연간 인증률 해당 없음'
-                }
-              >
-                <span className="adm-kpi-val">
-                  {annualCertificationRate != null ? annualCertificationRate.toFixed(1) : '—'}
-                </span>
-                <span className="adm-kpi-suffix">%</span>
-              </div>
-              <div className="adm-kpi-unit">
-                <span className="adm-kpi-unit-line" />
-                인증 인원 ÷ {year}년 1~{currentMonth}월 평가대상자 평균
+              <div className="adm-sat-kpi-center-list" aria-label="센터별 연간 인증률">
+                <div className="adm-sat-kpi-center-head" aria-hidden>
+                  <span>센터</span>
+                  <span>대상</span>
+                  <span>인증률</span>
+                </div>
+                {centerOverview.length === 0 ? (
+                  <p className="adm-sat-kpi-empty">센터별 지표를 불러올 수 없습니다.</p>
+                ) : (
+                  <>
+                    <div className="adm-sat-kpi-center-row">
+                      <span className="adm-sat-kpi-center-name" title="종합">
+                        종합
+                      </span>
+                      <span className="adm-sat-kpi-center-pct">{centerOverviewTotals.memberCount}명</span>
+                      <span className="adm-sat-kpi-center-pct adm-sat-kpi-center-pct--actual">
+                        {overallAnnualCertificationRate != null
+                          ? `${Number(overallAnnualCertificationRate).toFixed(1)}%`
+                          : '—'}
+                      </span>
+                    </div>
+                    {centerOverview.map((c) => (
+                      <div key={c.secondDepthDeptId} className="adm-sat-kpi-center-row">
+                        <span className="adm-sat-kpi-center-name" title={c.centerName}>
+                          {shortCenterLabel(c.centerName)}
+                        </span>
+                        <span className="adm-sat-kpi-center-pct">{c.memberCount}명</span>
+                        <span className="adm-sat-kpi-center-pct adm-sat-kpi-center-pct--actual">
+                          {c.annualCertificationRate != null
+                            ? `${Number(c.annualCertificationRate).toFixed(1)}%`
+                            : '—'}
+                        </span>
+                      </div>
+                    ))}
+                  </>
+                )}
               </div>
             </div>
-            <div className="adm-kpi-card adm-kpi-card--tone-files">
+            <div className="adm-kpi-card adm-kpi-card--tone-files adm-sat-kpi-card--centers adm-kpi-card--annual-by-center">
               <div className="adm-kpi-head">
                 <span className="adm-kpi-icon-wrap" aria-hidden>
                   <FileText className="adm-kpi-ico" size={18} strokeWidth={2.25} />
                 </span>
-                <span className="adm-kpi-title">{currentMonth}월 접수</span>
+                <span className="adm-kpi-title">
+                  {currentMonth}월 접수 · {currentMonth}월 선정
+                </span>
               </div>
               <div
-                className="adm-kpi-value-row"
-                aria-label={`${currentMonth}월 접수 ${monthlySubmitted}건`}
+                className="adm-sat-kpi-center-list"
+                aria-label={`센터별 ${currentMonth}월 접수 및 선정`}
               >
-                <span className="adm-kpi-val">{monthlySubmitted}</span>
-                <span className="adm-kpi-suffix">건</span>
-              </div>
-              <div className="adm-kpi-unit">
-                <span className="adm-kpi-unit-line" />
-                {year}년 {currentMonth}월 · 사례 접수 건수
+                <div className="adm-sat-kpi-center-head" aria-hidden>
+                  <span>센터</span>
+                  <span>{currentMonth}월 접수</span>
+                  <span>{currentMonth}월 선정</span>
+                </div>
+                {centerOverview.length === 0 ? (
+                  <p className="adm-sat-kpi-empty">센터별 지표를 불러올 수 없습니다.</p>
+                ) : (
+                  <>
+                    <div className="adm-sat-kpi-center-row">
+                      <span className="adm-sat-kpi-center-name" title="종합">
+                        종합
+                      </span>
+                      <span className="adm-sat-kpi-center-pct adm-sat-kpi-center-pct--actual">
+                        {Number(centerOverviewTotals.monthlySubmitted).toLocaleString('ko-KR')}건
+                      </span>
+                      <span className="adm-sat-kpi-center-pct adm-sat-kpi-center-pct--actual">
+                        {Number(centerOverviewTotals.monthlySelected).toLocaleString('ko-KR')}건
+                      </span>
+                    </div>
+                    {centerOverview.map((c) => (
+                      <div key={`subsel-${c.secondDepthDeptId}`} className="adm-sat-kpi-center-row">
+                        <span className="adm-sat-kpi-center-name" title={c.centerName}>
+                          {shortCenterLabel(c.centerName)}
+                        </span>
+                        <span className="adm-sat-kpi-center-pct adm-sat-kpi-center-pct--actual">
+                          {Number(c.monthlySubmitted ?? 0).toLocaleString('ko-KR')}건
+                        </span>
+                        <span className="adm-sat-kpi-center-pct adm-sat-kpi-center-pct--actual">
+                          {Number(c.monthlySelected ?? 0).toLocaleString('ko-KR')}건
+                        </span>
+                      </div>
+                    ))}
+                  </>
+                )}
               </div>
             </div>
-            <div className="adm-kpi-card adm-kpi-card--tone-award">
+            <div className="adm-kpi-card adm-kpi-card--tone-award adm-sat-kpi-card--centers adm-kpi-card--center-metrics-2">
               <div className="adm-kpi-head">
                 <span className="adm-kpi-icon-wrap" aria-hidden>
-                  <Trophy className="adm-kpi-ico" size={18} strokeWidth={2.25} />
+                  <BadgeCheck className="adm-kpi-ico" size={18} strokeWidth={2.25} />
                 </span>
-                <span className="adm-kpi-title">{currentMonth}월 선정</span>
+                <span className="adm-kpi-title">{priorReflectMonth}월 인증</span>
               </div>
               <div
-                className="adm-kpi-value-row"
-                aria-label={`${currentMonth}월 선정 ${monthlySelected}건`}
+                className="adm-sat-kpi-center-list"
+                aria-label={`센터별 ${priorReflectMonth}월 인증 건수`}
               >
-                <span className="adm-kpi-val">{monthlySelected}</span>
-                <span className="adm-kpi-suffix">건</span>
-              </div>
-              <div className="adm-kpi-unit">
-                <span className="adm-kpi-unit-line" />
-                {year}년 {currentMonth}월 · 선정 건수
+                <div className="adm-sat-kpi-center-head" aria-hidden>
+                  <span>센터</span>
+                  <span>건수</span>
+                </div>
+                {centerOverview.length === 0 ? (
+                  <p className="adm-sat-kpi-empty">센터별 지표를 불러올 수 없습니다.</p>
+                ) : (
+                  <>
+                    <div className="adm-sat-kpi-center-row">
+                      <span className="adm-sat-kpi-center-name" title="종합">
+                        종합
+                      </span>
+                      <span className="adm-sat-kpi-center-pct adm-sat-kpi-center-pct--actual">
+                        {Number(centerOverviewTotals.priorMonthReflectedCount).toLocaleString('ko-KR')}건
+                      </span>
+                    </div>
+                    {centerOverview.map((c) => (
+                      <div key={`cert-${c.secondDepthDeptId}`} className="adm-sat-kpi-center-row">
+                        <span className="adm-sat-kpi-center-name" title={c.centerName}>
+                          {shortCenterLabel(c.centerName)}
+                        </span>
+                        <span className="adm-sat-kpi-center-pct adm-sat-kpi-center-pct--actual">
+                          {Number(c.priorMonthReflectedCount ?? 0).toLocaleString('ko-KR')}건
+                        </span>
+                      </div>
+                    ))}
+                  </>
+                )}
               </div>
             </div>
           </div>
