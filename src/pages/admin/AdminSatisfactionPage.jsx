@@ -104,6 +104,22 @@ function num(v) {
   return Number(v).toLocaleString('ko-KR');
 }
 
+/** 불만족 유형 1~5 라벨 (백엔드 DISSATISFACTION_TYPE_LABELS와 동일) */
+const DISSAT_TYPE_LABELS = {
+  1: '서비스 지식부족',
+  2: '성의 없는 태도',
+  3: '적절하지 않는 혜택 안내',
+  4: '알아듣기 어려운 설명',
+  5: '문의내용 이해 못함',
+};
+
+/** row.dissatisfactionType("1"~"5" 등)을 라벨로. 유효 1~5 외에는 null. */
+function dissatTypeLabel(rawType) {
+  const code = Number(rawType);
+  if (!Number.isFinite(code) || code < 1 || code > 5) return null;
+  return DISSAT_TYPE_LABELS[code] ?? `유형 ${code}`;
+}
+
 function yesNo(v) {
   const s = String(v ?? '').trim().toUpperCase();
   if (s === 'Y') return 'Y';
@@ -259,8 +275,8 @@ function computeSummaryTotals(list) {
     satSum += Number(r.satisfiedCount) || 0;
   }
   const satisfactionPct = evalSum === 0 ? null : Math.round((1000 * satSum) / evalSum) / 10;
-  const fivePct = evalSum === 0 ? null : Math.round((1000 * fiveMajorSum) / evalSum) / 10;
-  const genPct = evalSum === 0 ? null : Math.round((1000 * gen5060Sum) / evalSum) / 10;
+  const fivePct = satSum === 0 ? null : Math.round((1000 * fiveMajorSum) / satSum) / 10;
+  const genPct = satSum === 0 ? null : Math.round((1000 * gen5060Sum) / satSum) / 10;
   const probPct = evalSum === 0 ? null : Math.round((1000 * problemResolvedSum) / evalSum) / 10;
   return {
     evalTargetMemberSum,
@@ -1163,12 +1179,13 @@ export default function AdminSatisfactionPage() {
                           </th>
                           <th><span className="adm-sat-modal-th-wrap">Good 멘트</span></th>
                           <th><span className="adm-sat-modal-th-wrap">Bad 멘트</span></th>
+                          <th><span className="adm-sat-modal-th-wrap">불만족 유형</span></th>
                         </tr>
                       </thead>
                       <tbody>
                         {modalPagedRows.length === 0 ? (
                           <tr>
-                            <td colSpan={8} className="adm-table-empty">
+                            <td colSpan={9} className="adm-table-empty">
                               선택한 조건에 맞는 접수 row가 없습니다.
                             </td>
                           </tr>
@@ -1187,6 +1204,16 @@ export default function AdminSatisfactionPage() {
                               <td><span className={`adm-sat-yn-chip ${ynClass(row.problemResolvedYn)}`}>{yesNo(row.problemResolvedYn)}</span></td>
                               <td className="adm-sat-modal-cell-ment">{row.goodMent?.trim() ? row.goodMent : '—'}</td>
                               <td className="adm-sat-modal-cell-ment">{row.badMent?.trim() ? row.badMent : '—'}</td>
+                              <td className="adm-sat-modal-cell-untype">
+                                {String(row.satisfiedYn ?? '').trim().toUpperCase() === 'N'
+                                  ? (() => {
+                                      const label = dissatTypeLabel(row.dissatisfactionType);
+                                      return label
+                                        ? <span className="adm-sat-untype-chip">{label}</span>
+                                        : '—';
+                                    })()
+                                  : '—'}
+                              </td>
                             </tr>
                           ))
                         )}

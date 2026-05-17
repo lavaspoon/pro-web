@@ -556,6 +556,148 @@
   background: linear-gradient(90deg, var(--csx-accent-strong), var(--csx-accent));
 }
 
+/* ── 불만족 유형 — 5개 항목 누적 건수 (컴팩트) ─────────────── */
+.csx-untype {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 12px;
+  border-radius: 12px;
+  border: 1px solid #edf1f5;
+  background: linear-gradient(180deg, #ffffff 0%, #fafbfd 100%);
+}
+
+.csx-untype-head {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex-shrink: 0;
+  padding-right: 12px;
+  border-right: 1px solid #eceff3;
+}
+
+.csx-untype-title {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
+  color: #4b5563;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+.csx-untype-total {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #9aa3af;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.csx-untype-total strong {
+  font-size: 12px;
+  font-weight: 900;
+  color: #be123c;
+  font-variant-numeric: tabular-nums;
+}
+
+.csx-untype-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.csx-untype-item {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+  min-width: 0;
+  padding: 5px 9px;
+  border-radius: 8px;
+  border: 1px solid #eceff3;
+  background: #ffffff;
+}
+
+.csx-untype-item-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.csx-untype-item-count {
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  color: #9f1239;
+  flex-shrink: 0;
+}
+
+.csx-untype-item-unit {
+  margin-left: 1px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #b9c0cb;
+  letter-spacing: -0.01em;
+}
+
+@media (max-width: 1080px) {
+  .csx-untype {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 9px;
+  }
+
+  .csx-untype-head {
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: space-between;
+    padding-right: 0;
+    border-right: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .csx-untype-list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 420px) {
+  .csx-untype-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* ── 모달: 불만족 유형 칩 ─────────────────────────────────── */
+.adm-sat-modal-cell-untype {
+  white-space: nowrap;
+}
+
+.adm-sat-untype-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.45;
+  color: #9f1239;
+  background: rgba(244, 63, 94, 0.10);
+  border: 1px solid rgba(244, 63, 94, 0.26);
+}
+
 .csx-rates-all-btn {
   width: 100%;
   margin-top: 1px;

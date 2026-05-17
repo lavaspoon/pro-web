@@ -718,6 +718,63 @@ function SatisfactionRateDeck({ data, received, onOpenFiltered }) {
   );
 }
 
+/**
+ * unsatisfiedCategories의 dissatisfactionType(코드) → label 맵을 만든다.
+ * row.dissatisfactionType("1"~"5" 문자열)을 라벨로 환원하는 데 사용.
+ */
+function buildUnsatTypeLabelMap(data) {
+  const raw = Array.isArray(data?.unsatisfiedCategories) ? data.unsatisfiedCategories : [];
+  const map = new Map();
+  raw.forEach((c) => {
+    const code = toNum(c?.dissatisfactionType);
+    if (code == null) return;
+    const label = String(c?.label ?? '').trim() || `유형 ${code}`;
+    map.set(code, label);
+  });
+  return map;
+}
+
+function unsatTypeLabel(map, rawType) {
+  const code = toNum(rawType);
+  // 유효 유형은 1~5뿐. 0·null·범위 밖은 미분류 → 라벨 없음.
+  if (code == null || code < 1 || code > 5) return null;
+  return map.get(code) ?? `유형 ${code}`;
+}
+
+/* ════════════════════════════════════════════════════════════
+   불만족 유형 — 5개 항목 누적 건수
+   ════════════════════════════════════════════════════════════ */
+function UnsatisfiedTypeDeck({ data }) {
+  const d = data ?? {};
+  const raw = Array.isArray(d.unsatisfiedCategories) ? d.unsatisfiedCategories : [];
+
+  const items = raw.slice(0, 5).map((c, i) => ({
+    label: String(c?.label ?? `유형 ${i + 1}`).trim() || `유형 ${i + 1}`,
+    count: toNum(c?.count, 0) ?? 0,
+  }));
+
+  if (items.length === 0) return null;
+
+  return (
+    <section className="csx-untype" aria-label="당월 불만족 유형별 건수">
+      <header className="csx-untype-head">
+        <h3 className="csx-untype-title">불만족 유형</h3>
+        <span className="csx-untype-total">당월 기준</span>
+      </header>
+      <ul className="csx-untype-list">
+        {items.map((it) => (
+          <li key={it.label} className="csx-untype-item">
+            <span className="csx-untype-item-label" title={it.label}>{it.label}</span>
+            <span className="csx-untype-item-count">
+              {numKo(it.count)}<span className="csx-untype-item-unit">건</span>
+            </span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 /* ════════════════════════════════════════════════════════════
    하단 세션 — 만족도 현황 (%)
    ════════════════════════════════════════════════════════════ */
@@ -738,7 +795,7 @@ function ReceptionFocusSection({
       <span className="csx-corner-bl" aria-hidden />
       <header className="csx-session-head-main csx-session-head-main--rates">
         <h2 id="csx-session-reception-focus-title" className="csx-session-title-main">
-          만족도 현황
+          당월 만족도 현황
         </h2>
       </header>
 
@@ -747,6 +804,8 @@ function ReceptionFocusSection({
         received={received}
         onOpenFiltered={onOpenFiltered}
       />
+
+      <UnsatisfiedTypeDeck data={d} />
 
       <button type="button" className="csx-rates-all-btn" onClick={onShowAll}>
         전체 접수 보기
@@ -887,6 +946,11 @@ export default function CsSatisfactionPage() {
   });
 
   const satData = satQuery.data ?? null;
+
+  const unsatTypeLabelMap = useMemo(
+    () => buildUnsatTypeLabelMap(satData),
+    [satData],
+  );
 
   const insightMentsQuery = useQuery({
     queryKey: ['member-cs-ai-insight-ments', user?.skid, year, month],
@@ -1155,12 +1219,13 @@ export default function CsSatisfactionPage() {
                             </button>
                           </th>
                           <th><span className="adm-sat-modal-th-wrap">Good 멘트</span></th>
+                          <th><span className="adm-sat-modal-th-wrap">불만족 유형</span></th>
                         </tr>
                       </thead>
                       <tbody>
                         {modalPagedRows.length === 0 ? (
                           <tr>
-                            <td colSpan={7} className="adm-table-empty">
+                            <td colSpan={8} className="adm-table-empty">
                               선택한 조건에 맞는 접수 내역이 없습니다.
                             </td>
                           </tr>
@@ -1178,6 +1243,16 @@ export default function CsSatisfactionPage() {
                               <td><span className={`adm-sat-yn-chip ${ynClass(row.gen5060Yn)}`}>{yesNo(row.gen5060Yn)}</span></td>
                               <td><span className={`adm-sat-yn-chip ${ynClass(row.problemResolvedYn)}`}>{yesNo(row.problemResolvedYn)}</span></td>
                               <td className="adm-sat-modal-cell-ment">{row.goodMent?.trim() ? row.goodMent : '—'}</td>
+                              <td className="adm-sat-modal-cell-untype">
+                                {String(row.satisfiedYn ?? '').trim().toUpperCase() === 'N'
+                                  ? (() => {
+                                      const label = unsatTypeLabel(unsatTypeLabelMap, row.dissatisfactionType);
+                                      return label
+                                        ? <span className="adm-sat-untype-chip">{label}</span>
+                                        : '—';
+                                    })()
+                                  : '—'}
+                              </td>
                             </tr>
                           ))
                         )}

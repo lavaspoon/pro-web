@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useMemberModalStore } from '../../store/memberModalStore';
@@ -37,6 +37,11 @@ function getTierIdx(n) {
   if (n >= 10) return 1;
   if (n >= 1) return 0;
   return -1;
+}
+
+function getTierNameByCumulative(count) {
+  const idx = getTierIdx(Number(count) || 0);
+  return idx >= 0 ? TIERS[idx].name : null;
 }
 
 function formatPreviewDate(dateStr) {
@@ -85,6 +90,99 @@ function getReflectState(row) {
   return row.csTargetMet === true ? 'met' : 'no';
 }
 
+const HOME_SLOGAN = '오늘의 사례가 내일의 인증이 됩니다';
+const BOARD_ROTATE_MS = 5000;
+const BOARD_REFETCH_MS = 30000;
+
+function CertificationBoardTicker({ items }) {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [slideKey, setSlideKey] = useState(0);
+
+  useEffect(() => {
+    setActiveIndex(0);
+    setSlideKey(0);
+  }, [items]);
+
+  useEffect(() => {
+    if (!items?.length || items.length < 2) return undefined;
+    const timer = window.setInterval(() => {
+      setActiveIndex((prev) => (prev + 1) % items.length);
+      setSlideKey((k) => k + 1);
+    }, BOARD_ROTATE_MS);
+    return () => window.clearInterval(timer);
+  }, [items]);
+
+  if (!items?.length) return null;
+
+  const safeIndex = Math.min(activeIndex, items.length - 1);
+  const item = items[safeIndex];
+  /** API rank가 0(구 누적순위·미반영)이어도 목록 순서 = 최근 선정 1~N위 */
+  const displayRank = item.rank > 0 ? item.rank : safeIndex + 1;
+  const tierName = item.tierName || getTierNameByCumulative(item.cumulativeCount);
+  const tierPart = tierName ? `, ${tierName}` : '';
+  const ariaLabel = `${displayRank}위${tierPart} 최근 선정, 누적 ${item.cumulativeCount}건 인증`;
+
+  return (
+    <div className="hp-board-ticker" aria-live="polite" aria-atomic="true">
+      <div
+        key={`${safeIndex}-${slideKey}`}
+        className="hp-board-compact-item hp-board-ticker-slide"
+      >
+        <div className="hp-board-meta-row" aria-label={ariaLabel}>
+          <span className="hp-board-meta-rank-block">
+            <span className="hp-board-meta-rank-num">{displayRank}</span>
+            <span className="hp-board-meta-rank-tail">
+              <span className="hp-board-meta-rank-unit">위</span>
+              {tierName ? <span className="hp-board-meta-tier">{tierName}</span> : null}
+            </span>
+          </span>
+          <span className="hp-board-meta-divider" aria-hidden />
+          <span className="hp-board-meta-cert">
+            누적 <strong className="hp-board-meta-cert-num">{item.cumulativeCount}</strong>건 인증
+          </span>
+        </div>
+        <p className="hp-board-compact-quote" title={item.title}>
+          <span className="hp-board-compact-quote-inner">
+            {item.title?.trim() ? item.title : '제목 없음'}
+          </span>
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function HomeIntro({ userName, onSubmit, loading = false }) {
+  const displayName = userName?.trim() ? userName.trim() : '구성원';
+
+  return (
+    <header className={`hp-intro${loading ? ' hp-intro--loading' : ''}`}>
+      <div className="hp-intro-main">
+        <div className="hp-intro-text">
+          <h1 className="hp-intro-title">
+            나의 <span className="hp-intro-accent">YOU PRO</span>
+          </h1>
+          <p className="hp-intro-line">
+            <strong className="hp-intro-name">{displayName}</strong>님
+            <span className="hp-intro-sep" aria-hidden>
+              ·
+            </span>
+            <span className="hp-intro-slogan">{HOME_SLOGAN}</span>
+          </p>
+        </div>
+        {loading ? (
+          <Skeleton width={108} height={44} radius={12} />
+        ) : (
+          <button type="button" className="hp-intro-cta" onClick={onSubmit} aria-label="사례 접수하기">
+            <span className="hp-intro-cta-icon" aria-hidden>
+              <Plus size={18} strokeWidth={2.75} />
+            </span>
+            <span className="hp-intro-cta-label">접수하기</span>
+          </button>
+        )}
+      </div>
+    </header>
+  );
+}
 function ReflectTimeline({ rows, cumulative, totalReflectedWon, onPickMonth }) {
   const items = rows.map((row) => {
     const baseState = getReflectState(row);
@@ -107,7 +205,7 @@ function ReflectTimeline({ rows, cumulative, totalReflectedWon, onPickMonth }) {
         <span className="hp-tier-summary-arrow" aria-hidden>
           <ChevronRight size={16} strokeWidth={2.5} />
         </span>
-        <div className="hp-tier-summary-item">
+        <div className="hp-tier-summary-item hp-tier-summary-item--cert">
           <span className="hp-tier-summary-label">올해 인증 누적</span>
           <span className="hp-tier-summary-val">
             <strong>{cumulative}</strong>
@@ -161,46 +259,30 @@ function ReflectTimeline({ rows, cumulative, totalReflectedWon, onPickMonth }) {
 function HomeSkeleton({ userName }) {
   return (
     <div className="page-container adm-dashboard adm-dashboard--yp fade-in yp-home hp-home">
-      <header className="hp-header">
-        <div className="hp-header-text">
-          <h1 className="hp-header-title">나의 YOU PRO</h1>
-          <p className="hp-header-sub">{userName ?? '구성원'}님</p>
-        </div>
-        <div className="hp-header-actions">
-          <Skeleton width={96} height={34} radius={10} />
-        </div>
-      </header>
+      <HomeIntro userName={userName} loading />
 
       <aside className="hp-program-note">
         <Skeleton variant="text" width={140} height={13} />
         <Skeleton variant="text" width="100%" height={36} />
       </aside>
 
-      <section className="hp-hero">
-        <div className="hp-month-block hp-month-block--main">
-          <div className="hp-month-block-header">
-            <div className="hp-month-block-title-wrap">
-              <Skeleton variant="text" width={110} height={14} />
-              <Skeleton width={88} height={22} radius={999} />
+      <section className="hp-hero hp-hero--month-unified">
+        <div className="hp-month-split">
+          <div className="hp-month-split-col hp-month-split-col--board">
+            <Skeleton variant="text" width={160} height={14} />
+            <Skeleton height={52} radius={8} />
+          </div>
+          <div className="hp-month-split-col hp-month-split-col--mine">
+            <Skeleton variant="text" width={120} height={14} />
+            <div className="hp-month-block-grid hp-month-block-grid--compact">
+              {[0, 1, 2].map((i) => (
+                <Skeleton key={i} height={52} radius={8} />
+              ))}
             </div>
-            <Skeleton variant="text" width={56} height={12} />
-          </div>
-          <div className="hp-month-block-grid">
-            {[0, 1, 2].map((i) => (
-              <div key={i} className="hp-month-block-item">
-                <Skeleton variant="text" width={40} height={11} />
-                <Skeleton variant="text" width={36} height={28} />
-              </div>
+            {[0, 1].map((i) => (
+              <Skeleton key={`pv-${i}`} height={34} radius={8} />
             ))}
           </div>
-          <div className="hp-month-preview hp-month-preview--loading">
-            {[0, 1, 2].map((i) => (
-              <Skeleton key={i} height={38} radius={8} />
-            ))}
-          </div>
-        </div>
-        <div className="hp-hero-compact">
-          <Skeleton variant="text" width="100%" height={14} />
         </div>
       </section>
 
@@ -234,6 +316,8 @@ export default function HomePage() {
     queryKey: ['member-home', user?.skid],
     queryFn: () => fetchMemberHome(user.skid),
     enabled: !!user?.skid,
+    refetchInterval: BOARD_REFETCH_MS,
+    refetchIntervalInBackground: true,
   });
 
   const { data: cases = [] } = useQuery({
@@ -276,6 +360,7 @@ export default function HomePage() {
     csSkillTargetPercent = null,
     yearReflectCumulativeCount = 0,
     reflectMonthsJanSep = [],
+    certificationBoard = null,
   } = data;
 
   const csHasTarget =
@@ -288,114 +373,120 @@ export default function HomePage() {
     reflectMonthsJanSep.length >= 9
       ? reflectMonthsJanSep
       : Array.from({ length: 9 }, (_, i) => {
-          const m = i + 1;
-          const hit = reflectMonthsJanSep.find((r) => r.month === m);
-          return hit ?? { month: m, csTargetMet: null, selectedCountRaw: null };
-        });
+        const m = i + 1;
+        const hit = reflectMonthsJanSep.find((r) => r.month === m);
+        return hit ?? { month: m, csTargetMet: null, selectedCountRaw: null };
+      });
 
   return (
     <div className="page-container adm-dashboard adm-dashboard--yp fade-in yp-home hp-home">
 
-      <header className="hp-header">
-        <div className="hp-header-text">
-          <h1 className="hp-header-title">나의 YOU PRO</h1>
-          <p className="hp-header-sub">{user?.name ?? '구성원'}님</p>
-        </div>
-        <div className="hp-header-actions">
-          <button type="button" className="hp-btn hp-btn--submit" onClick={openSubmit}>
-            <Plus size={15} strokeWidth={2.5} />
-            사례 접수
-          </button>
-        </div>
-      </header>
+      <HomeIntro userName={user?.name} onSubmit={openSubmit} />
 
-      <section className="hp-hero">
+      <section
+        className={`hp-hero hp-hero--month-unified${(certificationBoard?.items?.length ?? 0) === 0 ? ' hp-hero--month-unified-solo' : ''}`}
+        aria-label={`${currentMonthNum}월 접수 현황`}
+      >
         <span className="hp-corner-tr" aria-hidden />
         <span className="hp-corner-bl" aria-hidden />
-        <div className="hp-month-block hp-month-block--main">
-          <div className="hp-month-block-header">
-            <div className="hp-month-block-title-wrap">
-              <span className="hp-month-block-title">{currentMonthNum}월 접수 현황</span>
+
+        <div className="hp-month-split">
+          {(certificationBoard?.items?.length ?? 0) > 0 && (
+            <aside className="hp-month-split-col hp-month-split-col--board" aria-label="YOU 프로 상위 구성원 현황">
+              <div className="hp-month-split-col-head hp-month-split-col-head--sub">
+                <span className="hp-month-split-col-title hp-month-split-col-title--sub">YOU 프로 상위 구성원</span>
+              </div>
+              <CertificationBoardTicker items={certificationBoard.items} />
+            </aside>
+          )}
+
+          <div className="hp-month-split-col hp-month-split-col--mine" aria-label="나의 접수 현황">
+            <div className="hp-month-split-col-head hp-month-split-col-head--main">
+              <h2 className="hp-month-split-col-title hp-month-split-col-title--main">
+                <span className="hp-month-split-col-month">{currentMonthNum}월</span>
+                <span className="hp-month-split-col-title-text">나의 접수</span>
+              </h2>
               {currentMonthCsTargetMet === true && (
-                <span className="hp-month-cs hp-month-cs--met hp-month-cs--seal">
-                  <BadgeCheck size={13} strokeWidth={2.5} aria-hidden />
-                  만족도 달성 완료
+                <span className="hp-month-cs hp-month-cs--met hp-month-cs--seal hp-month-cs--seal-sm">
+                  <BadgeCheck size={12} strokeWidth={2.5} aria-hidden />
+                  만족도 달성
                 </span>
               )}
               {currentMonthCsTargetMet === false && (
-                <span className="hp-month-cs hp-month-cs--no hp-month-cs--seal">
-                  <ShieldAlert size={13} strokeWidth={2.5} aria-hidden />
-                  만족도 달성 필요
+                <span className="hp-month-cs hp-month-cs--no hp-month-cs--seal hp-month-cs--seal-sm">
+                  <ShieldAlert size={12} strokeWidth={2.5} aria-hidden />
+                  만족도 필요
                 </span>
               )}
             </div>
-          </div>
-          <div className="hp-month-block-grid">
-            <button
-              type="button"
-              className="hp-month-block-item hp-month-block-item--selected hp-month-block-item--btn"
-              onClick={() => openCaseList('선정')}
-              aria-label="선정 사례만 보기"
-            >
-              <span className="hp-month-block-item-label-top">선정</span>
-              <div className="hp-month-block-num-row">
-                <span className="hp-month-block-val">{monthStats.selected}</span>
-                <span className="hp-month-block-unit">건</span>
-              </div>
-            </button>
-            <button
-              type="button"
-              className="hp-month-block-item hp-month-block-item--pending hp-month-block-item--btn"
-              onClick={() => openCaseList('대기중')}
-              aria-label="대기 중 사례만 보기"
-            >
-              <span className="hp-month-block-item-label-top">대기 중</span>
-              <div className="hp-month-block-num-row">
-                <span className="hp-month-block-val">{monthStats.pending}</span>
-                <span className="hp-month-block-unit">건</span>
-              </div>
-            </button>
-            <button
-              type="button"
-              className="hp-month-block-item hp-month-block-item--rejected hp-month-block-item--btn"
-              onClick={() => openCaseList('비선정')}
-              aria-label="비선정 사례만 보기"
-            >
-              <span className="hp-month-block-item-label-top">비선정</span>
-              <div className="hp-month-block-num-row">
-                <span className="hp-month-block-val">{monthStats.rejected}</span>
-                <span className="hp-month-block-unit">건</span>
-              </div>
-            </button>
-          </div>
 
-          <div className="hp-month-preview">
-            <div className="hp-month-preview-head">
-              <span className="hp-month-preview-label">최근 접수 이력</span>
-              <Link to="/member/cases" className="hp-month-block-link">
-                전체 접수 이력 <ChevronRight size={12} strokeWidth={2.5} />
-              </Link>
+            <div className="hp-month-block-grid hp-month-block-grid--compact">
+              <button
+                type="button"
+                className="hp-month-block-item hp-month-block-item--selected hp-month-block-item--btn hp-month-block-item--compact"
+                onClick={() => openCaseList('선정')}
+                aria-label="선정 사례만 보기"
+              >
+                <span className="hp-month-block-item-label-top">선정</span>
+                <div className="hp-month-block-num-row">
+                  <span className="hp-month-block-val">{monthStats.selected}</span>
+                  <span className="hp-month-block-unit">건</span>
+                </div>
+              </button>
+              <button
+                type="button"
+                className="hp-month-block-item hp-month-block-item--pending hp-month-block-item--btn hp-month-block-item--compact"
+                onClick={() => openCaseList('대기중')}
+                aria-label="대기 중 사례만 보기"
+              >
+                <span className="hp-month-block-item-label-top">대기 중</span>
+                <div className="hp-month-block-num-row">
+                  <span className="hp-month-block-val">{monthStats.pending}</span>
+                  <span className="hp-month-block-unit">건</span>
+                </div>
+              </button>
+              <button
+                type="button"
+                className="hp-month-block-item hp-month-block-item--rejected hp-month-block-item--btn hp-month-block-item--compact"
+                onClick={() => openCaseList('비선정')}
+                aria-label="비선정 사례만 보기"
+              >
+                <span className="hp-month-block-item-label-top">비선정</span>
+                <div className="hp-month-block-num-row">
+                  <span className="hp-month-block-val">{monthStats.rejected}</span>
+                  <span className="hp-month-block-unit">건</span>
+                </div>
+              </button>
             </div>
-            {monthPreviewCases.length === 0 ? (
-              <p className="hp-month-preview-empty">이번 달 접수 내역이 없습니다.</p>
-            ) : (
-              <ul className="hp-month-preview-list">
-                {monthPreviewCases.map((c) => (
-                  <li key={c.id}>
-                    <Link to="/member/cases" className="hp-month-preview-row" aria-label={`${c.title || '사례'} 상세 목록으로 이동`}>
-                      <span className="hp-month-preview-badge">
-                        <StatusBadge status={c.status} size="sm" />
-                      </span>
-                      <span className="hp-month-preview-title" title={c.title || ''}>
-                        {c.title?.trim() ? c.title : '제목 없음'}
-                      </span>
-                      <span className="hp-month-preview-date">{formatPreviewDate(c.submittedAt)}</span>
-                      <ChevronRight size={14} strokeWidth={2.25} className="hp-month-preview-chev" aria-hidden />
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
+
+            <div className="hp-month-preview hp-month-preview--compact">
+              <div className="hp-month-preview-head">
+                <span className="hp-month-preview-label">최근 접수</span>
+                <Link to="/member/cases" className="hp-month-block-link">
+                  전체 <ChevronRight size={12} strokeWidth={2.5} />
+                </Link>
+              </div>
+              {monthPreviewCases.length === 0 ? (
+                <p className="hp-month-preview-empty">이번 달 접수 내역이 없습니다.</p>
+              ) : (
+                <ul className="hp-month-preview-list">
+                  {monthPreviewCases.map((c) => (
+                    <li key={c.id}>
+                      <Link to="/member/cases" className="hp-month-preview-row" aria-label={`${c.title || '사례'} 상세 목록으로 이동`}>
+                        <span className="hp-month-preview-badge">
+                          <StatusBadge status={c.status} size="sm" />
+                        </span>
+                        <span className="hp-month-preview-title" title={c.title || ''}>
+                          {c.title?.trim() ? c.title : '제목 없음'}
+                        </span>
+                        <span className="hp-month-preview-date">{formatPreviewDate(c.submittedAt)}</span>
+                        <ChevronRight size={14} strokeWidth={2.25} className="hp-month-preview-chev" aria-hidden />
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
         </div>
       </section>
