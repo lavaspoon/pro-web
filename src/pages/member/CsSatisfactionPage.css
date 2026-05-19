@@ -794,33 +794,49 @@
   margin: 2px 0 0;
 }
 
-.csx-header-meta {
-  margin: 8px 0 0;
+/* 인트로 라인 — 스킬 뱃지 (HomePage hp-intro-line 톤에 맞춤) */
+.csx-page.hp-home .hp-intro-line .csx-header-skill-badge {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  font-weight: 600;
-  color: #64748b;
-}
-
-.csx-header-skill-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 3px 9px;
+  padding: 2px 8px;
   border-radius: 999px;
-  border: 1px solid var(--csx-accent-border);
-  background: var(--csx-accent-soft);
-  color: var(--csx-accent-strong);
+  border: 1px solid var(--hp-brand-border, rgba(13, 148, 136, 0.2));
+  background: var(--hp-brand-muted, rgba(13, 148, 136, 0.1));
+  color: var(--hp-brand-deep, #0f766e);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: -0.01em;
+  line-height: 1.3;
+  vertical-align: baseline;
 }
 
-.csx-header-name {
-  color: #475569;
-  font-weight: 700;
-  letter-spacing: -0.01em;
+/* CS 만족도 워드마크 — 선 길이·viewBox에 맞춘 dash (잘림 방지) */
+.csx-page.hp-home .csx-intro-logo {
+  display: block;
+  height: 44px;
+  width: auto;
+  max-width: 100%;
+  overflow: visible;
+}
+
+.csx-page.hp-home .csx-intro-logo-sat {
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: -0.07em;
+}
+
+.csx-page.hp-home .csx-intro-logo .hp-intro-logo-line-brand {
+  stroke-dasharray: 78;
+  stroke-dashoffset: 78;
+}
+
+.csx-page.hp-home .csx-intro-logo .hp-intro-logo-line-accent {
+  stroke-dasharray: 78;
+  stroke-dashoffset: 78;
+}
+
+.csx-page.hp-home .hp-intro-title {
+  overflow: visible;
 }
 
 /* ── 공통 섹션 — 홈 카드와 동일 radius·border·padding ────── */
@@ -907,20 +923,350 @@
 
 .csx-hero-highlight {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr);
-  gap: 14px;
+  grid-template-columns: minmax(148px, 0.42fr) minmax(0, 1.58fr);
+  gap: 12px;
   align-items: stretch;
+}
+
+.csx-hero-highlight--integrated {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+}
+
+.csx-hero-highlight--integrated .csx-ai-insight {
+  width: 100%;
 }
 
 .csx-hero-highlight-left {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
+  max-width: 200px;
+  justify-self: start;
+}
+
+/* ── 좌(진행·달성·인사이트) | 우(대응 코칭) ───────────────── */
+.csx-ai-insight--lr {
+  gap: 0;
+  padding-top: 12px;
+}
+
+.csx-ai-insight--lr .csx-ai-insight-split {
+  grid-template-columns: minmax(0, 1.12fr) 1px minmax(0, 0.88fr);
+  gap: 0 16px;
+  min-height: 220px;
+}
+
+.csx-ai-insight-col--left {
+  gap: 10px;
+}
+
+.csx-ai-insight-inner-divider {
+  height: 1px;
+  margin: 4px 0 6px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    #dde3ea 8%,
+    #dde3ea 92%,
+    transparent 100%
+  );
+}
+
+.csx-ai-insight-trend-wrap {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  margin-top: 2px;
+  padding: 12px 14px 10px;
+  border-radius: 14px;
+  background: linear-gradient(
+    165deg,
+    rgba(249, 250, 252, 0.98) 0%,
+    rgba(241, 245, 249, 0.88) 100%
+  );
+  border: 1px solid #e8ecf2;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.85),
+    0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.csx-ai-insight-trend-kicker {
+  margin: 0 0 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e8ecf2;
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #64748b;
+}
+
+.csx-ai-insight-trend-wrap .csx-toss-insight {
+  flex: 1;
+  gap: 0;
+}
+
+.csx-ai-insight-trend-wrap .csx-toss-hero {
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.92);
+}
+
+.csx-ai-insight-trend-wrap .csx-toss-why {
+  gap: 8px;
+}
+
+.csx-ai-insight-trend-wrap .csx-toss-foot {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(226, 232, 240, 0.92);
+}
+
+.csx-ai-insight-col--left .csx-toss-insight {
+  flex: 1;
+}
+
+.csx-skill-achieve-badge {
+  align-self: stretch;
+  justify-content: flex-start;
+  max-width: none;
+  width: 100%;
+  padding: 8px 14px;
+  font-size: 12.5px;
+  border-radius: 12px;
+}
+
+.csx-skill-achieve-badge .csx-achieve-badge-text {
+  text-align: left;
+}
+
+.csx-hero-progress-side .csx-skill-achieve-badge {
+  margin-top: 0;
+  padding: 7px 11px;
+  font-size: 12.5px;
+  border-radius: 10px;
+  gap: 7px;
+}
+
+.csx-hero-progress-side .csx-achieve-badge-icon svg {
+  width: 17px;
+  height: 17px;
+}
+
+.csx-hero-progress-side .csx-achieve-badge-text {
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+
+.csx-hero-progress {
+  padding: 0 2px;
+}
+
+.csx-hero-progress-row {
+  display: flex;
+  align-items: stretch;
+  gap: 14px;
+}
+
+.csx-hero-progress-gauge {
+  flex-shrink: 0;
+  width: 168px;
+  height: 168px;
+}
+
+.csx-hero-progress-gauge .csx-gauge-svg {
+  filter: drop-shadow(0 8px 22px rgba(49, 130, 246, 0.16));
+}
+
+.csx-gauge-center--hero {
+  gap: 0;
+}
+
+.csx-gauge-center--hero .csx-gauge-period {
+  font-size: 12px;
+  margin-bottom: 0;
+}
+
+.csx-gauge-num--hero {
+  font-size: 38px !important;
+  line-height: 1;
+}
+
+.csx-gauge-unit--hero {
+  font-size: 16px !important;
+}
+
+.csx-gauge-target--hero {
+  margin-top: 2px;
+  font-size: 12px;
+}
+
+.csx-gauge-target--hero.csx-gauge-target--muted {
+  color: #94a3b8;
+}
+
+.csx-hero-progress-side {
+  flex: 1;
+  min-width: 0;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  padding: 2px 0;
+}
+
+.csx-hero-progress-stats {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  align-items: stretch;
+}
+
+.csx-hero-progress-stat {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  padding: 7px 8px;
+  border-radius: 10px;
+  background: linear-gradient(145deg, rgba(248, 250, 252, 0.95) 0%, rgba(241, 245, 249, 0.88) 100%);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+}
+
+.csx-hero-progress-stat--sat {
+  background: linear-gradient(145deg, rgba(236, 253, 245, 0.75) 0%, rgba(248, 250, 252, 0.92) 100%);
+  border-color: rgba(167, 243, 208, 0.65);
+}
+
+.csx-hero-progress-stat--unsat {
+  background: linear-gradient(145deg, rgba(254, 242, 242, 0.7) 0%, rgba(248, 250, 252, 0.92) 100%);
+  border-color: rgba(254, 202, 202, 0.65);
+}
+
+.csx-hero-progress-stat dt {
+  margin: 0;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #64748b;
+}
+
+.csx-hero-progress-stat dd {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.csx-hero-progress-stat dd strong {
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  color: #1e293b;
+  line-height: 1.1;
+}
+
+.csx-hero-progress-stat-unit {
+  font-size: 11px;
+  font-weight: 700;
+  color: #94a3b8;
+}
+
+.csx-hero-progress-stat--sat dd strong.csx-hero-progress-stat-sat {
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  color: #059669;
+  line-height: 1.1;
+}
+
+.csx-hero-progress-stat--unsat dd strong.csx-hero-progress-stat-unsat {
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  color: #dc2626;
+  line-height: 1.1;
+}
+
+.csx-hero-progress-received {
+  margin: 0;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: #94a3b8;
+}
+
+.csx-hero-progress-received strong {
+  font-weight: 800;
+  color: #64748b;
+}
+
+.csx-hero-progress-hint {
+  margin: 0;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: #475569;
+  line-height: 1.45;
+}
+
+.csx-hero-progress-hint strong {
+  font-weight: 800;
+  color: #1e40af;
+}
+
+.csx-hero-progress-hint--met {
+  color: #047857;
+}
+
+.csx-hero-progress-hint-sub {
+  display: block;
+  margin-top: 2px;
+  font-size: 10.5px;
+  font-weight: 500;
+  color: #94a3b8;
+}
+
+.csx-achieve-badge--compact {
+  align-self: center;
+  max-width: 148px;
+  padding: 8px 12px;
+  font-size: 11.5px;
+  flex-shrink: 0;
+}
+
+.csx-achieve-badge--compact .csx-achieve-badge-text {
+  text-align: left;
+  line-height: 1.35;
 }
 
 .csx-gauge-featured.csx-gauge-wrap {
-  padding: 2px 0 1px;
+  padding: 0;
+}
+
+.csx-hero-highlight-left .csx-gauge-featured .csx-gauge-num {
+  font-size: 40px;
+}
+
+.csx-hero-highlight-left .csx-gauge-featured .csx-gauge-unit {
+  font-size: 15px;
+}
+
+.csx-hero-highlight-left .csx-achieve-badge {
+  padding: 7px 12px;
+  font-size: 12px;
 }
 
 .csx-gauge-svg--large {
@@ -1459,6 +1805,643 @@
   gap: 10px;
 }
 
+/* ── AI 인사이트 — 토스증권 스타일 일자 비교 ───────────────── */
+.csx-ai-insight--toss {
+  --csx-toss-up: #e54d5d;
+  --csx-toss-down: #3182f6;
+  --csx-toss-ink: #1a1a1a;
+  --csx-toss-muted: #8b8b8b;
+  background: #ffffff;
+  border-color: #f2f4f6;
+  box-shadow: none;
+  padding: 12px 14px 10px;
+  gap: 0;
+  min-height: 0;
+}
+
+.csx-ai-insight--toss .csx-ai-insight-body {
+  padding: 0;
+}
+
+/* 인사이트 2열 — 일자 비교 | 대응 코칭 */
+.csx-ai-insight--split {
+  min-height: 0;
+}
+
+.csx-ai-insight-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1.12fr) 1px minmax(0, 0.88fr);
+  gap: 0 16px;
+  align-items: stretch;
+  min-height: 220px;
+}
+
+.csx-ai-insight-split--loading {
+  min-height: 180px;
+}
+
+.csx-ai-insight-divider {
+  width: 1px;
+  align-self: stretch;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    #e8ecf2 12%,
+    #e8ecf2 88%,
+    transparent 100%
+  );
+}
+
+.csx-ai-insight-col {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.csx-ai-insight-col--trend .csx-toss-insight,
+.csx-ai-insight-col--left .csx-toss-insight {
+  gap: 10px;
+}
+
+.csx-ai-insight-col--trend .csx-toss-foot,
+.csx-ai-insight-col--left .csx-toss-foot {
+  margin-top: auto;
+}
+
+.csx-ai-insight-col--coach {
+  min-height: 100%;
+}
+
+/* ── 대응 코칭 패널 ─────────────────────────────────────── */
+.csx-coach {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 100%;
+}
+
+.csx-coach--loading {
+  gap: 8px;
+}
+
+.csx-coach-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.csx-coach-title {
+  margin: 0;
+  font-size: 14.5px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: #1a1a1a;
+}
+
+.csx-coach-sub {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: #8b8b8b;
+  letter-spacing: -0.02em;
+}
+
+.csx-coach-cases {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.csx-coach-case {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  padding: 8px 9px;
+  border-radius: 11px;
+  border: 1px solid #eceff3;
+  background: #fafbfc;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.csx-coach-case:hover {
+  border-color: #d5dbe5;
+  background: #ffffff;
+}
+
+.csx-coach-case.is-active {
+  border-color: rgba(49, 130, 246, 0.45);
+  background: linear-gradient(165deg, #f8fbff 0%, #ffffff 72%);
+  box-shadow: 0 4px 14px rgba(49, 130, 246, 0.1);
+}
+
+.csx-coach-case-tag {
+  display: inline-flex;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #9f1239;
+  background: rgba(244, 63, 94, 0.1);
+  border: 1px solid rgba(244, 63, 94, 0.22);
+}
+
+.csx-coach-case-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.45;
+  letter-spacing: -0.02em;
+  color: #334155;
+  word-break: keep-all;
+}
+
+.csx-coach-case-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #3182f6;
+  letter-spacing: -0.02em;
+}
+
+.csx-coach-case.is-active .csx-coach-case-cta {
+  color: #1f5fcc;
+}
+
+/* 시나리오 카드 */
+.csx-coach-scenario {
+  margin-top: 2px;
+  padding: 10px 10px 8px;
+  border-radius: 14px;
+  border: 1px solid #e8edf3;
+  background: #fafbfc;
+  animation: csx-coach-scenario-in 0.28s ease-out;
+}
+
+/* 유형별 대응 피드백 */
+.csx-coach-feedback {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.csx-coach-feedback--loading {
+  padding: 4px 0;
+}
+
+.csx-coach-feedback-ref {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: #94a3b8;
+  letter-spacing: -0.02em;
+}
+
+.csx-coach-feedback-card {
+  padding: 10px 11px 9px;
+  border-radius: 12px;
+  border: 1px solid rgba(49, 130, 246, 0.28);
+  background: linear-gradient(165deg, #eef5ff 0%, #f8fbff 100%);
+  box-shadow: 0 2px 8px rgba(49, 130, 246, 0.08);
+}
+
+.csx-coach-feedback-type {
+  display: inline-flex;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #1e40af;
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(49, 130, 246, 0.2);
+}
+
+.csx-coach-feedback-kicker {
+  margin: 6px 0 4px;
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #3182f6;
+}
+
+.csx-coach-feedback-main {
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.55;
+  letter-spacing: -0.02em;
+  color: #1e3a5f;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.csx-coach-feedback-points {
+  margin: 6px 0 0;
+  padding-left: 1.05em;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.csx-coach-feedback-points li {
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1.5;
+  letter-spacing: -0.02em;
+  color: #475569;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+.csx-coach-feedback-points li::marker {
+  color: #94a3b8;
+}
+
+.csx-coach-feedback-foot {
+  margin: 0;
+  text-align: right;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: #b0b8c1;
+}
+
+@keyframes csx-coach-scenario-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.csx-coach-scenario-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.csx-coach-scenario-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #1f5fcc;
+  background: rgba(49, 130, 246, 0.1);
+  border: 1px solid rgba(49, 130, 246, 0.22);
+}
+
+.csx-coach-scenario-date {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #94a3b8;
+  white-space: nowrap;
+}
+
+.csx-coach-scenario-summary {
+  margin: 0 0 6px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: #64748b;
+  letter-spacing: -0.02em;
+}
+
+.csx-coach-scenario-opener {
+  margin: 0 0 8px;
+  padding: 7px 9px;
+  border-radius: 9px;
+  border-left: 3px solid #3182f6;
+  background: rgba(49, 130, 246, 0.06);
+  font-size: 11.5px;
+  font-weight: 600;
+  font-style: normal;
+  line-height: 1.45;
+  letter-spacing: -0.02em;
+  color: #1e293b;
+  word-break: keep-all;
+}
+
+.csx-coach-scenario-steps {
+  margin: 0 0 6px;
+  padding-left: 1.1em;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.csx-coach-scenario-steps li {
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.45;
+  letter-spacing: -0.02em;
+  color: #374151;
+  word-break: keep-all;
+}
+
+.csx-coach-scenario-steps li::marker {
+  color: #94a3b8;
+  font-weight: 700;
+}
+
+.csx-coach-scenario-ai-tag,
+.csx-coach-scenario-fallback {
+  margin: 6px 0 0;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.csx-coach-scenario-ai-tag {
+  color: #3182f6;
+  text-align: right;
+}
+
+.csx-coach-scenario-fallback {
+  color: #94a3b8;
+}
+
+.csx-toss-bullets-loading {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px 0 6px;
+}
+
+.csx-toss-ai-fallback {
+  margin: 6px 0 0;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #94a3b8;
+  letter-spacing: -0.02em;
+}
+
+.csx-coach-scenario-close {
+  margin: 0 0 8px;
+  padding: 8px 10px;
+  border-radius: 9px;
+  background: #f1f5f9;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: -0.02em;
+  color: #334155;
+  word-break: keep-all;
+}
+
+.csx-coach-scenario-tip {
+  margin: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: -0.02em;
+  color: #0f766e;
+}
+
+.csx-coach-scenario-tip svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.csx-coach--empty {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  min-height: 120px;
+  padding: 8px 4px;
+}
+
+.csx-coach-empty-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #475569;
+}
+
+.csx-coach-empty-sub {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.5;
+  color: #94a3b8;
+}
+
+.csx-ai-insight--toss .csx-ai-insight-head--compact {
+  padding-bottom: 2px;
+  margin-bottom: 0;
+}
+
+.csx-ai-insight--toss .csx-ai-insight-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(49, 130, 246, 0.22);
+}
+
+.csx-ai-insight--toss .csx-ai-insight-title {
+  font-size: 14px;
+}
+
+.csx-ai-insight--toss .csx-ai-insight-tagline {
+  color: var(--csx-toss-muted);
+  font-size: 11px;
+}
+
+.csx-ai-insight-body--loading-compact {
+  min-height: 100px;
+}
+
+.csx-toss-insight {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.csx-toss-insight .csx-toss-foot {
+  margin-top: auto;
+}
+
+.csx-toss-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.csx-toss-headline {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.045em;
+  color: var(--csx-toss-ink);
+  line-height: 1.25;
+}
+
+/* 불릿 내 핵심 수치만 은은한 형광 강조 */
+.csx-hl {
+  display: inline;
+  padding: 0 3px;
+  margin: 0;
+  border-radius: 3px;
+  font-weight: 700;
+  font-style: normal;
+  font-variant-numeric: tabular-nums;
+  color: inherit;
+  background: rgba(255, 235, 150, 0.45);
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+.csx-toss-meta-strong {
+  font-weight: 700;
+  color: #374151;
+}
+
+.csx-toss-delta {
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+
+.csx-toss-delta--up {
+  color: var(--csx-toss-up);
+}
+
+.csx-toss-delta--down {
+  color: var(--csx-toss-down);
+}
+
+.csx-toss-delta--flat {
+  color: #64748b;
+}
+
+.csx-toss-meta {
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--csx-toss-muted);
+  letter-spacing: -0.02em;
+  line-height: 1.45;
+}
+
+.csx-toss-why {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.csx-toss-why-title {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 16.5px;
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  color: var(--csx-toss-ink);
+}
+
+.csx-toss-why-ico {
+  color: #b0b8c4;
+  flex-shrink: 0;
+}
+
+.csx-toss-foot {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 4px;
+  padding-top: 2px;
+}
+
+.csx-toss-ai-badge {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--csx-toss-muted);
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+.csx-toss-bullets {
+  margin: 0;
+  padding: 0 0 0 1.05em;
+  list-style: disc;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.csx-toss-bullet {
+  font-size: 13.5px;
+  font-weight: 500;
+  line-height: 1.5;
+  letter-spacing: -0.02em;
+  color: #404040;
+  word-break: keep-all;
+}
+
+.csx-toss-bullet::marker {
+  color: #b8bfc9;
+  font-size: 0.85em;
+}
+
+.csx-toss-bullet--driver,
+.csx-toss-bullet--reason {
+  list-style: none;
+  margin-left: -1.05em;
+}
+
+.csx-toss-driver-line {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.55;
+  letter-spacing: -0.02em;
+  color: #404040;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+.csx-toss-driver-influence {
+  display: inline;
+}
+
+.csx-toss-empty {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.55;
+  color: #64748b;
+  letter-spacing: -0.02em;
+}
+
+.csx-toss-empty--inline {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--csx-toss-muted);
+}
+
 /* ── 히어로 내 중점 추진과제 ─────────────────────────────── */
 .csx-hero-focus-block {
   padding-top: 14px;
@@ -1932,7 +2915,7 @@
   gap: 4px;
   padding: 5px 11px;
   border-radius: 999px;
-  font-size: 11.5px;
+  font-size: 12.5px;
   font-weight: 800;
   letter-spacing: -0.01em;
   white-space: nowrap;
@@ -2207,10 +3190,68 @@
   color: #adb5bd;
 }
 
+@media (max-width: 960px) {
+  .csx-hero-highlight:not(.csx-hero-highlight--integrated) {
+    grid-template-columns: minmax(140px, 0.5fr) minmax(0, 1.5fr);
+  }
+
+  .csx-ai-insight--lr .csx-ai-insight-split,
+  .csx-ai-insight-split {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1px auto;
+    gap: 12px 0;
+  }
+
+  .csx-ai-insight-divider {
+    width: 100%;
+    height: 1px;
+    min-height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      #e8ecf2 12%,
+      #e8ecf2 88%,
+      transparent 100%
+    );
+  }
+}
+
 @media (max-width: 640px) {
-  .csx-hero-highlight {
+  .csx-hero-highlight:not(.csx-hero-highlight--integrated) {
     grid-template-columns: 1fr;
     gap: 16px;
+  }
+
+  .csx-hero-highlight-left {
+    max-width: none;
+    justify-self: stretch;
+  }
+
+  .csx-ai-insight--lr .csx-ai-insight-split,
+  .csx-ai-insight-split {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1px auto;
+    gap: 14px 0;
+  }
+
+  .csx-hero-progress-row {
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .csx-hero-progress-gauge {
+    width: 152px;
+    height: 152px;
+    margin: 0 auto;
+  }
+
+  .csx-hero-progress-side {
+    width: 100%;
+  }
+
+  .csx-hero-progress-stats {
+    grid-template-columns: 1fr 1fr;
   }
 
   .csx-ai-insight {

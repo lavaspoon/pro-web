@@ -261,7 +261,9 @@ function localeKoTrim(a, b) {
 /** 필터된 행 기준 합계·가중 %용 분모(평가건) */
 function computeSummaryTotals(list) {
   let fiveMajorSum = 0;
+  let fiveMajorEligibleSum = 0;
   let gen5060Sum = 0;
+  let gen5060EligibleSum = 0;
   let problemResolvedSum = 0;
   let evalTargetMemberSum = 0;
   let evalSum = 0;
@@ -269,14 +271,18 @@ function computeSummaryTotals(list) {
   for (const r of list) {
     evalTargetMemberSum += Number(r.evalTargetMemberCount) || 0;
     fiveMajorSum += Number(r.fiveMajorCitiesCount) || 0;
+    fiveMajorEligibleSum += Number(r.fiveMajorCitiesEligibleCount) || 0;
     gen5060Sum += Number(r.gen5060Count) || 0;
+    gen5060EligibleSum += Number(r.gen5060EligibleCount) || 0;
     problemResolvedSum += Number(r.problemResolvedCount) || 0;
     evalSum += Number(r.evalCount) || 0;
     satSum += Number(r.satisfiedCount) || 0;
   }
   const satisfactionPct = evalSum === 0 ? null : Math.round((1000 * satSum) / evalSum) / 10;
-  const fivePct = satSum === 0 ? null : Math.round((1000 * fiveMajorSum) / satSum) / 10;
-  const genPct = satSum === 0 ? null : Math.round((1000 * gen5060Sum) / satSum) / 10;
+  const fivePct =
+    fiveMajorEligibleSum === 0 ? null : Math.round((1000 * fiveMajorSum) / fiveMajorEligibleSum) / 10;
+  const genPct =
+    gen5060EligibleSum === 0 ? null : Math.round((1000 * gen5060Sum) / gen5060EligibleSum) / 10;
   const probPct = evalSum === 0 ? null : Math.round((1000 * problemResolvedSum) / evalSum) / 10;
   return {
     evalTargetMemberSum,
