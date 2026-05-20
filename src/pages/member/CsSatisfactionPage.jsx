@@ -1,8 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
-  ThumbsUp,
-  ThumbsDown,
   CheckCircle2,
   MapPinned,
   UserCircle2,
@@ -15,11 +13,12 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
-import { fetchMemberSatisfaction } from '../../api/memberApi';
+import { fetchMemberSatisfaction, fetchCsSatisfactionTeamDaySummary } from '../../api/memberApi';
 import { fetchCsSatisfactionMemberMonthlyRows } from '../../api/adminApi';
+import CsSatisfactionModalDayStats from '../../components/cs/CsSatisfactionModalDayStats';
 import { fetchCsCoachScenario, fetchCsDayOverDayInsight } from '../../api/lmStudioClient';
 import { parseCoachScenario, parseDayOverDayInsight } from '../../utils/parseCsAiInsight';
-import Skeleton from '../../components/common/Skeleton';
+import Skeleton, { SkeletonLines } from '../../components/common/Skeleton';
 import '../admin/DashboardPage.css';
 import '../admin/AdminSatisfactionPage.css';
 import './HomePage.css';
@@ -180,6 +179,61 @@ function getMonthIntakeStats(memberRowsData, month, satData) {
   const satisfiedCount = toNum(satData?.satisfiedCount, 0) ?? 0;
   const unsatisfiedCount = toNum(satData?.unsatisfiedCount, 0) ?? 0;
   return { totalReceived, satisfiedCount, unsatisfiedCount };
+}
+
+/** 중점추진과제 산식 분모·분자 (당월 row 우선, 없으면 API 건수 폴백) */
+function getMonthFocusMetrics(memberRowsData, month, satData) {
+  const bucket = (memberRowsData?.months ?? []).find(
+    (m) => Number(m.month) === Number(month),
+  );
+  const rows = bucket?.rows ?? [];
+  const yn = (r, field) => String(r?.[field] ?? '').trim().toUpperCase();
+
+  if (rows.length > 0) {
+    const received = rows.length;
+    const fiveEligible = rows.filter((r) => yn(r, 'fiveMajorCitiesYn') === 'Y').length;
+    const fiveNum = rows.filter(
+      (r) => yn(r, 'satisfiedYn') === 'Y' && yn(r, 'fiveMajorCitiesYn') === 'Y',
+    ).length;
+    const genEligible = rows.filter((r) => yn(r, 'gen5060Yn') === 'Y').length;
+    const genNum = rows.filter(
+      (r) => yn(r, 'satisfiedYn') === 'Y' && yn(r, 'gen5060Yn') === 'Y',
+    ).length;
+    const problemNum = rows.filter((r) => yn(r, 'problemResolvedYn') === 'Y').length;
+    return {
+      received,
+      fiveEligible,
+      fiveNum,
+      genEligible,
+      genNum,
+      problemNum,
+      problemDenom: received,
+      hasRowDetail: true,
+    };
+  }
+
+  const received = toNum(satData?.receivedCount ?? satData?.totalSamples, 0) ?? 0;
+  const problemNum = received > 0 && satData?.problemResolvedPct != null
+    ? Math.round((Number(satData.problemResolvedPct) * received) / 100)
+    : null;
+
+  return {
+    received,
+    fiveEligible: null,
+    fiveNum: null,
+    genEligible: null,
+    genNum: null,
+    problemNum,
+    problemDenom: received,
+    hasRowDetail: false,
+  };
+}
+
+function computeFocusMetricMet(pct, target) {
+  if (pct == null || Number.isNaN(Number(pct))) return null;
+  const t = toNum(target);
+  if (t == null || t <= 0) return null;
+  return Number(pct) >= t;
 }
 
 function computeShortageVsTarget(d) {
@@ -544,15 +598,121 @@ function buildCoachScenarioFromFallback(signal) {
   return buildCoachScenarioFallback(signal.typeLabel);
 }
 
+/** 히어로 — 원형 게이지 + 접수·만족 건수 */
+function GaugeProgressSkeleton() {
+  return (
+    <div className="csx-hero-progress csx-hero-progress--skeleton" aria-hidden>
+      <div className="csx-hero-progress-row">
+        <Skeleton variant="circle" width={148} height={148} className="csx-hero-skel-gauge" />
+        <div className="csx-hero-progress-side csx-hero-progress-side--skeleton">
+          <div className="csx-hero-progress-stats csx-hero-progress-stats--skeleton">
+            <Skeleton height={54} radius={10} />
+            <Skeleton height={54} radius={10} />
+          </div>
+          <Skeleton height={34} radius={10} className="csx-hero-skel-badge" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** 최근 만족도 AI 인사이트 — 토스형 스켈레톤 */
+function AiTrendInsightSkeleton() {
+  return (
+    <div
+      className="csx-toss-insight csx-toss-insight--skeleton"
+      aria-busy="true"
+      aria-label="AI 인사이트 불러오는 중"
+    >
+      <p className="csx-ai-insight-trend-kicker">최근 만족도 AI 인사이트</p>
+      <header className="csx-toss-hero csx-toss-hero--skeleton">
+        <Skeleton width={188} height={26} radius={6} className="csx-toss-skel-headline" />
+        <Skeleton variant="text" width="88%" height={14} radius={4} />
+      </header>
+      <section className="csx-toss-why csx-toss-why--skeleton" aria-hidden>
+        <Skeleton width={108} height={17} radius={4} className="csx-toss-skel-why-title" />
+        <ul className="csx-toss-bullets csx-toss-bullets--skeleton">
+          {[100, 94, 82].map((w) => (
+            <li key={w} className="csx-toss-skel-bullet">
+              <span className="csx-toss-skel-dot" aria-hidden />
+              <Skeleton variant="text" width={`${w}%`} height={12} radius={4} />
+            </li>
+          ))}
+        </ul>
+      </section>
+      <footer className="csx-toss-foot csx-toss-foot--skeleton">
+        <Skeleton variant="text" width={88} height={11} radius={4} />
+      </footer>
+    </div>
+  );
+}
+
+/** ‘이렇게 하면 좋아요’ 대응 피드백 카드 스켈레톤 */
+function CoachFeedbackSkeleton() {
+  return (
+    <div
+      className="csx-coach-feedback csx-coach-feedback--skeleton"
+      aria-busy="true"
+      aria-label="대응 피드백 불러오는 중"
+    >
+      <div className="csx-coach-feedback-card csx-coach-feedback-card--skeleton">
+        <span className="csx-coach-skel-type" aria-hidden>
+          <Skeleton width={58} height={18} radius={999} />
+        </span>
+        <p className="csx-coach-feedback-kicker csx-coach-skel-kicker">이렇게 하면 좋아요</p>
+        <div className="csx-coach-skel-main">
+          <SkeletonLines lines={2} lineHeight={13} gap={7} lastWidth="76%" />
+        </div>
+        <ul className="csx-coach-feedback-points csx-coach-skel-points" aria-hidden>
+          <li className="csx-coach-skel-point">
+            <span className="csx-coach-skel-point-dot" aria-hidden />
+            <Skeleton variant="text" width="90%" height={11} radius={4} />
+          </li>
+          <li className="csx-coach-skel-point">
+            <span className="csx-coach-skel-point-dot" aria-hidden />
+            <Skeleton variant="text" width="74%" height={11} radius={4} />
+          </li>
+        </ul>
+      </div>
+      <p className="csx-coach-feedback-foot csx-coach-skel-foot" aria-hidden>
+        <Skeleton variant="text" width={72} height={10} radius={4} />
+      </p>
+    </div>
+  );
+}
+
+/** 대응 코칭 패널 전체 스켈레톤 */
+function CoachPanelSkeleton() {
+  return (
+    <div className="csx-coach csx-coach--skeleton" aria-busy="true" aria-label="대응 코칭 불러오는 중">
+      <header className="csx-coach-head csx-coach-head--skeleton">
+        <Skeleton width={76} height={16} radius={4} />
+        <Skeleton variant="text" width={128} height={12} radius={4} />
+      </header>
+      <ul className="csx-coach-cases csx-coach-cases--skeleton" aria-hidden>
+        {[0, 1].map((i) => (
+          <li key={i}>
+            <div className={`csx-coach-case csx-coach-case--skeleton${i === 0 ? ' is-active' : ''}`}>
+              <Skeleton width={54} height={18} radius={999} />
+              <Skeleton variant="text" width={i === 0 ? '96%' : '88%'} height={13} radius={4} />
+              <Skeleton variant="text" width={108} height={11} radius={4} />
+            </div>
+          </li>
+        ))}
+      </ul>
+      <div className="csx-coach-scenario csx-coach-scenario--skeleton">
+        <CoachFeedbackSkeleton />
+      </div>
+    </div>
+  );
+}
+
 /** 유형별 대응 피드백 */
 function CoachTypeFeedback({ typeLabel, scenario, badMent, usedFallback }) {
   const mentNote = badMent ? truncateMent(badMent, 48) : null;
 
   return (
     <div className="csx-coach-feedback">
-      {mentNote ? (
-        <p className="csx-coach-feedback-ref">참고 · {mentNote}</p>
-      ) : null}
       <div className="csx-coach-feedback-card">
         <span className="csx-coach-feedback-type">{typeLabel}</span>
         <p className="csx-coach-feedback-kicker">이렇게 하면 좋아요</p>
@@ -679,14 +839,7 @@ function ResponseCoachPanel({ cases, pending: dataPending }) {
   const scenarioUsedFallback = !!selected && coachAiQuery.isError && !coachAiQuery.data;
 
   if (dataPending) {
-    return (
-      <div className="csx-coach csx-coach--loading" aria-busy="true">
-        <Skeleton variant="text" width={100} height={14} />
-        <Skeleton height={48} radius={12} />
-        <Skeleton height={48} radius={12} />
-        <Skeleton height={88} radius={14} />
-      </div>
-    );
+    return <CoachPanelSkeleton />;
   }
 
   if (cases.length === 0) {
@@ -736,10 +889,7 @@ function ResponseCoachPanel({ cases, pending: dataPending }) {
           aria-busy={scenarioPending}
         >
           {scenarioPending ? (
-            <div className="csx-coach-feedback csx-coach-feedback--loading" aria-busy="true">
-              <Skeleton height={52} radius={14} />
-              <Skeleton height={64} radius={14} />
-            </div>
+            <CoachFeedbackSkeleton />
           ) : scenario ? (
             <CoachTypeFeedback typeLabel={selected.typeLabel} scenario={scenario} badMent={selected.badMent} usedFallback={scenarioUsedFallback} />
           ) : null}
@@ -817,16 +967,20 @@ function HeroSkeleton() {
             <Skeleton width={72} height={24} radius={999} />
           </div>
           <div className="csx-hero-highlight csx-hero-highlight--integrated">
-            <div className="csx-ai-insight csx-ai-insight--skeleton csx-ai-insight--split csx-ai-insight--lr" aria-hidden>
+            <div
+              className="csx-ai-insight csx-ai-insight--skeleton csx-ai-insight--toss csx-ai-insight--split csx-ai-insight--lr"
+              aria-hidden
+            >
               <div className="csx-ai-insight-split">
                 <div className="csx-ai-insight-col csx-ai-insight-col--left">
-                  <Skeleton height={72} radius={12} />
-                  <Skeleton height={36} radius={999} />
-                  <Skeleton height={1} radius={0} />
-                  <Skeleton height={140} radius={12} />
+                  <GaugeProgressSkeleton />
+                  <div className="csx-ai-insight-inner-divider" aria-hidden />
+                  <AiTrendInsightSkeleton />
                 </div>
-                <Skeleton height={180} radius={0} style={{ width: 1 }} />
-                <Skeleton height={180} radius={12} />
+                <div className="csx-ai-insight-divider" aria-hidden />
+                <div className="csx-ai-insight-col csx-ai-insight-col--coach">
+                  <CoachPanelSkeleton />
+                </div>
               </div>
             </div>
           </div>
@@ -837,13 +991,22 @@ function HeroSkeleton() {
         <span className="csx-corner-bl" aria-hidden />
         <Skeleton variant="text" width={140} height={18} />
         <Skeleton variant="text" width="95%" height={12} style={{ marginTop: 6 }} />
-        <ul className="csx-rate-deck csx-rate-deck--skeleton">
-          {[0, 1, 2, 3, 4].map((i) => (
-            <li key={i} className="csx-rate-deck-item">
-              <Skeleton height={64} radius={14} />
-            </li>
-          ))}
-        </ul>
+        <div className="csx-rate-deck-group-wrap csx-rate-deck-group-wrap--row csx-rate-deck-group-wrap--skeleton">
+          <ul className="csx-month-kpi-strip csx-month-kpi-strip--skeleton" aria-hidden>
+            {[0, 1, 2].map((i) => (
+              <li key={i} className="csx-month-kpi-item">
+                <Skeleton height={40} radius={10} />
+              </li>
+            ))}
+          </ul>
+          <ul className="csx-rate-deck csx-rate-deck--focus csx-rate-deck--skeleton" aria-hidden>
+            {[0, 1, 2].map((i) => (
+              <li key={i} className="csx-rate-deck-item">
+                <Skeleton height={64} radius={12} />
+              </li>
+            ))}
+          </ul>
+        </div>
         <Skeleton height={42} radius={12} style={{ marginTop: 4 }} />
       </section>
     </>
@@ -1054,11 +1217,14 @@ function DayOverDayInsightPanel({
           <HelpCircle size={14} strokeWidth={2.2} className="csx-toss-why-ico" aria-hidden />
         </h4>
         {aiBulletsPending ? (
-          <div className="csx-toss-bullets-loading" aria-busy="true">
-            <Skeleton variant="text" width="100%" height={12} />
-            <Skeleton variant="text" width="92%" height={12} />
-            <Skeleton variant="text" width="85%" height={12} />
-          </div>
+          <ul className="csx-toss-bullets csx-toss-bullets--skeleton" aria-busy="true" aria-label="AI 분석 중">
+            {[100, 94, 82].map((w) => (
+              <li key={w} className="csx-toss-skel-bullet">
+                <span className="csx-toss-skel-dot" aria-hidden />
+                <Skeleton variant="text" width={`${w}%`} height={12} radius={4} />
+              </li>
+            ))}
+          </ul>
         ) : displayReasons.length > 0 ? (
           <ul className="csx-toss-bullets">
             {displayReasons.map((line, i) => (
@@ -1133,10 +1299,9 @@ function SatisfactionProgressSection({
   const statusMod = met === true ? 'met' : met === false ? 'no' : 'none';
   const hasTarget = target != null && target > 0;
   const displayActual = actualPct != null ? fmt(animatedActualPct) : null;
-  const { totalReceived, satisfiedCount, unsatisfiedCount } = intakeStats ?? {
+  const { totalReceived, satisfiedCount } = intakeStats ?? {
     totalReceived: 0,
     satisfiedCount: 0,
-    unsatisfiedCount: 0,
   };
 
   return (
@@ -1170,9 +1335,20 @@ function SatisfactionProgressSection({
         </div>
 
         <div className="csx-hero-progress-side">
-          <dl className="csx-hero-progress-stats" aria-label="당월 만족·불만족 건수">
+          <dl className="csx-hero-progress-stats" aria-label="당월 접수·만족 건수">
+            <div className="csx-hero-progress-stat csx-hero-progress-stat--recv">
+              <dt>접수건수</dt>
+              <dd>
+                {statsPending ? '…' : (
+                  <>
+                    <strong>{numKo(totalReceived)}</strong>
+                    <span className="csx-hero-progress-stat-unit">건</span>
+                  </>
+                )}
+              </dd>
+            </div>
             <div className="csx-hero-progress-stat csx-hero-progress-stat--sat">
-              <dt>만족</dt>
+              <dt>만족건수</dt>
               <dd>
                 {statsPending ? '…' : (
                   <>
@@ -1184,25 +1360,7 @@ function SatisfactionProgressSection({
                 )}
               </dd>
             </div>
-            <div className="csx-hero-progress-stat csx-hero-progress-stat--unsat">
-              <dt>불만족</dt>
-              <dd>
-                {statsPending ? '…' : (
-                  <>
-                    <strong className="csx-hero-progress-stat-unsat">
-                      {numKo(unsatisfiedCount)}
-                    </strong>
-                    <span className="csx-hero-progress-stat-unit">건</span>
-                  </>
-                )}
-              </dd>
-            </div>
           </dl>
-          {!statsPending ? (
-            <p className="csx-hero-progress-received">
-              접수 <strong>{numKo(totalReceived)}</strong>건
-            </p>
-          ) : null}
           <SkillAchievementBadge met={met} skill={skill} shortage={shortage} />
         </div>
 
@@ -1311,10 +1469,7 @@ function CsAiInsight({
           />
           <div className="csx-ai-insight-inner-divider" aria-hidden />
           {memberRowsPending ? (
-            <div className="csx-ai-insight-body--loading csx-ai-insight-body--loading-compact">
-              <div className="csx-ai-insight-shimmer" />
-              <p className="csx-ai-insight-wait">분석 중…</p>
-            </div>
+            <AiTrendInsightSkeleton />
           ) : (
             <div className="csx-ai-insight-trend-wrap">
               <p className="csx-ai-insight-trend-kicker">최근 만족도 AI 인사이트</p>
@@ -1368,71 +1523,155 @@ const RATE_CARD_FILTERS = {
 };
 
 /* ════════════════════════════════════════════════════════════
-   만족도 현황 — 5대 지표(%)
+   만족도 현황 — 당월 KPI 3종 + 중점추진과제 3종(%)
    ════════════════════════════════════════════════════════════ */
-function SatisfactionRateDeck({ data, received, onOpenFiltered }) {
+function SatisfactionRateDeck({
+  data,
+  received,
+  onOpenFiltered,
+  memberRowsData,
+  month,
+  shortage,
+  target,
+  intakeStats,
+  met,
+}) {
   const d = data ?? {};
   const hasBase = received > 0;
+  const targetPct = toNum(target);
 
-  const items = [
+  const focusMetrics = useMemo(
+    () => getMonthFocusMetrics(memberRowsData, month, data),
+    [memberRowsData, month, data],
+  );
+
+  const evalCount = intakeStats?.totalReceived ?? received;
+  const satCount = intakeStats?.satisfiedCount ?? toNum(d.satisfiedCount, 0) ?? 0;
+
+  const shortageMod = shortage?.status === 'met' ? 'met'
+    : shortage?.status === 'short' ? 'no'
+      : 'none';
+  const satMod = met === true ? 'met' : met === false ? 'no' : 'none';
+
+  const numClass = (mod) => (mod && mod !== 'none' ? `csx-stat-num csx-stat-num--${mod}` : 'csx-stat-num');
+
+  const monthKpiCards = [
     {
-      key: 'sat',
-      label: '만족',
-      sub: '만족(Y)',
-      field: 'monthlyActualPct',
-      mod: 'sat',
-      Icon: ThumbsUp,
+      key: 'eval',
+      label: '총 평가건수',
+      numMod: null,
+      value: hasBase ? (
+        <>
+          <strong className={numClass(null)}>{numKo(evalCount)}</strong>
+          <span className="csx-month-kpi-unit">건</span>
+        </>
+      ) : <strong className="csx-stat-num">—</strong>,
+      filter: DEFAULT_MODAL_FILTERS,
+    },
+    {
+      key: 'sat-count',
+      label: '만족도 건수',
+      numMod: satMod !== 'none' ? satMod : null,
+      value: hasBase ? (
+        <>
+          <strong className={numClass(satMod !== 'none' ? satMod : null)}>{numKo(satCount)}</strong>
+          <span className="csx-month-kpi-unit">건</span>
+        </>
+      ) : <strong className="csx-stat-num">—</strong>,
       filter: RATE_CARD_FILTERS.sat,
     },
     {
-      key: 'unsat',
-      label: '불만족',
-      sub: '불만족(N)',
-      field: 'unsatisfiedPct',
-      mod: 'unsat',
-      Icon: ThumbsDown,
-      filter: RATE_CARD_FILTERS.unsat,
+      key: 'shortage',
+      label: '목표 달성 필요 건수',
+      numMod: shortageMod !== 'none' ? shortageMod : null,
+      value: (() => {
+        if (shortage?.status === 'short') {
+          return (
+            <>
+              <strong className={numClass('no')}>{numKo(shortage.count)}</strong>
+              <span className="csx-month-kpi-unit">건</span>
+            </>
+          );
+        }
+        if (shortage?.status === 'met') {
+          return <strong className={numClass('met')}>달성</strong>;
+        }
+        if (shortage?.status === 'noTarget') {
+          return <strong className="csx-stat-num csx-stat-num--muted">목표 없음</strong>;
+        }
+        return <strong className="csx-stat-num">—</strong>;
+      })(),
+      filter: DEFAULT_MODAL_FILTERS,
     },
+  ];
+
+  const focusItems = [
     {
       key: 'five',
       label: '5대도시',
-      sub: '5대도시(Y)',
+      sub: '',
       field: 'fiveMajorCitiesPct',
       mod: 'five',
       Icon: MapPinned,
       filter: RATE_CARD_FILTERS.five,
+      denom: focusMetrics.fiveEligible,
+      numer: focusMetrics.fiveNum,
+      denomLabel: '전체 접수',
+      numerLabel: '해당 건수',
     },
     {
       key: 'gen',
       label: '5060',
-      sub: '5060(Y)',
+      sub: '',
       field: 'gen5060Pct',
       mod: 'gen',
       Icon: UserCircle2,
       filter: RATE_CARD_FILTERS.gen,
+      denom: focusMetrics.genEligible,
+      numer: focusMetrics.genNum,
+      denomLabel: '전체 접수',
+      numerLabel: '해당 건수',
     },
     {
       key: 'solve',
       label: '문제해결',
-      sub: '문제해결(Y)',
+      sub: '',
       field: 'problemResolvedPct',
       mod: 'solve',
       Icon: CheckCircle2,
       filter: RATE_CARD_FILTERS.solve,
+      denom: focusMetrics.problemDenom,
+      numer: focusMetrics.problemNum,
+      denomLabel: '전체 접수',
+      numerLabel: '해당 건수',
     },
   ];
 
-  const rightItems = items.filter((it) => it.key !== 'sat' && it.key !== 'unsat');
-  const satPctRaw = hasBase ? toNum(d.monthlyActualPct) : null;
-  const unsatPctRaw = hasBase ? toNum(d.unsatisfiedPct) : null;
-  const satPct = satPctRaw == null || Number.isNaN(satPctRaw) ? null : Math.min(100, Math.max(0, satPctRaw));
-  const unsatPct = unsatPctRaw == null || Number.isNaN(unsatPctRaw) ? null : Math.min(100, Math.max(0, unsatPctRaw));
-
-  const renderCard = (it) => {
+  const renderFocusCard = (it) => {
     const Icon = it.Icon;
     const raw = hasBase ? toNum(d[it.field]) : null;
     const display = raw == null || Number.isNaN(raw) ? '—' : `${fmt(raw)}%`;
     const width = raw != null && !Number.isNaN(raw) ? Math.min(100, Math.max(0, raw)) : 0;
+    const focusMet = computeFocusMetricMet(raw, targetPct);
+    const statusMod = focusMet === true ? 'met' : focusMet === false ? 'no' : 'none';
+
+    const formulaText = (() => {
+      if (!hasBase) return null;
+      if (it.denom == null || it.numer == null) {
+        if (!focusMetrics.hasRowDetail) return null;
+        return '해당 0건';
+      }
+      const fMod = statusMod !== 'none' ? statusMod : null;
+      return (
+        <>
+          {it.denomLabel}{' '}
+          <strong className={numClass(fMod)}>{numKo(it.denom)}</strong>건
+          <span className="csx-rate-card-formula-sep" aria-hidden>·</span>
+          {it.numerLabel}{' '}
+          <strong className={numClass(fMod)}>{numKo(it.numer)}</strong>건
+        </>
+      );
+    })();
 
     return (
       <li key={it.key} className="csx-rate-deck-item">
@@ -1447,7 +1686,7 @@ function SatisfactionRateDeck({ data, received, onOpenFiltered }) {
           <span className="csx-rate-card-main">
             <span className="csx-rate-card-top">
               <span className="csx-rate-card-label">{it.label}</span>
-              <span className="csx-rate-card-pct" title={`${it.sub} ÷ 이번 달 평가 건수`}>
+              <span className={`csx-rate-card-pct csx-rate-card-pct--${statusMod}`} title={it.sub}>
                 {display}
               </span>
             </span>
@@ -1457,6 +1696,9 @@ function SatisfactionRateDeck({ data, received, onOpenFiltered }) {
                 <span className="csx-rate-meter-fill" style={{ width: `${width}%` }} />
               </span>
             ) : null}
+            {formulaText ? (
+              <span className="csx-rate-card-formula">{formulaText}</span>
+            ) : null}
           </span>
         </button>
       </li>
@@ -1464,70 +1706,24 @@ function SatisfactionRateDeck({ data, received, onOpenFiltered }) {
   };
 
   return (
-    <div className="csx-rate-deck-group-wrap">
-      <section className="csx-rate-group csx-rate-group--left" aria-label="만족/불만족">
-        <h3 className="csx-rate-group-title">만족/불만족</h3>
-        <div className="csx-satmix-grid" role="group" aria-label="만족 및 불만족 비율">
-          <button
-            type="button"
-            className="csx-satmix-tile csx-satmix-tile--sat"
-            onClick={() => onOpenFiltered(RATE_CARD_FILTERS.sat)}
-          >
-            <span className="csx-satmix-tile-icon" aria-hidden>
-              <ThumbsUp size={20} strokeWidth={2.15} />
-            </span>
-            <span className="csx-satmix-tile-main">
-              <span className="csx-satmix-tile-top">
-                <span className="csx-satmix-tile-label">만족</span>
-                <span className="csx-satmix-tile-pct" title="만족(Y) ÷ 이번 달 평가 건수">
-                  {satPct == null ? '—' : `${fmt(satPct)}%`}
-                </span>
-              </span>
-              <span className="csx-satmix-tile-sub">만족(Y)</span>
-              {hasBase && satPct != null ? (
-                <span className="csx-satmix-tile-meter" aria-hidden>
-                  <span
-                    className="csx-satmix-tile-meter-fill csx-satmix-tile-meter-fill--sat"
-                    style={{ width: `${satPct}%` }}
-                  />
-                </span>
-              ) : null}
-            </span>
-          </button>
-          <button
-            type="button"
-            className="csx-satmix-tile csx-satmix-tile--unsat"
-            onClick={() => onOpenFiltered(RATE_CARD_FILTERS.unsat)}
-          >
-            <span className="csx-satmix-tile-icon" aria-hidden>
-              <ThumbsDown size={20} strokeWidth={2.15} />
-            </span>
-            <span className="csx-satmix-tile-main">
-              <span className="csx-satmix-tile-top">
-                <span className="csx-satmix-tile-label">불만족</span>
-                <span className="csx-satmix-tile-pct" title="불만족(N) ÷ 이번 달 평가 건수">
-                  {unsatPct == null ? '—' : `${fmt(unsatPct)}%`}
-                </span>
-              </span>
-              <span className="csx-satmix-tile-sub">불만족(N)</span>
-              {hasBase && unsatPct != null ? (
-                <span className="csx-satmix-tile-meter" aria-hidden>
-                  <span
-                    className="csx-satmix-tile-meter-fill csx-satmix-tile-meter-fill--unsat"
-                    style={{ width: `${unsatPct}%` }}
-                  />
-                </span>
-              ) : null}
-            </span>
-          </button>
-        </div>
-      </section>
-      <section className="csx-rate-group csx-rate-group--right" aria-label="중점 항목">
-        <h3 className="csx-rate-group-title">5대도시 · 5060 · 문제해결</h3>
-        <ul className="csx-rate-deck csx-rate-deck--right">
-          {rightItems.map(renderCard)}
-        </ul>
-      </section>
+    <div className="csx-rate-deck-group-wrap csx-rate-deck-group-wrap--row">
+      <ul className="csx-month-kpi-strip" aria-label="당월 평가·목표">
+        {monthKpiCards.map((card) => (
+          <li key={card.key} className="csx-month-kpi-item">
+            <button
+              type="button"
+              className="csx-month-kpi-stat"
+              onClick={() => onOpenFiltered(card.filter)}
+            >
+              <span className="csx-month-kpi-label">{card.label}</span>
+              <span className="csx-month-kpi-value">{card.value}</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+      <ul className="csx-rate-deck csx-rate-deck--focus" aria-label="중점추진과제">
+        {focusItems.map(renderFocusCard)}
+      </ul>
     </div>
   );
 }
@@ -1596,9 +1792,18 @@ function ReceptionFocusSection({
   data,
   onShowAll,
   onOpenFiltered,
+  memberRowsData,
+  month,
 }) {
   const d = data ?? {};
   const received = toNum(d.receivedCount ?? d.totalSamples, 0) ?? 0;
+  const target = toNum(d.monthlyTargetPct ?? d.target);
+  const met = computeMet(d);
+  const shortage = computeShortageVsTarget(d);
+  const intakeStats = useMemo(
+    () => getMonthIntakeStats(memberRowsData, month, d),
+    [memberRowsData, month, d],
+  );
 
   return (
     <section
@@ -1617,6 +1822,12 @@ function ReceptionFocusSection({
         data={d}
         received={received}
         onOpenFiltered={onOpenFiltered}
+        memberRowsData={memberRowsData}
+        month={month}
+        shortage={shortage}
+        target={target}
+        intakeStats={intakeStats}
+        met={met}
       />
 
       <UnsatisfiedTypeDeck data={d} />
@@ -1755,6 +1966,13 @@ export default function CsSatisfactionPage() {
   );
   const modalSelectedBucket = modalDateIndex >= 0 ? modalDateBuckets[modalDateIndex] : null;
 
+  const teamDaySummaryQuery = useQuery({
+    queryKey: ['cs-satisfaction-team-day-summary', user?.skid, modalDate],
+    queryFn: () => fetchCsSatisfactionTeamDaySummary(user.skid, modalDate),
+    enabled: showModal && !!user?.skid && modalDate != null && modalDate !== '',
+    staleTime: 30_000,
+  });
+
   const modalFilteredRows = useMemo(() => {
     const rowsInDate = modalSelectedBucket?.rows ?? [];
     return rowsInDate.filter((r) => {
@@ -1839,6 +2057,8 @@ export default function CsSatisfactionPage() {
           </section>
           <ReceptionFocusSection
             data={satData}
+            month={month}
+            memberRowsData={memberRowsQuery.data}
             onShowAll={() => {
               setModalYnFilters({ ...DEFAULT_MODAL_FILTERS });
               setShowModal(true);
@@ -1870,9 +2090,7 @@ export default function CsSatisfactionPage() {
                 <h3 className="adm-sat-row-modal-title">
                   {user?.name ?? user?.skid} 접수 상세
                 </h3>
-                <p className="adm-sat-row-modal-sub">
-                  {year}년 전체 · 총 {numKo(memberRowsQuery.data?.totalCount ?? 0)}건
-                </p>
+                <p className="adm-sat-row-modal-sub">{year}년 접수 상세</p>
               </div>
               <div className="adm-sat-row-modal-month-nav">
                 <button
@@ -1927,16 +2145,11 @@ export default function CsSatisfactionPage() {
                 <p className="adm-sat-query-empty">해당 연도 접수 내역이 없습니다.</p>
               ) : (
                 <div className="adm-sat-member-month-bucket">
-                  <div className="adm-sat-modal-context-bar">
-                    <div className="adm-sat-modal-context-date">
-                      <span className="adm-sat-modal-context-kicker">조회 일자</span>
-                      <strong>{modalSelectedBucket ? modalSelectedBucket.date : '—'}</strong>
-                    </div>
-                    <div className="adm-sat-modal-context-meta">
-                      <span className="adm-sat-modal-context-pill">필터 결과 {numKo(modalFilteredRows.length)}건</span>
-                      <span className="adm-sat-modal-context-pill">페이지 {modalPage} / {modalTotalPages}</span>
-                    </div>
-                  </div>
+                  <CsSatisfactionModalDayStats
+                    rows={modalSelectedBucket?.rows ?? []}
+                    personalTargetPercent={satData?.monthlyTargetPct ?? satData?.target ?? null}
+                    deptSummary={teamDaySummaryQuery.data ?? null}
+                  />
                   <div className="adm-table-wrap adm-sat-modal-table-wrap">
                     <table className="adm-table adm-sat-modal-rows-table">
                       <thead>

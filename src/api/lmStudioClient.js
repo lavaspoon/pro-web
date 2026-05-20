@@ -123,7 +123,7 @@ export async function fetchCsCoachScenario({
 }
 
 /**
- * YOU 프로 상위 구성원(랭킹 1~3위) — 선정 포인트 + 접수 제안
+ * YOU 프로 상위 구성원(랭킹 1~3위) — 인증 포인트 + 접수 제안
  */
 export async function fetchTopMembersSpotlightInsight({ items, signal }) {
   const top3 = (items ?? []).slice(0, 3);
@@ -133,7 +133,7 @@ export async function fetchTopMembersSpotlightInsight({ items, signal }) {
       `【${rank}위】`,
       `- 제목: ${it.title || '(없음)'}`,
       `- 응대 내용: ${String(it.description || '').slice(0, 280) || '(없음)'}`,
-      `- 관리자 선정 사유(참고): ${String(it.judgmentReason || '').slice(0, 180) || '(없음)'}`,
+      `- 관리자 평가 비고(참고): ${String(it.judgmentReason || '').slice(0, 180) || '(없음)'}`,
     ].join('\n');
   });
 
@@ -141,13 +141,13 @@ export async function fetchTopMembersSpotlightInsight({ items, signal }) {
     'YOU PRO 우수 상담 사례 분석가. 제공 데이터만 근거로 사실·패턴을 설명합니다.',
     '실명·부서·개인 식별 금지.',
     'JSON만: {"entries":[{"rank":1,"selectionReason":"…"}],"recentTrend":"…","trendBullets":["…","…"]}',
-    'entries: 1~3위 각 1개. selectionReason: 선정 포인트 1문장, 48자 내외.',
-    'recentTrend: 최근 선정된 접수(제목·응대 내용)에서 보이는 공통 패턴을 1~2문장으로 요약. 사실만, 존댓말, 80자 내외.',
-    'trendBullets: 2개. 제목·본문 작성에서 요즘 잘 선정되는 방향을 각 1짧은 문장(28자 내외). 번호·따옴표 인용 금지.',
+    'entries: 1~3위 각 1개. selectionReason: 인증 포인트 1문장, 48자 내외.',
+    'recentTrend: 공통 패턴 1문장 요약. 사실만, 존댓말, 52자 내외.',
+    'trendBullets: 1개. 접수 작성 팁 1짧은 문장(24자 내외). 번호·따옴표 인용 금지.',
   ].join(' ');
 
   const user = [
-    '랭킹 1~3위 최근 선정 사례(1위=가장 최근). entries·recentTrend·trendBullets 작성.',
+    '랭킹 1~3위 최근 인증 사례(1위=가장 최근). entries·recentTrend·trendBullets 작성.',
     '',
     ...blocks,
   ].join('\n');

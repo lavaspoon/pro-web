@@ -558,7 +558,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
   gap: 10px 14px;
-  align-items: stretch;
+  align-items: start;
   width: 100%;
 }
 
@@ -578,7 +578,6 @@
   border: none;
   opacity: 1;
   gap: 6px;
-  min-height: 100%;
 }
 
 .hp-home .hp-month-split-col--board .hp-month-split-col-head--sub {
@@ -620,36 +619,176 @@
 
 /* ── 상위 구성원 패널 (랭킹 로테이션 + CS 접수 제안) ── */
 .hp-home .hp-top-panel {
-  flex: 1;
+  flex: 0 0 auto;
   min-width: 0;
-  min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
 }
 
 .hp-home .hp-top-rank-zone {
   min-width: 0;
 }
 
-.hp-home .hp-top-rank-kicker {
+.hp-home .hp-top-rank-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
   margin-bottom: 8px;
 }
 
-.hp-home .hp-top-rank-ticker {
+.hp-home .hp-top-rank-kicker {
+  margin: 0;
+}
+
+.hp-home .hp-top-rank-range {
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #0f766e;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.hp-home .hp-top-rank-table-wrap {
   min-width: 0;
-  /* 1~3위 전환 시 카드 높이 고정 — 레이아웃 점프 방지 */
-  min-height: 178px;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  background: #ffffff;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
-.hp-home .hp-top-rank-ticker-slide {
-  animation: hp-board-ticker-in 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+.hp-home .hp-top-rank-table {
+  width: 100%;
+  border-collapse: collapse;
+  border-spacing: 0;
+  table-layout: fixed;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .hp-home .hp-top-rank-ticker-slide {
-    animation: none;
-  }
+.hp-home .hp-top-rank-table-caption {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.hp-home .hp-top-rank-table thead th {
+  padding: 9px 5px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+  color: #86868b;
+  text-align: center;
+  vertical-align: middle;
+  background: rgba(248, 248, 250, 0.96);
+  border-bottom: 0.5px solid rgba(60, 60, 67, 0.12);
+}
+
+.hp-home .hp-top-rank-table thead th:nth-child(1) {
+  width: 12%;
+}
+
+.hp-home .hp-top-rank-table thead th:nth-child(2) {
+  width: 22%;
+}
+
+.hp-home .hp-top-rank-table thead th:nth-child(3) {
+  width: 18%;
+}
+
+.hp-home .hp-top-rank-table thead th:nth-child(4) {
+  width: 26%;
+}
+
+.hp-home .hp-top-rank-table thead th:nth-child(5) {
+  width: 14%;
+}
+
+.hp-home .hp-top-rank-table tbody td {
+  padding: 8px 5px;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: #1d1d1f;
+  text-align: center;
+  vertical-align: middle;
+  border-bottom: 0.5px solid rgba(60, 60, 67, 0.08);
+}
+
+.hp-home .hp-top-rank-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.hp-home .hp-top-rank-row {
+  background: #ffffff;
+  transition: background 0.15s ease;
+}
+
+.hp-home .hp-top-rank-row:hover td {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.hp-home .hp-top-rank-row--first .hp-top-rank-num {
+  color: #bf5f00;
+}
+
+.hp-home .hp-top-rank-cell--rank {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.hp-home .hp-top-rank-num {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #1d1d1f;
+}
+
+.hp-home .hp-top-rank-suffix {
+  margin-left: 1px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #86868b;
+}
+
+.hp-home .hp-top-rank-cell--center,
+.hp-home .hp-top-rank-cell--name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #3a3a3c;
+}
+
+.hp-home .hp-top-rank-cell--sat {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: #0071e3;
+  font-weight: 600;
+  font-size: 11.5px;
+}
+
+.hp-home .hp-top-rank-cell--cert {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.hp-home .hp-top-rank-cell--cert strong {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #1d1d1f;
+}
+
+.hp-home .hp-top-rank-unit {
+  margin-left: 1px;
+  font-size: 10.5px;
+  font-weight: 500;
+  color: #86868b;
 }
 
 .hp-home .hp-top-rank-dots {
@@ -748,6 +887,42 @@
   font-size: 12.5px;
   line-height: 1.48;
   color: #6b7684;
+}
+
+.hp-home .hp-top-trend--compact {
+  gap: 5px;
+  padding: 7px 9px;
+}
+
+.hp-home .hp-top-trend--compact .hp-top-trend-label {
+  font-size: 10.5px;
+}
+
+.hp-home .hp-top-trend--compact .hp-top-trend-summary {
+  font-size: 12px;
+  line-height: 1.42;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.hp-home .hp-top-trend--compact .hp-top-trend-bullets {
+  gap: 0;
+}
+
+.hp-home .hp-top-trend--compact .hp-top-trend-bullet {
+  font-size: 11.5px;
+  line-height: 1.38;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  overflow: hidden;
+}
+
+.hp-home .hp-top-trend--compact.hp-top-trend--loading {
+  gap: 5px;
+  padding: 7px 9px;
 }
 
 .hp-home .hp-top-suggest-trend .csx-toss-ai-fallback {
@@ -1133,6 +1308,103 @@
   border-top-color: #ebe9e6;
 }
 
+/* 최근 접수 — 최대 3건, 슬롯 높이 고정 */
+.hp-home .hp-month-preview--fixed {
+  --hp-preview-slot-h: 36px;
+  --hp-preview-slot-gap: 6px;
+  --hp-preview-body-h: calc(3 * var(--hp-preview-slot-h) + 2 * var(--hp-preview-slot-gap));
+}
+
+.hp-home .hp-month-preview-body {
+  min-height: var(--hp-preview-body-h);
+  display: flex;
+  flex-direction: column;
+}
+
+.hp-home .hp-month-preview-list--fixed {
+  flex: 1;
+  min-height: var(--hp-preview-body-h);
+  gap: var(--hp-preview-slot-gap);
+}
+
+.hp-home .hp-month-preview-slot {
+  flex: 0 0 var(--hp-preview-slot-h);
+  min-height: var(--hp-preview-slot-h);
+  max-height: var(--hp-preview-slot-h);
+}
+
+.hp-home .hp-month-preview--fixed .hp-month-preview-row {
+  height: 100%;
+  min-height: var(--hp-preview-slot-h);
+  box-sizing: border-box;
+}
+
+.hp-home .hp-month-preview--fixed .hp-month-preview-empty {
+  flex: 1;
+  min-height: var(--hp-preview-body-h);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+}
+
+/* 나의 접수 — 접수 제안 (흰 배경 + 푸른 선 구분) */
+.hp-home .hp-month-split-col--mine .hp-mine-suggest {
+  --hp-suggest-blue: #2563eb;
+  --hp-suggest-blue-deep: #1d4ed8;
+  --hp-suggest-blue-border: rgba(37, 99, 235, 0.34);
+  --hp-suggest-blue-soft: rgba(37, 99, 235, 0.06);
+  margin-top: 10px;
+  padding: 10px 11px 9px;
+  border-radius: 10px;
+  border: 1px solid var(--hp-suggest-blue-border);
+  background: #ffffff;
+  box-shadow: none;
+}
+
+.hp-home .hp-month-split-col--mine .hp-mine-suggest .csx-ai-insight-trend-kicker {
+  margin-bottom: 7px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--hp-suggest-blue-border);
+  color: var(--hp-suggest-blue-deep);
+}
+
+.hp-home .hp-month-split-col--mine .hp-mine-suggest .csx-toss-insight {
+  gap: 0;
+}
+
+.hp-home .hp-month-split-col--mine .hp-mine-suggest .hp-top-suggest-why {
+  gap: 6px;
+}
+
+.hp-home .hp-month-split-col--mine .hp-mine-suggest .hp-top-suggest-why-main {
+  color: #1e3a5f;
+}
+
+.hp-home .hp-month-split-col--mine .hp-mine-suggest .hp-top-suggest-why .csx-toss-why-ico {
+  color: var(--hp-suggest-blue);
+}
+
+.hp-home .hp-month-split-col--mine .hp-mine-suggest .hp-top-trend {
+  padding: 6px 8px;
+  background: var(--hp-suggest-blue-soft);
+  border: 1px solid var(--hp-suggest-blue-border);
+}
+
+.hp-home .hp-month-split-col--mine .hp-mine-suggest .hp-top-trend-label {
+  color: var(--hp-suggest-blue-deep);
+}
+
+.hp-home .hp-month-split-col--mine .hp-mine-suggest .csx-toss-foot {
+  margin-top: 8px;
+  padding-top: 7px;
+  border-top: 1px solid var(--hp-suggest-blue-border);
+}
+
+.hp-home .hp-month-split-col--mine .hp-mine-suggest .csx-toss-ai-badge {
+  color: var(--hp-suggest-blue-deep);
+}
+
 .hp-home .hp-month-split-col--mine .hp-month-preview-label {
   font-size: 13.5px;
   font-weight: 800;
@@ -1172,7 +1444,6 @@
     padding: 8px 10px;
     border-bottom: none;
     border-right: none;
-    min-height: 132px;
   }
 
   .hp-home .hp-month-split-col-month {
@@ -1781,21 +2052,27 @@ button.hp-month-block-item--btn:focus-visible {
   color: #e08800;
 }
 
-.hp-month-block-item--rejected {
-  background: #f9fafb;
-  border-color: #eaecf0;
+.hp-month-block-item--rank {
+  background: linear-gradient(160deg, #f5f3ff 0%, #ede9fe 100%);
+  border-color: rgba(109, 40, 217, 0.18);
+  cursor: default;
 }
 
-.hp-month-block-item--rejected .hp-month-block-item-label-top {
-  color: #8b95a1;
+.hp-month-block-item--rank .hp-month-block-item-label-top {
+  color: #5b21b6;
 }
 
-.hp-month-block-item--rejected .hp-month-block-val {
-  color: #b0b8c1;
+.hp-month-block-item--rank .hp-month-block-val {
+  color: #6d28d9;
 }
 
-.hp-month-block-item--rejected .hp-month-block-unit {
-  color: #b0b8c1;
+.hp-month-block-item--rank .hp-month-block-unit {
+  color: rgba(109, 40, 217, 0.72);
+}
+
+.hp-home .hp-month-split-col--mine .hp-month-block-item--rank {
+  padding: 8px 10px;
+  border-radius: 9px;
 }
 
 .hp-month-block-remain {
@@ -2050,6 +2327,13 @@ button.hp-month-block-item--btn:focus-visible {
   color: #dc2626;
 }
 
+.hp-month-cs--achievement {
+  background: rgba(0, 113, 227, 0.08);
+  border: 1px solid rgba(0, 113, 227, 0.22);
+  color: #0071e3;
+  font-variant-numeric: tabular-nums;
+}
+
 /* 인증 마크 스타일 — 아이콘 + 텍스트, 약간의 광택 */
 .hp-month-cs--seal {
   gap: 4px;
@@ -2075,6 +2359,14 @@ button.hp-month-block-item--btn:focus-visible {
   background: linear-gradient(180deg, rgba(239, 68, 68, 0.14), rgba(239, 68, 68, 0.07));
   border-color: rgba(239, 68, 68, 0.38);
   color: #b91c1c;
+}
+
+.hp-month-cs--seal.hp-month-cs--achievement {
+  background: linear-gradient(180deg, rgba(0, 113, 227, 0.12), rgba(0, 113, 227, 0.05));
+  border-color: rgba(0, 113, 227, 0.28);
+  color: #0071e3;
+  text-transform: none;
+  letter-spacing: -0.02em;
 }
 
 .hp-month-strip:hover .hp-month-strip-link {

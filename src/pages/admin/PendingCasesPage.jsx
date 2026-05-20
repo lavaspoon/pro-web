@@ -17,6 +17,11 @@ import { fetchAdminLeafTeams, fetchAdminReviewQueue, fetchCaseForReview } from '
 import CaseReviewModal from './CaseReviewModal';
 import { formatCaseCallDateTime } from '../../utils/caseDisplay';
 import { mergeSecondDepthOptions } from '../../utils/adminSecondDepth';
+import {
+  buildTeamHierarchyMeta,
+  buildTeamHierarchyPath,
+  compareTeamHierarchy,
+} from '../../utils/teamHierarchy';
 import './DashboardPage.css';
 import './PendingCasesPage.css';
 import '../../pages/member/CaseListPage.css';
@@ -32,8 +37,8 @@ function formatDate(dateStr) {
 function formatCaseStatus(status) {
   const s = (status && String(status).toLowerCase()) || '';
   if (s === 'pending') return '검토대기';
-  if (s === 'selected') return '선정';
-  if (s === 'rejected') return '비선정';
+  if (s === 'selected') return '인증';
+  if (s === 'rejected') return '미인증';
   return status ? String(status) : '—';
 }
 
@@ -169,22 +174,57 @@ export default function PendingCasesPage() {
     [casesInMonth]
   );
 
+  const skidToTeamHierarchy = useMemo(() => {
+    const map = new Map();
+    for (const t of teamsInScope) {
+      const info = {
+        centerName: t.centerName ?? '',
+        groupName: t.groupName ?? '',
+        teamName: t.name ?? '',
+        hierarchyPath: buildTeamHierarchyPath({
+          centerName: t.centerName,
+          groupName: t.groupName,
+          teamName: t.name,
+        }),
+        hierarchyMeta: buildTeamHierarchyMeta({
+          centerName: t.centerName,
+          groupName: t.groupName,
+        }),
+      };
+      for (const m of t.members ?? []) {
+        if (m?.id) map.set(m.id, info);
+      }
+    }
+    return map;
+  }, [teamsInScope]);
+
   const teamRows = useMemo(() => {
-    const teams = teamsInScope;
-    const rows = teams.map((t) => {
+    const rows = teamsInScope.map((t) => {
       const skids = new Set((t.members ?? []).map((m) => m.id));
       const list = casesForTable.filter((c) => skids.has(c.skid));
       const pendingCount = list.filter((c) => String(c.status || '').toLowerCase() === 'pending').length;
+      const teamName = t.name ?? '';
       return {
         key: `leaf-${t.id}`,
-        teamName: t.name,
+        teamName,
+        centerName: t.centerName ?? '',
+        groupName: t.groupName ?? '',
+        hierarchyPath: buildTeamHierarchyPath({
+          centerName: t.centerName,
+          groupName: t.groupName,
+          teamName,
+        }),
+        hierarchyMeta: buildTeamHierarchyMeta({
+          centerName: t.centerName,
+          groupName: t.groupName,
+        }),
         deptId: t.id,
         pendingCount,
         judgedCount: Number(t.judgedCount ?? 0),
         cases: list,
       };
     });
-    rows.sort((a, b) => a.teamName.localeCompare(b.teamName, 'ko'));
+    rows.sort(compareTeamHierarchy);
     return rows;
   }, [teamsInScope, casesForTable]);
 
@@ -232,15 +272,18 @@ export default function PendingCasesPage() {
         return (a.id ?? 0) - (b.id ?? 0);
       }
       if (key === 'team') {
-        const ta = (a.teamName && String(a.teamName).trim()) || '미지정';
-        const tb = (b.teamName && String(b.teamName).trim()) || '미지정';
+        const ta =
+          skidToTeamHierarchy.get(a.skid)?.hierarchyPath ||
+          (a.teamName && String(a.teamName).trim()) ||
+          '미지정';
+        const tb =
+          skidToTeamHierarchy.get(b.skid)?.hierarchyPath ||
+          (b.teamName && String(b.teamName).trim()) ||
+          '미지정';
         return ta.localeCompare(tb, 'ko') * mul;
       }
       if (key === 'member') {
         return (a.memberName || '').localeCompare(b.memberName || '', 'ko') * mul;
-      }
-      if (key === 'title') {
-        return (a.title || '').localeCompare(b.title || '', 'ko') * mul;
       }
       if (key === 'submitted') {
         const ta = a.submittedAt ? new Date(a.submittedAt).getTime() : 0;
@@ -260,7 +303,7 @@ export default function PendingCasesPage() {
       return 0;
     });
     return list;
-  }, [isAllTeamsView, casesForTable, selectedTeam?.cases, tableSort]);
+  }, [isAllTeamsView, casesForTable, selectedTeam?.cases, tableSort, skidToTeamHierarchy]);
 
   const toggleSort = useCallback((key) => {
     setTableSort((prev) => {
@@ -309,7 +352,7 @@ export default function PendingCasesPage() {
           <div className="pending-header-body">
             <div className="adm-header-text">
               <p className="adm-identity-kicker">YOU PRO · 심사</p>
-              <h1 className="adm-title">검토 대기</h1>
+              <h1 className="adm-title">접수 현황</h1>
             </div>
             <div className="pending-header-actions">
               <div className="pending-header-stats" role="group" aria-label="센터별 검토 대기 건수">
@@ -413,7 +456,16 @@ export default function PendingCasesPage() {
                         aria-pressed={active}
                       >
                         <span className="tree-leaf-main">
-                          <span className="tree-leaf-name">{row.teamName}</span>
+                          <span className="tree-leaf-text">
+                            {row.hierarchyMeta ? (
+                              <span className="tree-leaf-path" title={row.hierarchyPath}>
+                                {row.hierarchyMeta}
+                              </span>
+                            ) : null}
+                            <span className="tree-leaf-name" title={row.hierarchyPath}>
+                              {row.teamName}
+                            </span>
+                          </span>
                           <span className="tree-leaf-stats">
                             <span className="tree-stat tree-stat--wait">대기 {row.pendingCount}</span>
                           </span>
@@ -435,7 +487,7 @@ export default function PendingCasesPage() {
                     <div className="pending-panel-head-text">
                       <span className="pending-panel-title-bar" aria-hidden />
                       <h2 className="pending-panel-title">
-                        {isAllTeamsView ? '사례 목록' : selectedTeam.teamName}
+                        {isAllTeamsView ? '사례 목록' : selectedTeam.hierarchyPath}
                       </h2>
                     </div>
                     <div className="pending-panel-head-right">
@@ -563,27 +615,6 @@ export default function PendingCasesPage() {
                           </th>
                           <th
                             scope="col"
-                            className="pending-th pending-th--title"
-                            aria-sort={
-                              tableSort.key === 'title'
-                                ? tableSort.direction === 'asc'
-                                  ? 'ascending'
-                                  : 'descending'
-                                : 'none'
-                            }
-                          >
-                            <button
-                              type="button"
-                              className="pending-th-btn"
-                              onClick={() => toggleSort('title')}
-                              aria-label="제목 기준 정렬"
-                            >
-                              <span>제목</span>
-                              <SortGlyph active={tableSort.key === 'title'} direction={tableSort.direction} />
-                            </button>
-                          </th>
-                          <th
-                            scope="col"
                             className="pending-th pending-th--date"
                             aria-sort={
                               tableSort.key === 'submitted'
@@ -640,15 +671,33 @@ export default function PendingCasesPage() {
                               <span className="pending-td-status-pill">{formatCaseStatus(c.status)}</span>
                             </td>
                             <td className="pending-td-team">
-                              <span className="pending-td-team-text" title={c.teamName || '미지정'}>
-                                {(c.teamName && String(c.teamName).trim()) || '미지정'}
-                              </span>
+                              {(() => {
+                                const hier = skidToTeamHierarchy.get(c.skid);
+                                const path =
+                                  hier?.hierarchyPath ||
+                                  (c.teamName && String(c.teamName).trim()) ||
+                                  '미지정';
+                                return (
+                                  <span className="pending-td-team-wrap" title={path}>
+                                    {hier?.hierarchyMeta ? (
+                                      <span className="pending-td-team-path">{hier.hierarchyMeta}</span>
+                                    ) : null}
+                                    <span className="pending-td-team-text">
+                                      {hier?.teamName ||
+                                        (c.teamName && String(c.teamName).trim()) ||
+                                        '미지정'}
+                                    </span>
+                                  </span>
+                                );
+                              })()}
                             </td>
                             <td className="pending-td-member">
                               <span className="pending-td-name">{c.memberName}</span>
-                            </td>
-                            <td className="pending-td-title">
-                              <span className="pending-td-title-text">{c.title}</span>
+                              {c.judgmentDraft && (
+                                <span className="pending-td-draft" title="임시저장된 평가">
+                                  임시
+                                </span>
+                              )}
                             </td>
                             <td className="pending-td-date">
                               <span className="pending-td-date-val">{formatDate(c.submittedAt)}</span>

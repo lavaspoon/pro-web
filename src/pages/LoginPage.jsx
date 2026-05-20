@@ -110,7 +110,7 @@ export default function LoginPage() {
 
         <div className="login-footer">
           <Award size={14} />
-          <span>연간 최대 36회 선정 · 월 최대 3회 · 연말 포상</span>
+          <span>연간 최대 36회 인증 · 월 최대 3회 · 연말 포상</span>
         </div>
       </div>
     </div>

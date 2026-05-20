@@ -14,12 +14,19 @@ import { fetchMyCases, fetchCaseDetail } from '../../api/memberApi';
 import StatusBadge from '../../components/common/StatusBadge';
 import AiInsight from '../../components/member/AiInsight';
 import { formatCaseCallDateTime } from '../../utils/caseDisplay';
+import { caseDescriptionExcerpt } from '../../utils/caseEvaluation';
 import '../../pages/member/CaseListPage.css';
 import '../../components/member/MemberCaseListModal.css';
 import '../../components/member/MemberCaseDetailModal.css';
 
-const STATUS_FILTER = ['전체', '대기중', '선정', '비선정'];
-const STATUS_MAP = { 대기중: 'pending', 선정: 'selected', 비선정: 'rejected' };
+const STATUS_FILTER = ['전체', '대기중', '인증', '미인증'];
+const STATUS_MAP = {
+  대기중: 'pending',
+  인증: 'selected',
+  미인증: 'rejected',
+  선정: 'selected',
+  비선정: 'rejected',
+};
 
 function formatDate(dateStr) {
   if (!dateStr) return '-';
@@ -98,7 +105,6 @@ function CaseDetailView({ caseId, onBack, onClose }) {
           <>
             <div className="detail-hero member-case-detail-hero">
               <div className="member-case-detail-title-row">
-                <h3 className="detail-title">{caseData.title}</h3>
                 <StatusBadge status={caseData.status} size="sm" />
               </div>
               <p className="detail-desc">{caseData.description}</p>
@@ -333,7 +339,7 @@ export default function AdminMemberCasesModal({ open, member, onClose }) {
                           <tr>
                             <th className="mct-col-no">#</th>
                             <th className="mct-col-status">상태</th>
-                            <th className="mct-col-title">사례 제목</th>
+                            <th className="mct-col-title">접수 내용</th>
                             <th className="mct-col-date">접수일</th>
                             <th className="mct-col-action" aria-hidden />
                           </tr>
@@ -352,7 +358,7 @@ export default function AdminMemberCasesModal({ open, member, onClose }) {
                               <td className="mct-status">
                                 <StatusBadge status={c.status} size="sm" />
                               </td>
-                              <td className="mct-title">{c.title}</td>
+                              <td className="mct-title">{caseDescriptionExcerpt(c.description)}</td>
                               <td className="mct-date">{formatDate(c.submittedAt)}</td>
                               <td className="mct-action" aria-hidden>
                                 <ChevronRight size={14} strokeWidth={2} />

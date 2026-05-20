@@ -11,14 +11,22 @@ import {
 import useAuthStore from '../../store/authStore';
 import { fetchMyCases } from '../../api/memberApi';
 import StatusBadge from '../common/StatusBadge';
+import { caseDescriptionExcerpt } from '../../utils/caseEvaluation';
 import { useMemberModalStore } from '../../store/memberModalStore';
 import MemberCaseDetailPanel from './MemberCaseDetailPanel';
 import '../../pages/member/CaseListPage.css';
 import './MemberSubmitModal.css';
 import './MemberCaseListModal.css';
 
-const STATUS_FILTER = ['전체', '대기중', '선정', '비선정'];
-const STATUS_MAP = { 대기중: 'pending', 선정: 'selected', 비선정: 'rejected' };
+const STATUS_FILTER = ['전체', '대기중', '인증', '미인증'];
+const STATUS_MAP = {
+  대기중: 'pending',
+  인증: 'selected',
+  미인증: 'rejected',
+  /** 이전 필터 키 호환 */
+  선정: 'selected',
+  비선정: 'rejected',
+};
 
 function formatDate(dateStr) {
   if (!dateStr) return '-';
@@ -97,7 +105,10 @@ export default function MemberCaseListModal() {
   }, [open, initialMonth]);
 
   useEffect(() => {
-    if (open) setActiveFilter(STATUS_FILTER.includes(initialFilter) ? initialFilter : '전체');
+    if (!open) return;
+    const normalized =
+      initialFilter === '선정' ? '인증' : initialFilter === '비선정' ? '미인증' : initialFilter;
+    setActiveFilter(STATUS_FILTER.includes(normalized) ? normalized : '전체');
   }, [open, initialFilter]);
 
   const { minMonthKey, maxMonthKey } = useMemo(() => {
@@ -247,7 +258,7 @@ export default function MemberCaseListModal() {
                       <tr>
                         <th className="mct-col-no">순번</th>
                         <th className="mct-col-status">상태</th>
-                        <th className="mct-col-title">사례 제목</th>
+                        <th className="mct-col-title">접수 내용</th>
                         <th className="mct-col-date">접수일</th>
                         <th className="mct-col-action" aria-hidden />
                       </tr>
@@ -266,7 +277,7 @@ export default function MemberCaseListModal() {
                           <td className="mct-status">
                             <StatusBadge status={c.status} size="sm" />
                           </td>
-                          <td className="mct-title">{c.title}</td>
+                          <td className="mct-title">{caseDescriptionExcerpt(c.description)}</td>
                           <td className="mct-date">{formatDate(c.submittedAt)}</td>
                           <td className="mct-action" aria-hidden>
                             <ChevronRight size={14} strokeWidth={2} />

@@ -9,7 +9,7 @@ export default function AiInsight({ judgmentReason, caseStatus, judgedAtLabel })
   const isRejected = caseStatus === 'rejected';
 
   const VerdictIcon = isSelected ? CheckCircle : isRejected ? XCircle : AlertCircle;
-  const verdictLabel = isSelected ? '선정' : isRejected ? '비선정' : '검토 필요';
+  const verdictLabel = isSelected ? '인증' : isRejected ? '미인증' : '검토 필요';
   const variant = isSelected ? 'yes' : isRejected ? 'no' : 'neutral';
 
   const reasonText = judgmentReason != null ? String(judgmentReason).trim() : '';
@@ -17,13 +17,11 @@ export default function AiInsight({ judgmentReason, caseStatus, judgedAtLabel })
 
   return (
     <div className={`ai-unified-card ai-unified-card--${variant}`}>
-      {/* 헤더: 아이콘 + 선정여부 + 판정일 */}
       <div className="ai-unified-header">
         <div className="ai-unified-icon" aria-hidden>
           <VerdictIcon size={24} strokeWidth={2.2} />
         </div>
         <div className="ai-unified-header-body">
-          <span className="ai-unified-label">선정 여부</span>
           <strong className="ai-unified-verdict">{verdictLabel}</strong>
         </div>
         {judgedAtLabel && (
@@ -34,12 +32,9 @@ export default function AiInsight({ judgmentReason, caseStatus, judgedAtLabel })
         )}
       </div>
 
-      {/* 사유 */}
       {hasReason && (
         <div className="ai-unified-reason">
-          <p className="ai-unified-reason-label">
-            {isSelected ? '선정 사유' : '비선정 사유'}
-          </p>
+          <p className="ai-unified-reason-label">평가 비고</p>
           <p className="ai-unified-reason-text">{reasonText}</p>
         </div>
       )}

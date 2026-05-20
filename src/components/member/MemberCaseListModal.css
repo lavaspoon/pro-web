@@ -2,10 +2,10 @@
 .member-case-list-root .member-modal-panel {
   display: flex;
   flex-direction: column;
-  max-width: min(96vw, 800px);
-  width: min(96vw, 800px);
+  max-width: min(96vw, 920px);
+  width: min(96vw, 920px);
   min-height: 0;
-  max-height: min(90vh, 760px);
+  max-height: min(92vh, 820px);
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }

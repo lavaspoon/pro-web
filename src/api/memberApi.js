@@ -56,6 +56,17 @@ export const fetchMemberSatisfaction = async ({ skid, year, month }) => {
 };
 
 /**
+ * 소속 리프 팀의 특정 일자 만족도 집계
+ * GET /api/member/satisfaction/team-day-summary?skid=&date=
+ */
+export const fetchCsSatisfactionTeamDaySummary = async (skid, date) => {
+  const { data } = await axiosInstance.get('/api/member/satisfaction/team-day-summary', {
+    params: { skid, date },
+  });
+  return data;
+};
+
+/**
  * 구성원 당월 중점추진과제(5대도시·5060·문제해결) Y 건수
  * GET /api/member/satisfaction/focus-tasks?skid=&year=&month=
  */

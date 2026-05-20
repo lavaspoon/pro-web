@@ -17,11 +17,13 @@ import {
   fetchCsSatisfactionCenterMonthDetail,
   fetchCsSatisfactionDashboardKpis,
   fetchCsSatisfactionMemberMonthlyRows,
+  fetchCsSatisfactionScopeDaySummary,
   fetchCsSatisfactionSummary,
   fetchCsSatisfactionExcludeLog,
   excludeCsSatisfactionEvalRange,
 } from '../../api/adminApi';
 import { mergeSecondDepthOptions } from '../../utils/adminSecondDepth';
+import CsSatisfactionModalDayStats from '../../components/cs/CsSatisfactionModalDayStats';
 import Skeleton from '../../components/common/Skeleton';
 import './DashboardPage.css';
 import './TeamDetailPage.css';
@@ -97,6 +99,70 @@ function normalizeDatetimeLocalForApi(s) {
 function pct(v) {
   if (v == null || Number.isNaN(Number(v))) return '—';
   return `${Number(v).toFixed(1)}%`;
+}
+
+/**
+ * 문제해결 역산 달성률(%) — 목표는 허용 상한(이하여야 유리). 실적이 목표를 넘으면 감점.
+ * 백엔드 problemInverseAchievementPct 와 동일.
+ */
+function problemInverseAchievementPct(actualResolvedPct, targetResolvedPct) {
+  if (actualResolvedPct == null || targetResolvedPct == null) return null;
+  const t = Number(targetResolvedPct);
+  const a = Number(actualResolvedPct);
+  if (!Number.isFinite(t) || !Number.isFinite(a) || t <= 0 || t >= 100) return null;
+  if (a <= t) return 100;
+  return Math.round((1000 * t) / a) / 10;
+}
+
+/** 스킬 월 목표 대비 만족도 달성률(%) */
+function satisfactionAchievementFromTarget(actualRate, targetPercent) {
+  if (actualRate == null || targetPercent == null) return null;
+  const t = Number(targetPercent);
+  const a = Number(actualRate);
+  if (!Number.isFinite(t) || !Number.isFinite(a) || t <= 0) return null;
+  return Math.round((1000 * a) / t) / 10;
+}
+
+function formatMemberDetailPeriodHint(detail) {
+  if (detail?.statFrom && detail?.statTo) {
+    return `당월 · ${detail.statFrom} ~ ${detail.statTo} (KST${
+      detail.rollingThroughYesterday ? ' · 1일이면 전월, 아니면 당월 1일~전일' : ''
+    })`;
+  }
+  return '당월 기준';
+}
+
+/** 목표 대비 달성 — achievementRate 우선, 없으면 actual ≥ target (높을수록 유리 지표) */
+function resolveTargetMet({ actualPct, targetPct, achievementRate }) {
+  if (achievementRate != null && !Number.isNaN(Number(achievementRate))) {
+    return Number(achievementRate) >= 100;
+  }
+  if (actualPct == null || targetPct == null || Number.isNaN(Number(actualPct))) {
+    return null;
+  }
+  const t = Number(targetPct);
+  if (!Number.isFinite(t) || t <= 0) return null;
+  return Number(actualPct) >= t;
+}
+
+function SatPctCell({ value, targetPct, achievementRate }) {
+  const met = resolveTargetMet({ actualPct: value, targetPct, achievementRate });
+  const toneClass =
+    met == null ? '' : met ? 'adm-sat-pct--ok' : 'adm-sat-pct--no';
+  return (
+    <span className={toneClass ? `adm-sat-pct ${toneClass}` : undefined}>
+      {pct(value)}
+    </span>
+  );
+}
+
+function pickOverallTargetPercent(rows) {
+  const list = rows ?? [];
+  const row =
+    list.find((r) => String(r?.scopeKey) === 'OVERALL') ??
+    list.find((r) => String(r?.scopeName ?? '').trim() === '종합');
+  const v = row?.targetPercent;
+  return v != null && !Number.isNaN(Number(v)) ? Number(v) : null;
 }
 
 function num(v) {
@@ -412,6 +478,38 @@ export default function AdminSatisfactionPage() {
   }, [filteredRows]);
 
   const summaryTotals = useMemo(() => computeSummaryTotals(filteredRows), [filteredRows]);
+
+  const annualMetricTargets = useMemo(
+    () => ({
+      fiveMajor: pickOverallTargetPercent(kpiData?.fiveMajorCities),
+      gen5060: pickOverallTargetPercent(kpiData?.gen5060),
+      problem: pickOverallTargetPercent(kpiData?.problemResolved),
+    }),
+    [kpiData],
+  );
+
+  const overallSatisfactionAchievement = useMemo(() => {
+    const row = (kpiData?.centerAchievements ?? []).find(
+      (r) => String(r?.scopeKey) === 'OVERALL' || String(r?.scopeName ?? '').trim() === '종합',
+    );
+    const v = row?.achievementRate;
+    return v != null && !Number.isNaN(Number(v)) ? Number(v) : null;
+  }, [kpiData]);
+
+  const overallProblemAchievement = useMemo(() => {
+    const row = (kpiData?.problemResolved ?? []).find(
+      (r) => String(r?.scopeKey) === 'OVERALL' || String(r?.scopeName ?? '').trim() === '종합',
+    );
+    const v = row?.achievementRate;
+    return v != null && !Number.isNaN(Number(v)) ? Number(v) : null;
+  }, [kpiData]);
+
+  const footerProblemAchievement = useMemo(
+    () =>
+      problemInverseAchievementPct(summaryTotals.probPct, annualMetricTargets.problem) ??
+      overallProblemAchievement,
+    [summaryTotals.probPct, annualMetricTargets.problem, overallProblemAchievement],
+  );
   const statPeriodHint = useMemo(() => {
     const d = summaryQuery.data;
     if (d?.statFrom && d?.statTo) {
@@ -423,6 +521,10 @@ export default function AdminSatisfactionPage() {
     () => centerMonthDetailQuery.data?.members ?? [],
     [centerMonthDetailQuery.data],
   );
+  const memberDetailData = centerMonthDetailQuery.data;
+  const memberDetailPeriodHint = formatMemberDetailPeriodHint(memberDetailData);
+  const memberProblemTarget =
+    memberDetailData?.problemResolvedAnnualTargetPercent ?? annualMetricTargets.problem;
   const selectedMember = useMemo(
     () => memberRows.find((m) => m.skid === selectedMemberSkid) ?? null,
     [memberRows, selectedMemberSkid],
@@ -458,6 +560,18 @@ export default function AdminSatisfactionPage() {
     [modalDateBuckets, modalDate],
   );
   const modalSelectedBucket = modalDateIndex >= 0 ? modalDateBuckets[modalDateIndex] : null;
+
+  const scopeDaySummaryQuery = useQuery({
+    queryKey: ['cs-satisfaction-scope-day-summary', selectedSecondDepthId, modalDate],
+    queryFn: () => fetchCsSatisfactionScopeDaySummary(selectedSecondDepthId, modalDate),
+    enabled:
+      selectedMemberSkid != null
+      && selectedSecondDepthId != null
+      && modalDate != null
+      && modalDate !== '',
+    staleTime: 30_000,
+  });
+
   const modalFilteredRows = useMemo(() => {
     const rowsInDate = modalSelectedBucket?.rows ?? [];
     return rowsInDate.filter((r) => {
@@ -472,7 +586,6 @@ export default function AdminSatisfactionPage() {
     const total = modalFilteredRows.length;
     return Math.max(1, Math.ceil(total / MEMBER_ROWS_PAGE_SIZE));
   }, [modalFilteredRows]);
-  const modalFilteredCount = modalFilteredRows.length;
   const modalPagedRows = useMemo(() => {
     const start = (modalPage - 1) * MEMBER_ROWS_PAGE_SIZE;
     return modalFilteredRows.slice(start, start + MEMBER_ROWS_PAGE_SIZE);
@@ -649,7 +762,7 @@ export default function AdminSatisfactionPage() {
             <h1 className="adm-title">CS 만족도 대시보드</h1>
             <p className="adm-sub">
               상단 KPI는 <strong>{monthLabel}</strong>, 실별·구성원 표는{' '}
-              <strong>당월 1일~전일(KST·1일이면 전월)</strong> 누적 구간입니다.
+              <strong>전일 기준</strong> 누적 구간입니다.
             </p>
           </div>
           <div className="adm-sat-header-actions">
@@ -740,7 +853,7 @@ export default function AdminSatisfactionPage() {
             <span className="adm-title-bar" aria-hidden />
             <div className="adm-section-title-text">
               <h2 id="adm-sat-table-title" className="adm-section-heading">
-                실별 만족도
+                당월 실별 만족도
               </h2>
             </div>
           </div>
@@ -804,7 +917,7 @@ export default function AdminSatisfactionPage() {
                   스킬
                 </th>
                 <th scope="col" className="adm-th-cell">
-                  팀명
+                  실
                 </th>
                 <th scope="col" className="adm-th-cell">
                   만족도
@@ -896,10 +1009,30 @@ export default function AdminSatisfactionPage() {
                         <span className="adm-team-name">{r.secondDepthName}</span>
                         <span className="adm-member-badge">{num(r.evalTargetMemberCount)}명</span>
                       </td>
-                      <td>{pct(r.satisfactionRate)}</td>
-                      <td>{pct(r.fiveMajorCitiesPct)}</td>
-                      <td>{pct(r.gen5060Pct)}</td>
-                      <td>{pct(r.problemResolvedPct)}</td>
+                      <td>
+                        <SatPctCell
+                          value={r.satisfactionRate}
+                          achievementRate={r.achievementRate}
+                        />
+                      </td>
+                      <td>
+                        <SatPctCell
+                          value={r.fiveMajorCitiesPct}
+                          targetPct={annualMetricTargets.fiveMajor}
+                        />
+                      </td>
+                      <td>
+                        <SatPctCell
+                          value={r.gen5060Pct}
+                          targetPct={annualMetricTargets.gen5060}
+                        />
+                      </td>
+                      <td>
+                        <SatPctCell
+                          value={r.problemResolvedPct}
+                          achievementRate={r.problemResolvedInverseAchievementPct}
+                        />
+                      </td>
                     </tr>
                   );
                 })
@@ -915,10 +1048,30 @@ export default function AdminSatisfactionPage() {
                       {num(summaryTotals.evalSum)}건
                     </span>
                   </td>
-                  <td>{pct(summaryTotals.satisfactionPct)}</td>
-                  <td>{pct(summaryTotals.fivePct)}</td>
-                  <td>{pct(summaryTotals.genPct)}</td>
-                  <td>{pct(summaryTotals.probPct)}</td>
+                  <td>
+                    <SatPctCell
+                      value={summaryTotals.satisfactionPct}
+                      achievementRate={overallSatisfactionAchievement}
+                    />
+                  </td>
+                  <td>
+                    <SatPctCell
+                      value={summaryTotals.fivePct}
+                      targetPct={annualMetricTargets.fiveMajor}
+                    />
+                  </td>
+                  <td>
+                    <SatPctCell
+                      value={summaryTotals.genPct}
+                      targetPct={annualMetricTargets.gen5060}
+                    />
+                  </td>
+                  <td>
+                    <SatPctCell
+                      value={summaryTotals.probPct}
+                      achievementRate={footerProblemAchievement}
+                    />
+                  </td>
                 </tr>
               </tfoot>
             ) : null}
@@ -930,6 +1083,7 @@ export default function AdminSatisfactionPage() {
             <span className="adm-title-bar" />
             <div>
               <h3 className="adm-section-heading">구성원 상세 현황</h3>
+              <p className="adm-section-hint">{memberDetailPeriodHint}</p>
             </div>
           </div>
 
@@ -987,22 +1141,51 @@ export default function AdminSatisfactionPage() {
                         </div>
                       </div>
 
-                      <div className="member-card-stats member-card-stats--metrics">
+                      <div className="member-card-stats member-card-stats--metrics adm-member-metrics-grid adm-member-metrics-grid--cols-4">
                         <div className="mcs-item mcs-item--panel">
                           <span className="mcs-label">만족도</span>
-                          <span className="mcs-value">{pct(m.satisfactionRate)}</span>
+                          <span className="mcs-value">
+                            <SatPctCell
+                              value={m.satisfactionRate}
+                              achievementRate={satisfactionAchievementFromTarget(
+                                m.satisfactionRate,
+                                m.targetPercent,
+                              )}
+                            />
+                          </span>
                         </div>
                         <div className="mcs-item mcs-item--panel">
                           <span className="mcs-label">5대도시</span>
-                          <span className="mcs-value">{pct(m.fiveMajorCitiesPct)}</span>
+                          <span className="mcs-value">
+                            <SatPctCell
+                              value={m.fiveMajorCitiesPct}
+                              targetPct={annualMetricTargets.fiveMajor}
+                            />
+                          </span>
                         </div>
                         <div className="mcs-item mcs-item--panel">
                           <span className="mcs-label">5060</span>
-                          <span className="mcs-value">{pct(m.gen5060Pct)}</span>
+                          <span className="mcs-value">
+                            <SatPctCell
+                              value={m.gen5060Pct}
+                              targetPct={annualMetricTargets.gen5060}
+                            />
+                          </span>
                         </div>
                         <div className="mcs-item mcs-item--panel">
                           <span className="mcs-label">문제해결</span>
-                          <span className="mcs-value">{pct(m.problemResolvedPct)}</span>
+                          <span className="mcs-value">
+                            <SatPctCell
+                              value={m.problemResolvedPct}
+                              achievementRate={
+                                m.problemResolvedInverseAchievementPct ??
+                                problemInverseAchievementPct(
+                                  m.problemResolvedPct,
+                                  memberProblemTarget,
+                                )
+                              }
+                            />
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -1032,9 +1215,7 @@ export default function AdminSatisfactionPage() {
                 <h3 className="adm-sat-row-modal-title">
                   {(memberMonthlyRowsQuery.data?.memberName || selectedMember?.mbName || selectedMemberSkid)} ({selectedMemberSkid})
                 </h3>
-                <p className="adm-sat-row-modal-sub">
-                  {year}년 전체 접수 상세 · 총 {num(memberMonthlyRowsQuery.data?.totalCount ?? 0)}건
-                </p>
+                <p className="adm-sat-row-modal-sub">{year}년 평가 세부 내용</p>
               </div>
               <div className="adm-sat-row-modal-month-nav">
                 <button
@@ -1089,16 +1270,14 @@ export default function AdminSatisfactionPage() {
                 <p className="adm-sat-query-empty">해당 연도 접수 row가 없습니다.</p>
               ) : (
                 <div className="adm-sat-member-month-bucket">
-                  <div className="adm-sat-modal-context-bar">
-                    <div className="adm-sat-modal-context-date">
-                      <span className="adm-sat-modal-context-kicker">조회 일자</span>
-                      <strong>{modalSelectedBucket ? modalSelectedBucket.date : '—'}</strong>
-                    </div>
-                    <div className="adm-sat-modal-context-meta">
-                      <span className="adm-sat-modal-context-pill">필터 결과 {num(modalFilteredCount)}건</span>
-                      <span className="adm-sat-modal-context-pill">페이지 {modalPage} / {modalTotalPages}</span>
-                    </div>
-                  </div>
+                  <CsSatisfactionModalDayStats
+                    rows={modalSelectedBucket?.rows ?? []}
+                    personalTargetPercent={selectedMember?.targetPercent ?? null}
+                    deptSummary={scopeDaySummaryQuery.data ?? null}
+                    deptTargetPercent={
+                      selectedDeptRow?.targetPercent ?? scopeDaySummaryQuery.data?.targetPercent ?? null
+                    }
+                  />
                   <div className="adm-table-wrap adm-sat-modal-table-wrap">
                     <table className="adm-table adm-sat-modal-rows-table">
                       <thead>
@@ -1380,6 +1559,7 @@ export default function AdminSatisfactionPage() {
       <AdminTargetMembersUploadModal
         open={targetUploadModalOpen}
         onClose={() => setTargetUploadModalOpen(false)}
+        variant="cs"
       />
     </div>
   );

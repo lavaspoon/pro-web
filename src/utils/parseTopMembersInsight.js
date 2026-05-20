@@ -74,7 +74,7 @@ export function parseTopMembersInsight(raw) {
     const bullets = bulletSrc
       .map((v) => formatReadableText(typeof v === 'string' ? v : v?.text ?? v?.body))
       .filter(Boolean)
-      .slice(0, 3);
+      .slice(0, 2);
 
     const recentTrend = { summary, bullets };
 
@@ -110,7 +110,7 @@ export function mapTopMembersInsightByRank(items, parsed) {
   const bullets = (trend.bullets?.length ? trend.bullets : fallbackTrend.bullets)
     .map((b) => formatReadableText(b))
     .filter(Boolean)
-    .slice(0, 3);
+    .slice(0, 2);
 
   return {
     ranked: ranked.map((row) => ({
@@ -125,8 +125,8 @@ function buildFallbackSelectionReason(item) {
   const reason = normalizeText(item?.judgmentReason);
   if (reason) return reason;
   const title = normalizeText(item?.title);
-  if (title) return `「${title}」 사례의 응대 내용이 선정 기준에 부합한 것으로 평가되었습니다.`;
-  return '제공된 사례 내용이 선정 기준에 부합합니다.';
+  if (title) return `「${title}」 사례의 응대 내용이 인증 기준에 부합한 것으로 평가되었습니다.`;
+  return '제공된 사례 내용이 인증 기준에 부합합니다.';
 }
 
 /** 최근 선정 1~3위 제목·내용 기반 트렌드 폴백 */
@@ -135,14 +135,11 @@ export function buildFallbackRecentTrend(items) {
   const titles = rows.map((it) => normalizeText(it?.title)).filter(Boolean);
 
   const summary = titles.length
-    ? `최근 선정 사례는 「${titles[0]}」처럼 상황·해결 과정이 드러나는 제목과, 응대 내용에 구체적 성과·공감 포인트가 담긴 글이 많습니다.`
-    : '최근 선정 사례는 고객 상황과 응대·해결 과정이 구체적으로 드러나는 내용이 많습니다.';
+    ? `최근 인증 사례는 「${titles[0]}」처럼 상황·해결이 드러나는 제목·응대가 많습니다.`
+    : '최근 인증 사례는 고객 상황과 응대·해결 과정이 구체적인 글이 많습니다.';
 
   return {
     summary,
-    bullets: [
-      '제목: 상황과 핵심 성과를 한 줄로',
-      '본문: 고객 맥락 → 응대 → 결과 순으로 짧게',
-    ],
+    bullets: ['제목·본문에 상황·응대·결과를 짧게 담기'],
   };
 }

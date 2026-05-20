@@ -75,16 +75,42 @@ export const fetchCaseForReview = async (caseId) => {
  */
 export const judgeCase = async ({
   caseId,
-  decision,
-  reason,
   adminSkid,
+  draft = false,
+  kindGreeting,
+  needsIdentification,
+  empathy,
+  listening,
+  variedExpression,
+  voiceDirection,
+  customConsultation,
+  consultationFlow,
+  proactivity,
+  accuracy,
+  deepCare,
+  closingImpression,
+  bonus,
+  remarks,
   aiKeyPhrase,
   aiKeyPoint,
 }) => {
   const body = {
     adminSkid,
-    decision,
-    reason,
+    draft: Boolean(draft),
+    kindGreeting,
+    needsIdentification,
+    empathy,
+    listening,
+    variedExpression,
+    voiceDirection,
+    customConsultation,
+    consultationFlow,
+    proactivity,
+    accuracy,
+    deepCare,
+    closingImpression,
+    bonus,
+    remarks: remarks != null ? String(remarks).trim() : '',
   };
   if (aiKeyPhrase != null && String(aiKeyPhrase).trim() !== '') {
     body.aiKeyPhrase = String(aiKeyPhrase).trim();
@@ -191,6 +217,17 @@ export const fetchCsSatisfactionMemberMonthlyRows = async (skid, year) => {
 };
 
 /**
+ * 선택 팀(리프) 또는 센터의 특정 일자 만족도 집계
+ * GET /api/admin/cs-satisfaction/scope-day-summary?secondDepthDeptId=&date=
+ */
+export const fetchCsSatisfactionScopeDaySummary = async (secondDepthDeptId, date) => {
+  const { data } = await axiosInstance.get('/api/admin/cs-satisfaction/scope-day-summary', {
+    params: { secondDepthDeptId, date },
+  });
+  return data;
+};
+
+/**
  * CS 만족도 — 스킬 + 상담일시 구간(시작·종료 포함) 평가 제외(useYn='N')
  * POST /api/admin/cs-satisfaction/exclude-time
  * @param {{ skill: string, startAt: string, endAt: string }} body — ISO-8601 로컬 일시 문자열
@@ -261,15 +298,11 @@ export const saveCsSatisfactionTargetsUnified = async (body) => {
   await axiosInstance.post('/api/admin/cs-satisfaction/targets-unified', body);
 };
 
-/**
- * 평가 대상자 엑셀 업로드 (.xlsx)
- * POST /api/admin/target-members/upload
- */
-export const uploadTargetMembersExcel = async (file) => {
+async function uploadTargetMembersExcelTo(path, file) {
   const baseURL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080';
   const formData = new FormData();
   formData.append('file', file);
-  const res = await fetch(`${baseURL}/api/admin/target-members/upload`, {
+  const res = await fetch(`${baseURL}${path}`, {
     method: 'POST',
     body: formData,
   });
@@ -285,4 +318,21 @@ export const uploadTargetMembersExcel = async (file) => {
     throw new Error(msg);
   }
   return text ? JSON.parse(text) : {};
-};
+}
+
+/**
+ * YOU 프로 평가 대상자 엑셀 업로드 (.xlsx) — TB_YOU_TARGET + you_yn
+ * POST /api/admin/target-members/upload
+ */
+export const uploadYouProTargetMembersExcel = async (file) =>
+  uploadTargetMembersExcelTo('/api/admin/target-members/upload', file);
+
+/**
+ * CS 만족도 평가 대상자 엑셀 업로드 (.xlsx) — TB_CS_TARGET + cs_yn
+ * POST /api/admin/cs-satisfaction/target-members/upload
+ */
+export const uploadCsTargetMembersExcel = async (file) =>
+  uploadTargetMembersExcelTo('/api/admin/cs-satisfaction/target-members/upload', file);
+
+/** @deprecated uploadYouProTargetMembersExcel 사용 */
+export const uploadTargetMembersExcel = uploadYouProTargetMembersExcel;

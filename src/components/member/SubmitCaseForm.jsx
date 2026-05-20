@@ -19,7 +19,6 @@ export default function SubmitCaseForm({ className = '', onGoToCaseList, compact
   const queryClient = useQueryClient();
 
   const [form, setForm] = useState({
-    title: '',
     excellentContent: '',
     callDatePart: '',
     callTimePart: '',
@@ -67,11 +66,6 @@ export default function SubmitCaseForm({ className = '', onGoToCaseList, compact
     e.preventDefault();
     setClientError('');
     if (mutation.isPending) return;
-    const titleTrimmed = form.title.trim();
-    if (titleTrimmed.length < 2) {
-      setClientError('사례 제목을 2자 이상 입력해 주세요.');
-      return;
-    }
     const body = form.excellentContent.trim();
     if (body.length < 30) {
       setClientError('우수 상담내용을 최소 30자 이상 입력해 주세요.');
@@ -91,23 +85,20 @@ export default function SubmitCaseForm({ className = '', onGoToCaseList, compact
       return;
     }
     mutation.mutate({
-      title: titleTrimmed,
+      title: '',
       description: body,
       callDate,
     });
   };
 
   const resetForm = () => {
-    setForm({ title: '', excellentContent: '', callDatePart: '', callTimePart: '' });
+    setForm({ excellentContent: '', callDatePart: '', callTimePart: '' });
     setSubmitted(false);
     setClientError('');
   };
 
   const canSubmit =
-    form.title.trim().length >= 2 &&
-    form.excellentContent.trim().length >= 30 &&
-    form.callDatePart &&
-    form.callTimePart;
+    form.excellentContent.trim().length >= 30 && form.callDatePart && form.callTimePart;
 
   if (submitted) {
     return (
@@ -151,43 +142,14 @@ export default function SubmitCaseForm({ className = '', onGoToCaseList, compact
 
           {!compact && (
             <p className="submit-form-overview">
-              <strong>① 제목</strong>을 입력한 뒤, <strong>② 사례 내용</strong>과 <strong>③ 통화 일시</strong>를 입력하고 접수합니다.
+              <strong>① 사례 내용</strong>과 <strong>② 통화 일시</strong>를 입력하고 접수합니다.
             </p>
           )}
-
-          <section className="submit-section" aria-labelledby="submit-section-title-label">
-            <header className="submit-section-head">
-              <span className="submit-step-badge" aria-hidden>
-                1
-              </span>
-              <div className="submit-section-head-text">
-                <h3 id="submit-section-title-label" className="submit-section-title">
-                  제목 <span className="required">*</span>
-                </h3>
-              </div>
-            </header>
-            <div className="submit-section-body">
-              <label className="sr-only" htmlFor="submit-title">제목</label>
-              <input
-                id="submit-title"
-                type="text"
-                name="title"
-                className="form-input"
-                placeholder="예: 불만 고객 공감 후 단계별 해결 안내"
-                value={form.title}
-                onChange={handleChange}
-                maxLength={60}
-              />
-              <div className="submit-field-meta">
-                <span className="input-hint">{form.title.trim().length} / 60자</span>
-              </div>
-            </div>
-          </section>
 
           <section className="submit-section" aria-labelledby="submit-section-story-title">
             <header className="submit-section-head">
               <span className="submit-step-badge" aria-hidden>
-                2
+                1
               </span>
               <div className="submit-section-head-text">
                 <h3 id="submit-section-story-title" className="submit-section-title">
@@ -217,7 +179,7 @@ export default function SubmitCaseForm({ className = '', onGoToCaseList, compact
           <section className="submit-section" aria-labelledby="submit-section-when-title">
             <header className="submit-section-head">
               <span className="submit-step-badge" aria-hidden>
-                3
+                2
               </span>
               <div className="submit-section-head-text">
                 <h3 id="submit-section-when-title" className="submit-section-title">
@@ -277,7 +239,7 @@ export default function SubmitCaseForm({ className = '', onGoToCaseList, compact
               )}
             </button>
             {compact && (
-              <p className="submit-form-footnote">선정 한도: 월 3회 · 연 36회 · 통화 일시는 실제 상담 시각과 맞게 입력해 주세요.</p>
+              <p className="submit-form-footnote">인증 한도: 월 3회 · 연 36회 · 통화 일시는 실제 상담 시각과 맞게 입력해 주세요.</p>
             )}
           </div>
         </form>
@@ -291,7 +253,7 @@ export default function SubmitCaseForm({ className = '', onGoToCaseList, compact
               </div>
               <ul className="guide-list">
                 <li>
-                  선정 한도: 월 <strong>{3}</strong>회 · 연 <strong>{36}</strong>회
+                  인증 한도: 월 <strong>{3}</strong>회 · 연 <strong>{36}</strong>회
                 </li>
                 <li>
                   <strong>통화 일시</strong>는 실제 통화가 이루어진 시각을 선택해 주세요.

@@ -650,6 +650,163 @@
   font-weight: 700;
 }
 
+/* 모달 — 당일 만족도 요약 (구성원 카드 지표 톤과 통일) */
+.adm-sat-modal-day-stats-panel {
+  padding: 0.72rem 0.82rem 0.78rem;
+  border-bottom: 1px solid rgba(10, 126, 164, 0.12);
+  background: linear-gradient(
+    180deg,
+    rgba(240, 249, 255, 0.55) 0%,
+    rgba(255, 255, 255, 0.98) 100%
+  );
+}
+
+.adm-sat-modal-day-stats-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.52rem;
+}
+
+.adm-sat-modal-day-stats-kicker {
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #0a7ea4;
+}
+
+.adm-sat-modal-day-stats-note {
+  font-size: 0.62rem;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.adm-sat-modal-day-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.45rem;
+  align-items: stretch;
+}
+
+.adm-sat-modal-day-metric {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  gap: 0.28rem;
+  min-height: 3.35rem;
+  padding: 0.5rem 0.55rem;
+  border-radius: 10px;
+  border: 1px solid rgba(15, 23, 42, 0.09);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(248, 250, 252, 0.9) 100%);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.92) inset,
+    0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.adm-sat-modal-day-metric-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  line-height: 1.25;
+  text-align: center;
+  color: #64748b;
+  letter-spacing: -0.01em;
+}
+
+.adm-sat-modal-day-metric-val {
+  font-size: 1.05rem;
+  font-weight: 800;
+  line-height: 1.15;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+  color: #0f172a;
+}
+
+.adm-sat-modal-day-metric-val--pct {
+  font-size: 1.12rem;
+}
+
+.adm-sat-modal-day-metric--eval {
+  border-color: rgba(148, 163, 184, 0.35);
+  background: linear-gradient(
+    165deg,
+    rgba(248, 250, 252, 0.98) 0%,
+    rgba(241, 245, 249, 0.92) 100%
+  );
+}
+
+.adm-sat-modal-day-metric--eval .adm-sat-modal-day-metric-label {
+  color: #475569;
+}
+
+.adm-sat-modal-day-metric--eval .adm-sat-modal-day-metric-val {
+  color: #334155;
+}
+
+.adm-sat-modal-day-metric--sat {
+  border-color: rgba(110, 231, 183, 0.45);
+  background: linear-gradient(
+    165deg,
+    rgba(236, 253, 245, 0.98) 0%,
+    rgba(209, 250, 229, 0.82) 100%
+  );
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.9) inset,
+    0 1px 3px rgba(16, 185, 129, 0.06);
+}
+
+.adm-sat-modal-day-metric--sat .adm-sat-modal-day-metric-label {
+  color: #2d6a4f;
+}
+
+.adm-sat-modal-day-metric--sat .adm-sat-modal-day-metric-val {
+  color: #047857;
+}
+
+.adm-sat-modal-day-metric--rate {
+  border-color: rgba(125, 211, 252, 0.5);
+  background: linear-gradient(
+    165deg,
+    rgba(240, 249, 255, 0.98) 0%,
+    rgba(224, 242, 254, 0.88) 100%
+  );
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.92) inset,
+    0 1px 3px rgba(10, 126, 164, 0.08);
+}
+
+.adm-sat-modal-day-metric--rate .adm-sat-modal-day-metric-label {
+  color: #0369a1;
+}
+
+.adm-sat-modal-day-metric--rate.is-ok {
+  border-color: rgba(74, 222, 128, 0.55);
+  background: linear-gradient(
+    165deg,
+    rgba(240, 253, 244, 0.98) 0%,
+    rgba(220, 252, 231, 0.9) 100%
+  );
+}
+
+.adm-sat-modal-day-metric--rate.is-ok .adm-sat-modal-day-metric-val {
+  color: #15803d;
+}
+
+.adm-sat-modal-day-metric--rate.is-no {
+  border-color: rgba(252, 165, 165, 0.55);
+  background: linear-gradient(
+    165deg,
+    rgba(254, 242, 242, 0.98) 0%,
+    rgba(254, 226, 226, 0.88) 100%
+  );
+}
+
+.adm-sat-modal-day-metric--rate.is-no .adm-sat-modal-day-metric-val {
+  color: #dc2626;
+}
+
 .adm-sat-modal-table-wrap {
   border-radius: 0;
   border: 0;
@@ -1369,6 +1526,16 @@
     justify-content: flex-start;
   }
 
+  .adm-sat-modal-day-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .adm-sat-modal-day-stats-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.15rem;
+  }
+
   .adm-sat-modal-cell-ment {
     min-width: 11rem;
     max-width: 13rem;
@@ -1722,3 +1889,18 @@
   background: rgba(100, 116, 139, 0.1);
   border-color: rgba(100, 116, 139, 0.18);
 }
+
+/* 당월 실별 만족도 — 목표 달성/미달성 */
+.adm-sat-pct {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.adm-sat-pct--ok {
+  color: #16a34a;
+}
+
+.adm-sat-pct--no {
+  color: #dc2626;
+}
+

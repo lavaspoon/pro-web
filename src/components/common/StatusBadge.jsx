@@ -4,7 +4,7 @@ import './StatusBadge.css';
 
 const STATUS_CONFIG = {
   selected: {
-    label: '선정',
+    label: '인증',
     icon: CheckCircle,
     className: 'badge-selected',
   },
@@ -14,7 +14,7 @@ const STATUS_CONFIG = {
     className: 'badge-pending',
   },
   rejected: {
-    label: '비선정',
+    label: '미인증',
     icon: XCircle,
     className: 'badge-rejected',
   },

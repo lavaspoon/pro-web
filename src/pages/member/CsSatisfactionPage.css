@@ -120,6 +120,14 @@
   border-bottom-left-radius: var(--hp-corner-radius);
 }
 
+.csx-rate-deck-group-wrap--skeleton {
+  pointer-events: none;
+}
+
+.csx-month-kpi-strip--skeleton {
+  list-style: none;
+}
+
 .csx-session--skeleton .csx-rate-deck--skeleton {
   margin-top: 4px;
 }
@@ -213,206 +221,104 @@
   gap: 9px;
 }
 
-.csx-rate-deck-group-wrap {
+/* 당월 현황 — KPI 스트립 + 중점 3카드 한 행 */
+.csx-rate-deck-group-wrap--row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.45fr);
   gap: 10px;
+  align-items: stretch;
 }
 
-.csx-rate-group {
-  border: 1px solid #edf1f5;
-  border-radius: 14px;
-  padding: 10px;
-  background: linear-gradient(180deg, #ffffff 0%, #fafbfd 100%);
-}
-
-.csx-rate-group-title {
-  margin: 0 0 8px;
-  font-size: 11px;
-  font-weight: 700;
-  color: #8a95a5;
-  letter-spacing: -0.01em;
-}
-
-.csx-rate-deck--left {
-  grid-template-columns: 1fr;
-}
-
-.csx-satmix-grid {
+.csx-month-kpi-strip {
+  list-style: none;
+  margin: 0;
+  padding: 0;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 9px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
   min-width: 0;
 }
 
-.csx-satmix-tile {
-  width: 100%;
+.csx-month-kpi-item {
+  margin: 0;
+  padding: 0;
   min-width: 0;
+}
+
+.csx-month-kpi-stat {
+  width: 100%;
   display: flex;
+  flex-direction: column;
   align-items: flex-start;
-  gap: 9px;
-  padding: 9px 10px;
-  border-radius: 12px;
+  gap: 2px;
+  padding: 7px 8px;
+  border-radius: 10px;
   border: 1px solid #eceff3;
-  background: linear-gradient(180deg, #ffffff 0%, #f9fafb 100%);
-  box-shadow:
-    0 1px 2px rgba(15, 23, 42, 0.03),
-    0 6px 18px rgba(15, 23, 42, 0.03);
+  background: #fafbfc;
   cursor: pointer;
   text-align: left;
-  transition: border-color 0.16s ease, box-shadow 0.16s ease, transform 0.08s ease;
   font-family: inherit;
+  transition: border-color 0.15s ease, background 0.15s ease;
 }
 
-.csx-satmix-tile:hover {
+.csx-month-kpi-stat:hover {
   border-color: #d7dee8;
-  box-shadow:
-    0 8px 20px rgba(15, 23, 42, 0.08),
-    0 1px 2px rgba(15, 23, 42, 0.04);
+  background: #ffffff;
 }
 
-.csx-satmix-tile:active {
-  transform: scale(0.992);
-}
-
-.csx-satmix-tile:focus-visible {
+.csx-month-kpi-stat:focus-visible {
   outline: 2px solid #7c8aa0;
   outline-offset: 2px;
 }
 
-/* 오른쪽 3대 카드와 같은 리듬, 상태만 초록·로즈로 구분 */
-.csx-satmix-tile--sat {
-  border-color: rgba(16, 185, 129, 0.28);
-  background: linear-gradient(165deg, #f0fdf4 0%, #ecfdf5 55%, #f8fafc 100%);
-  box-shadow:
-    0 1px 2px rgba(15, 23, 42, 0.03),
-    0 6px 18px rgba(16, 185, 129, 0.08);
-}
-
-.csx-satmix-tile--sat:hover {
-  border-color: rgba(5, 150, 105, 0.45);
-  box-shadow:
-    0 8px 22px rgba(16, 185, 129, 0.14),
-    0 1px 2px rgba(15, 23, 42, 0.04);
-}
-
-.csx-satmix-tile--unsat {
-  border-color: rgba(244, 63, 94, 0.28);
-  background: linear-gradient(165deg, #fff1f2 0%, #ffe4e6 48%, #fafafa 100%);
-  box-shadow:
-    0 1px 2px rgba(15, 23, 42, 0.03),
-    0 6px 18px rgba(244, 63, 94, 0.07);
-}
-
-.csx-satmix-tile--unsat:hover {
-  border-color: rgba(225, 29, 72, 0.38);
-  box-shadow:
-    0 8px 22px rgba(244, 63, 94, 0.12),
-    0 1px 2px rgba(15, 23, 42, 0.04);
-}
-
-.csx-satmix-tile-icon {
-  flex-shrink: 0;
-  width: 30px;
-  height: 30px;
-  border-radius: 9px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  align-self: flex-start;
-}
-
-.csx-satmix-tile--sat .csx-satmix-tile-icon {
-  background: var(--csx-met-soft);
-  color: var(--csx-met-strong);
-  border: 1px solid var(--csx-met-border);
-}
-
-.csx-satmix-tile--unsat .csx-satmix-tile-icon {
-  background: rgba(244, 63, 94, 0.12);
-  color: #be123c;
-  border: 1px solid rgba(244, 63, 94, 0.28);
-}
-
-.csx-satmix-tile-main {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-
-.csx-satmix-tile-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 8px;
-}
-
-.csx-satmix-tile-label {
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: -0.03em;
-  color: #334155;
-}
-
-.csx-satmix-tile--sat .csx-satmix-tile-label {
-  color: #065f46;
-}
-
-.csx-satmix-tile--unsat .csx-satmix-tile-label {
-  color: #9f1239;
-}
-
-.csx-satmix-tile-pct {
-  font-size: 24px;
-  font-weight: 900;
-  letter-spacing: -0.045em;
-  font-variant-numeric: tabular-nums;
-  line-height: 1;
-  flex-shrink: 0;
-}
-
-.csx-satmix-tile--sat .csx-satmix-tile-pct {
-  color: var(--csx-met-strong);
-}
-
-.csx-satmix-tile--unsat .csx-satmix-tile-pct {
-  color: #9f1239;
-}
-
-.csx-satmix-tile-sub {
+.csx-month-kpi-label {
   font-size: 10px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #8a95a5;
+  line-height: 1.3;
+}
+
+.csx-month-kpi-value {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+  font-size: 11px;
   font-weight: 600;
-  letter-spacing: -0.01em;
-  color: #9aa3af;
+  color: #64748b;
 }
 
-.csx-satmix-tile-meter {
-  display: block;
-  height: 3px;
-  border-radius: 999px;
-  background: rgba(148, 163, 184, 0.25);
-  margin-top: 4px;
-  overflow: hidden;
+.csx-month-kpi-unit {
+  font-size: 10px;
+  font-weight: 700;
+  color: #94a3b8;
 }
 
-.csx-satmix-tile-meter-fill {
-  display: block;
-  height: 100%;
-  border-radius: 999px;
-  transition: width 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+/* 숫자만 목표 달성 색 */
+.csx-stat-num {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  color: #1e293b;
+  line-height: 1.15;
 }
 
-.csx-satmix-tile-meter-fill--sat {
-  background: linear-gradient(90deg, #10b981, #34d399);
+.csx-stat-num--met {
+  color: var(--csx-met-strong);
 }
 
-.csx-satmix-tile-meter-fill--unsat {
-  background: linear-gradient(90deg, #f43f5e, #fb7185);
+.csx-stat-num--no {
+  color: #dc2626;
 }
 
-.csx-rate-deck--right {
+.csx-stat-num--muted {
+  font-size: 11px;
+  font-weight: 700;
+  color: #94a3b8;
+}
+
+.csx-rate-deck--focus {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
@@ -554,6 +460,35 @@
 .csx-rate-card--gen .csx-rate-meter-fill,
 .csx-rate-card--solve .csx-rate-meter-fill {
   background: linear-gradient(90deg, var(--csx-accent-strong), var(--csx-accent));
+}
+
+/* 중점 카드 — %·산식 숫자만 목표 색 */
+.csx-rate-card-pct--met {
+  color: var(--csx-met-strong);
+}
+
+.csx-rate-card-pct--no {
+  color: #dc2626;
+}
+
+.csx-rate-card-formula {
+  display: block;
+  margin-top: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: #94a3b8;
+  line-height: 1.35;
+}
+
+.csx-rate-card-formula .csx-stat-num {
+  font-size: inherit;
+  font-weight: 800;
+}
+
+.csx-rate-card-formula-sep {
+  margin: 0 4px;
+  color: #cbd5e1;
 }
 
 /* ── 불만족 유형 — 5개 항목 누적 건수 (컴팩트) ─────────────── */
@@ -724,33 +659,24 @@
   outline-offset: 2px;
 }
 
-@media (max-width: 1200px) {
-  .csx-rate-deck-group-wrap {
+@media (max-width: 900px) {
+  .csx-rate-deck-group-wrap--row {
     grid-template-columns: 1fr;
-  }
-
-  .csx-rate-deck--left {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .csx-rate-deck--right {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 760px) {
-  .csx-rate-deck--left {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .csx-rate-deck--right {
+  .csx-rate-deck--focus {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 560px) {
-  .csx-rate-deck--left,
-  .csx-rate-deck--right {
+  .csx-month-kpi-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .csx-rate-deck--focus {
     grid-template-columns: 1fr;
   }
 }
@@ -1138,14 +1064,14 @@
   border: 1px solid rgba(226, 232, 240, 0.9);
 }
 
+.csx-hero-progress-stat--recv {
+  background: linear-gradient(145deg, rgba(248, 250, 252, 0.95) 0%, rgba(241, 245, 249, 0.88) 100%);
+  border-color: rgba(226, 232, 240, 0.9);
+}
+
 .csx-hero-progress-stat--sat {
   background: linear-gradient(145deg, rgba(236, 253, 245, 0.75) 0%, rgba(248, 250, 252, 0.92) 100%);
   border-color: rgba(167, 243, 208, 0.65);
-}
-
-.csx-hero-progress-stat--unsat {
-  background: linear-gradient(145deg, rgba(254, 242, 242, 0.7) 0%, rgba(248, 250, 252, 0.92) 100%);
-  border-color: rgba(254, 202, 202, 0.65);
 }
 
 .csx-hero-progress-stat dt {
@@ -1188,29 +1114,6 @@
   font-variant-numeric: tabular-nums;
   color: #059669;
   line-height: 1.1;
-}
-
-.csx-hero-progress-stat--unsat dd strong.csx-hero-progress-stat-unsat {
-  font-size: 20px;
-  font-weight: 900;
-  letter-spacing: -0.04em;
-  font-variant-numeric: tabular-nums;
-  color: #dc2626;
-  line-height: 1.1;
-}
-
-.csx-hero-progress-received {
-  margin: 0;
-  text-align: center;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  color: #94a3b8;
-}
-
-.csx-hero-progress-received strong {
-  font-weight: 800;
-  color: #64748b;
 }
 
 .csx-hero-progress-hint {
@@ -1798,11 +1701,47 @@
 }
 
 .csx-ai-insight--skeleton {
-  min-height: 200px;
-  border: 1px dashed #cbd5e1;
+  min-height: 220px;
+  border: 1px solid #edf1f5;
   border-radius: 14px;
-  padding: 16px;
-  gap: 10px;
+  padding: 12px 14px;
+  background: #ffffff;
+  pointer-events: none;
+}
+
+.csx-ai-insight--skeleton .csx-ai-insight-split {
+  min-height: 220px;
+}
+
+/* 히어로 게이지 스켈레톤 */
+.csx-hero-progress--skeleton .csx-hero-progress-row {
+  align-items: center;
+}
+
+.csx-hero-skel-gauge {
+  flex-shrink: 0;
+}
+
+.csx-hero-progress-stats--skeleton {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  width: 100%;
+}
+
+.csx-hero-progress-stats--skeleton > .sk {
+  display: block;
+  width: 100% !important;
+}
+
+.csx-hero-skel-badge {
+  display: block;
+  width: 100% !important;
+  max-width: 148px;
+}
+
+.csx-hero-progress-side--skeleton {
+  gap: 8px;
 }
 
 /* ── AI 인사이트 — 토스증권 스타일 일자 비교 ───────────────── */
@@ -1996,6 +1935,221 @@
 
 .csx-coach-feedback--loading {
   padding: 4px 0;
+}
+
+/* ── 코칭·AI 인사이트 스켈레톤 ───────────────────────────── */
+.csx-toss-insight--skeleton {
+  gap: 10px;
+  animation: csx-skel-fade-in 0.35s ease-out;
+}
+
+.csx-toss-hero--skeleton {
+  gap: 8px;
+}
+
+.csx-toss-skel-headline {
+  display: block;
+}
+
+.csx-toss-why--skeleton {
+  gap: 8px;
+}
+
+.csx-toss-skel-why-title {
+  display: block;
+}
+
+.csx-toss-bullets--skeleton {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.csx-toss-skel-bullet {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+}
+
+.csx-toss-skel-dot {
+  flex-shrink: 0;
+  width: 5px;
+  height: 5px;
+  margin-top: 5px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.55);
+}
+
+.csx-toss-skel-bullet > .sk {
+  flex: 1;
+  display: block;
+  min-width: 0;
+}
+
+.csx-toss-foot--skeleton {
+  margin-top: auto;
+  padding-top: 4px;
+}
+
+/* ‘이렇게 하면 좋아요’ 피드백 스켈레톤 */
+.csx-coach-feedback--skeleton {
+  gap: 6px;
+  animation: csx-skel-fade-in 0.35s ease-out;
+}
+
+.csx-coach-feedback-card--skeleton {
+  position: relative;
+  overflow: hidden;
+  border-color: rgba(49, 130, 246, 0.18);
+  background: linear-gradient(165deg, #f4f8ff 0%, #f8fbff 100%);
+}
+
+.csx-coach-feedback-card--skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.55) 42%,
+    transparent 78%
+  );
+  animation: csx-coach-card-shimmer 1.6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes csx-coach-card-shimmer {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
+}
+
+.csx-coach-skel-type {
+  display: inline-flex;
+}
+
+.csx-coach-skel-kicker {
+  margin: 6px 0 6px;
+  opacity: 0.72;
+}
+
+.csx-coach-skel-main {
+  margin-bottom: 2px;
+}
+
+.csx-coach-skel-points {
+  margin-top: 8px;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.csx-coach-skel-point {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.csx-coach-skel-point-dot {
+  flex-shrink: 0;
+  width: 4px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.5);
+}
+
+.csx-coach-skel-point > .sk {
+  flex: 1;
+  display: block;
+}
+
+.csx-coach-skel-foot {
+  display: flex;
+  justify-content: flex-end;
+  margin: 0;
+}
+
+.csx-coach-skel-foot > .sk {
+  display: block;
+}
+
+/* 대응 코칭 패널 스켈레톤 */
+.csx-coach--skeleton {
+  gap: 10px;
+  animation: csx-skel-fade-in 0.35s ease-out;
+}
+
+.csx-coach-head--skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.csx-coach-cases--skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.csx-coach-case--skeleton {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 9px 10px;
+  border-radius: 11px;
+  border: 1px solid #eceff3;
+  background: #fafbfc;
+  pointer-events: none;
+}
+
+.csx-coach-case--skeleton.is-active {
+  border-color: rgba(49, 130, 246, 0.28);
+  background: linear-gradient(165deg, #f5f9ff 0%, #ffffff 72%);
+  box-shadow: 0 3px 12px rgba(49, 130, 246, 0.08);
+}
+
+.csx-coach-case--skeleton > .sk {
+  display: block;
+}
+
+.csx-coach-scenario--skeleton {
+  margin-top: 2px;
+  padding: 10px;
+  border-radius: 14px;
+  border: 1px solid #e8edf3;
+  background: #fafbfc;
+  pointer-events: none;
+}
+
+@keyframes csx-skel-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .csx-coach-feedback-card--skeleton::after,
+  .csx-toss-insight--skeleton,
+  .csx-coach-feedback--skeleton,
+  .csx-coach--skeleton {
+    animation: none;
+  }
+
+  .csx-coach-feedback-card--skeleton::after {
+    display: none;
+  }
 }
 
 .csx-coach-feedback-ref {

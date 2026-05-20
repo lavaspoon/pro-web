@@ -192,7 +192,7 @@
   gap: 2px;
 }
 
-/* 구성원 카드 지표 — 패널로 구분 */
+/* 구성원 카드 지표 — 패널로 구분 (동일 높이) */
 .member-card-stats--metrics .mcs-item--panel {
   padding: 5px 8px 6px;
   border-radius: 8px;
@@ -202,32 +202,63 @@
     0 1px 0 rgba(255, 255, 255, 0.88) inset,
     0 1px 1px rgba(15, 23, 42, 0.03);
   min-width: 0;
+  width: 100%;
+  min-height: 3.35rem;
+  height: 100%;
+  box-sizing: border-box;
+  align-self: stretch;
 }
 
-.member-card-stats--metrics .mcs-item--reflect {
-  border-color: rgba(234, 88, 12, 0.38);
+/* 연간 접수·인증 — 파스텔 블루 */
+.member-card-stats--metrics .mcs-item--panel.mcs-item--annual {
+  border-color: rgba(147, 197, 253, 0.55);
   background: linear-gradient(
     165deg,
-    rgba(255, 247, 237, 0.92) 0%,
-    rgba(254, 243, 199, 0.48) 100%
+    rgba(239, 246, 255, 0.98) 0%,
+    rgba(219, 234, 254, 0.82) 100%
   );
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.7) inset,
-    0 0 0 1px rgba(234, 88, 12, 0.05),
-    0 1px 4px rgba(234, 88, 12, 0.06);
+    0 1px 0 rgba(255, 255, 255, 0.9) inset,
+    0 1px 3px rgba(59, 130, 246, 0.06);
 }
 
-.member-card-stats--metrics .mcs-item--reflect .mcs-label--reflect {
-  color: #9a3412;
-  font-weight: 600;
+.member-card-stats--metrics .mcs-item--annual .mcs-label {
+  color: #3b6ea8;
 }
 
-.member-card-stats--metrics .mcs-value--reflect {
-  color: #ea580c;
-  font-size: 12px;
+.member-card-stats--metrics .mcs-item--annual .mcs-value {
+  color: #1d4ed8;
+}
+
+/* 이달 접수·인증 — 파스텔 민트 */
+.member-card-stats--metrics .mcs-item--panel.mcs-item--monthly {
+  border-color: rgba(110, 231, 183, 0.5);
+  background: linear-gradient(
+    165deg,
+    rgba(236, 253, 245, 0.98) 0%,
+    rgba(209, 250, 229, 0.78) 100%
+  );
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.9) inset,
+    0 1px 3px rgba(16, 185, 129, 0.06);
+}
+
+.member-card-stats--metrics .mcs-item--monthly .mcs-label {
+  color: #2d6a4f;
+}
+
+.member-card-stats--metrics .mcs-item--monthly .mcs-value {
+  color: #047857;
+}
+
+.member-card-stats--metrics .mcs-value--cs-ok {
+  color: #16a34a;
   font-weight: 800;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.03em;
+}
+
+.member-card-stats--metrics .mcs-value--cs-no {
+  color: #dc2626;
+  font-weight: 800;
 }
 
 .mcs-label {
@@ -240,16 +271,126 @@
   max-width: 7.5rem;
 }
 
-.member-card-stats--metrics .mcs-label {
-  text-transform: none;
-  font-size: 9px;
-  line-height: 1.2;
-  max-width: 6.5rem;
+/* 구성원 상세 지표 그리드 — YOU PRO(5) · CS 만족도(4) 공통 */
+.adm-member-metrics-grid.member-card-stats--metrics {
+  display: grid;
+  gap: 6px;
+  align-items: stretch;
+  justify-items: stretch;
+  min-width: 0;
 }
 
-.member-card-stats--metrics .mcs-value {
-  font-size: 12px;
-  line-height: 1.15;
+.adm-member-metrics-grid--cols-4 {
+  grid-template-columns: repeat(4, minmax(5.25rem, 1fr));
+  flex: 1 1 280px;
+  width: 100%;
+  max-width: 100%;
+}
+
+.adm-member-metrics-grid--cols-5 {
+  grid-template-columns: repeat(5, minmax(5rem, 1fr));
+  flex: 0 0 auto;
+  width: max-content;
+  max-width: 100%;
+}
+
+.adm-member-metrics-grid .mcs-item--panel {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  gap: 4px;
+  padding: 6px 8px;
+  min-height: 3.2rem;
+  height: 100%;
+}
+
+.adm-member-metrics-grid .mcs-label {
+  text-transform: none;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.25;
+  max-width: none;
+  width: 100%;
+  text-align: center;
+  white-space: normal;
+  word-break: keep-all;
+  color: var(--text-secondary, #64748b);
+}
+
+.adm-member-metrics-grid .mcs-value {
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.2;
+  width: 100%;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  min-height: 1.15rem;
+  letter-spacing: -0.02em;
+}
+
+.adm-member-metrics-grid .mcs-value .adm-sat-pct {
+  display: block;
+  width: 100%;
+  text-align: center;
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+.adm-member-metrics-grid .mcs-item--annual .mcs-label {
+  color: #3b6ea8;
+}
+
+.adm-member-metrics-grid .mcs-item--annual .mcs-value {
+  color: #1d4ed8;
+}
+
+.adm-member-metrics-grid .mcs-item--monthly .mcs-label {
+  color: #2d6a4f;
+}
+
+.adm-member-metrics-grid .mcs-item--monthly .mcs-value {
+  color: #047857;
+}
+
+.adm-member-metrics-grid .mcs-value--cs-ok,
+.adm-member-metrics-grid .mcs-value .adm-sat-pct--ok {
+  color: #16a34a;
+}
+
+.adm-member-metrics-grid .mcs-value--cs-no,
+.adm-member-metrics-grid .mcs-value .adm-sat-pct--no {
+  color: #dc2626;
+}
+
+@media (max-width: 900px) {
+  .adm-member-metrics-grid--cols-5 {
+    grid-template-columns: repeat(3, minmax(5rem, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .adm-member-metrics-grid--cols-4 {
+    grid-template-columns: repeat(2, minmax(5.25rem, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .adm-member-metrics-grid--cols-5,
+  .adm-member-metrics-grid--cols-4 {
+    grid-template-columns: repeat(2, minmax(4.85rem, 1fr));
+    width: 100%;
+  }
+}
+
+.adm-dashboard--yp .member-detail-card--metrics .member-card-header {
+  align-items: center;
+  gap: 10px;
+}
+
+.adm-dashboard--yp .member-detail-card--metrics .member-card-left {
+  flex: 1 1 10rem;
+  min-width: 0;
 }
 
 .mcs-value {

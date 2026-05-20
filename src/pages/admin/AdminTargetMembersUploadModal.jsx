@@ -1,23 +1,53 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Upload, X } from 'lucide-react';
-import { uploadTargetMembersExcel } from '../../api/adminApi';
+import {
+  uploadCsTargetMembersExcel,
+  uploadYouProTargetMembersExcel,
+} from '../../api/adminApi';
 import './DashboardPage.css';
 import './PendingCasesPage.css';
 import './AdminSatisfactionSetupPage.css';
 
-export default function AdminTargetMembersUploadModal({ open, onClose }) {
+const VARIANT_CONFIG = {
+  you: {
+    title: 'YOU 프로 평가 대상자 업로드',
+    tableLabel: 'TB_YOU_TARGET',
+    memberColumn: 'you_yn',
+    uploadFn: uploadYouProTargetMembersExcel,
+    invalidateKeys: [
+      ['admin-dashboard'],
+      ['admin-leaf-teams'],
+      ['admin-ranking'],
+      ['team-detail'],
+    ],
+  },
+  cs: {
+    title: 'CS 만족도 평가 대상자 업로드',
+    tableLabel: 'TB_CS_TARGET',
+    memberColumn: 'cs_yn',
+    uploadFn: uploadCsTargetMembersExcel,
+    invalidateKeys: [
+      ['cs-satisfaction-summary'],
+      ['cs-satisfaction-center-month-detail'],
+      ['cs-satisfaction-dashboard-kpis'],
+      ['cs-satisfaction-member-monthly-rows'],
+    ],
+  },
+};
+
+export default function AdminTargetMembersUploadModal({ open, onClose, variant = 'you' }) {
+  const config = VARIANT_CONFIG[variant] ?? VARIANT_CONFIG.you;
   const queryClient = useQueryClient();
   const fileRef = useRef(null);
   const [pickedName, setPickedName] = useState('');
 
   const uploadMutation = useMutation({
-    mutationFn: (file) => uploadTargetMembersExcel(file),
+    mutationFn: (file) => config.uploadFn(file),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cs-satisfaction-summary'] });
-      queryClient.invalidateQueries({ queryKey: ['cs-satisfaction-center-month-detail'] });
-      queryClient.invalidateQueries({ queryKey: ['cs-satisfaction-monthly-overview'] });
-      queryClient.invalidateQueries({ queryKey: ['cs-satisfaction-ranking'] });
+      for (const key of config.invalidateKeys) {
+        queryClient.invalidateQueries({ queryKey: key });
+      }
       setPickedName('');
       if (fileRef.current) fileRef.current.value = '';
     },
@@ -36,6 +66,13 @@ export default function AdminTargetMembersUploadModal({ open, onClose }) {
       document.body.style.overflow = prevOverflow;
     };
   }, [open, onClose]);
+
+  useEffect(() => {
+    if (!open) {
+      setPickedName('');
+      if (fileRef.current) fileRef.current.value = '';
+    }
+  }, [open, variant]);
 
   if (!open) return null;
 
@@ -63,10 +100,11 @@ export default function AdminTargetMembersUploadModal({ open, onClose }) {
         <div className="sat-setup-modal-header">
           <div className="sat-setup-modal-header-text">
             <h2 id="target-member-upload-modal-title" className="sat-setup-modal-title">
-              평가 대상자 업로드
+              {config.title}
             </h2>
             <p className="sat-setup-modal-lead">
-              업로드 시 <strong>기존 데이터는 전체 삭제</strong> 후 다시 저장됩니다.
+              업로드 시 <strong>{config.tableLabel} 기존 데이터는 전체 삭제</strong> 후 재적재되며,{' '}
+              <strong>TB_LMS_MEMBER.{config.memberColumn}</strong> 은 먼저 전체 N 처리 후 엑셀 기준으로 반영됩니다.
             </p>
           </div>
           <button type="button" className="sat-setup-modal-close" onClick={onClose} aria-label="닫기">
@@ -80,7 +118,10 @@ export default function AdminTargetMembersUploadModal({ open, onClose }) {
               <div className="sat-setup-pane-head sat-setup-pane-head--minimal">
                 <div>
                   <h3 className="sat-setup-pane-title">엑셀 업로드</h3>
-                  <p className="sat-setup-pane-sub">TB_YOU_TARGET 반영 후 구성원 평가대상 여부 + 부서 스킬을 동기화합니다.</p>
+                  <p className="sat-setup-pane-sub">
+                    {config.tableLabel} 반영 후 구성원 {config.memberColumn} 을 동기화합니다.
+                    {variant === 'you' ? ' (YOU 프로는 부서 스킬도 함께 반영)' : null}
+                  </p>
                 </div>
               </div>
               <div className="sat-setup-pane-body sat-setup-pane-body--upload">
@@ -100,7 +141,7 @@ export default function AdminTargetMembersUploadModal({ open, onClose }) {
                 >
                   <Upload size={22} strokeWidth={2.1} className="sat-setup-drop-ico" aria-hidden />
                   <span className="sat-setup-drop-title">파일 선택</span>
-                  <span className="sat-setup-drop-hint">.xlsx</span>
+                  <span className="sat-setup-drop-hint">.xlsx · 평가대상여부 열: 대상 또는 평가</span>
                 </button>
 
                 <div className="sat-setup-upload-actions">
@@ -125,9 +166,16 @@ export default function AdminTargetMembersUploadModal({ open, onClose }) {
                 ) : null}
                 {uploadMutation.isSuccess ? (
                   <p className="sat-setup-ok sat-setup-inline-msg">
-                    반영 {uploadMutation.data?.inserted ?? 0} · 구성원동기화 {uploadMutation.data?.updatedMembers ?? 0}
-                    · 부서스킬동기화 {uploadMutation.data?.updatedDepts ?? 0} · 스킵{' '}
-                    {uploadMutation.data?.skipped ?? 0}
+                    반영 {uploadMutation.data?.inserted ?? 0} · 전체 N 초기화{' '}
+                    {uploadMutation.data?.resetMembers ?? 0} · 구성원동기화{' '}
+                    {uploadMutation.data?.updatedMembers ?? 0}
+                    {variant === 'you' ? (
+                      <>
+                        {' '}
+                        · 부서스킬동기화 {uploadMutation.data?.updatedDepts ?? 0}
+                      </>
+                    ) : null}{' '}
+                    · 스킵 {uploadMutation.data?.skipped ?? 0}
                   </p>
                 ) : null}
               </div>
