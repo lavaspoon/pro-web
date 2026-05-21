@@ -10,9 +10,9 @@
 }
 
 /* sizes */
-.size-sm { font-size: 11px; padding: 2px 7px; }
-.size-md { font-size: 12px; padding: 3px 9px; }
-.size-lg { font-size: 13px; padding: 4px 11px; }
+.size-sm { font-size: 12px; padding: 2px 7px; }
+.size-md { font-size: 13px; padding: 3px 9px; }
+.size-lg { font-size: 14px; padding: 4px 11px; }
 
 /* variants */
 .badge-selected {

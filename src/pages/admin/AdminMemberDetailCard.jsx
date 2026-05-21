@@ -33,6 +33,9 @@ export default function AdminMemberDetailCard({ member, teamContext }) {
   const groupName = teamContext?.groupName ?? member.groupName;
   const skill = teamContext?.skill ?? member.skill;
 
+  const satDisplay = monthlySat != null ? `${monthlySat.toFixed(1)}%` : '—';
+  const rewardWonDisplay = `${cumulativeRewardWon.toLocaleString('ko-KR')}원`;
+
   return (
     <div className="member-detail-card member-detail-card--metrics">
       <div
@@ -46,7 +49,7 @@ export default function AdminMemberDetailCard({ member, teamContext }) {
         }}
         role="button"
         tabIndex={0}
-        aria-label={`${member.name} 사례 목록 열기`}
+        aria-label={`${displayName} 사례 목록 열기`}
       >
         <div className="member-card-left">
           <div className="member-avatar-lg">{displayName.charAt(0)}</div>
@@ -69,48 +72,29 @@ export default function AdminMemberDetailCard({ member, teamContext }) {
           </div>
         </div>
 
-        <div className="member-card-stats member-card-stats--metrics adm-member-metrics-grid adm-member-metrics-grid--cols-4">
-          <div className="mcs-item mcs-item--panel mcs-item--annual mcs-item--case-combo">
-            <span className="mcs-label">연간 접수 · 인증</span>
-            <div className="mcs-case-combo-body">
-              <span className="mcs-case-combo-line">
-                <span className="mcs-case-combo-k">접수</span>
-                <span className="mcs-case-combo-v">{totalSubmitted}건</span>
-              </span>
-              <span className="mcs-case-combo-line">
-                <span className="mcs-case-combo-k">인증</span>
-                <span className="mcs-case-combo-v">{annualCertified}건</span>
-              </span>
-            </div>
-          </div>
-          <div className="mcs-item mcs-item--panel mcs-item--monthly mcs-item--case-combo">
-            <span className="mcs-label">이달 접수 · 인증</span>
-            <div className="mcs-case-combo-body">
-              <span className="mcs-case-combo-line">
-                <span className="mcs-case-combo-k">접수</span>
-                <span className="mcs-case-combo-v">{monthlySubmitted}건</span>
-              </span>
-              <span className="mcs-case-combo-line">
-                <span className="mcs-case-combo-k">인증</span>
-                <span className="mcs-case-combo-v">{monthlyCertified}건</span>
-              </span>
-            </div>
-          </div>
-          <div className="mcs-item mcs-item--panel mcs-item--cs-monthly">
-            <span className="mcs-label">당월 만족도</span>
-            <span className="mcs-value">
-              {monthlySat != null ? `${monthlySat.toFixed(1)}%` : '—'}
-            </span>
-          </div>
-          <div className="mcs-item mcs-item--panel mcs-item--reward-tier">
-            <span className="mcs-label">등급 · Reward</span>
-            <div className="mcs-reward-tier-body">
-              <span className="mcs-reward-tier-grade">{tierName ?? '등급 없음'}</span>
-              <span className="mcs-reward-tier-won">
-                누적 {cumulativeRewardWon.toLocaleString('ko-KR')}원
-              </span>
-            </div>
-          </div>
+        <div
+          className="adm-member-metrics-grid"
+          role="group"
+          aria-label={`${displayName} 실적: 연간 접수 ${totalSubmitted}건 인증 ${annualCertified}건, 이달 접수 ${monthlySubmitted}건 인증 ${monthlyCertified}건, 당월 만족도 ${satDisplay}, ${tierName ?? '등급 없음'} 누적 ${rewardWonDisplay}`}
+        >
+          <span className="adm-mmg-h adm-mmg-h--corner" aria-hidden />
+          <span className="adm-mmg-h adm-mmg-h--sub">접수</span>
+          <span className="adm-mmg-h adm-mmg-h--cert">인증</span>
+          <span className="adm-mmg-h adm-mmg-h--sat">당월 만족도</span>
+          <span className="adm-mmg-h adm-mmg-h--reward">Reward</span>
+
+          <span className="adm-mmg-period adm-mmg-period--annual">연간</span>
+          <span className="adm-mmg-v adm-mmg-v--sub adm-mmg-v--annual">{totalSubmitted}건</span>
+          <span className="adm-mmg-v adm-mmg-v--cert adm-mmg-v--annual">{annualCertified}건</span>
+          <span className="adm-mmg-stack adm-mmg-stack--sat">{satDisplay}</span>
+          <span className="adm-mmg-stack adm-mmg-stack--reward">
+            <span className="adm-mmg-reward-tier">{tierName ?? '등급 없음'}</span>
+            <span className="adm-mmg-reward-won">누적 {rewardWonDisplay}</span>
+          </span>
+
+          <span className="adm-mmg-period adm-mmg-period--monthly">이달</span>
+          <span className="adm-mmg-v adm-mmg-v--sub adm-mmg-v--monthly">{monthlySubmitted}건</span>
+          <span className="adm-mmg-v adm-mmg-v--cert adm-mmg-v--monthly">{monthlyCertified}건</span>
         </div>
 
         <span className="expand-btn expand-btn--static" aria-hidden>

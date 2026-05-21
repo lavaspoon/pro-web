@@ -77,7 +77,7 @@
 }
 
 .admin-topbar-catblock-label {
-  font-size: 10px;
+  font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -144,7 +144,7 @@
 
 .member-topbar-ment-kicker {
   flex-shrink: 0;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   color: #047857;
   letter-spacing: -0.01em;
@@ -157,7 +157,7 @@
 .member-topbar-ment-text {
   margin: 0;
   max-width: calc(100% - 90px);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   letter-spacing: -0.01em;
   color: #065f46;
@@ -178,7 +178,7 @@
 }
 
 .member-topbar-ment-quote {
-  font-size: 12px;
+  font-size: 13px;
   color: #94a3b8;
 }
 
@@ -192,7 +192,7 @@
 }
 
 .member-topbar-catblock-label {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -220,7 +220,7 @@
   gap: 8px;
   padding: 9px 16px 9px 14px;
   border-radius: 11px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   letter-spacing: -0.02em;
   color: var(--text-secondary);
@@ -294,7 +294,7 @@
 
   .member-topbar-cat {
     padding: 8px 12px 8px 11px;
-    font-size: 12px;
+    font-size: 13px;
   }
 
   .member-topbar-cat-ico {
@@ -320,7 +320,7 @@
 }
 
 .admin-topbar-brand {
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 600;
   color: var(--text-primary);
   letter-spacing: -0.02em;
@@ -332,7 +332,7 @@
   gap: 6px;
   padding: 8px 14px;
   border-radius: var(--r-sm);
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--text-secondary);
   background: transparent;
@@ -403,7 +403,7 @@
 .page-title-group {}
 
 .page-title-group h1 {
-  font-size: 24px;
+  font-size: 27px;
   font-weight: 700;
   color: var(--text-primary);
   letter-spacing: -0.03em;
@@ -411,7 +411,7 @@
 }
 
 .page-title-group p {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--text-secondary);
   margin-top: 4px;
   letter-spacing: -0.01em;

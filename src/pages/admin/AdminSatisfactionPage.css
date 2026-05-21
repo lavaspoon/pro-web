@@ -51,7 +51,7 @@
 .adm-sat-month-nav-label {
   min-width: 6.4rem;
   text-align: center;
-  font-size: 0.8rem;
+  font-size: 0.875rem;
   font-weight: 800;
   color: #0f172a;
   letter-spacing: -0.01em;
@@ -82,7 +82,7 @@
   border-radius: 10px;
   border: 1px solid rgba(15, 23, 42, 0.12);
   background: #fff;
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   font-weight: 600;
   color: #0f172a;
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset;
@@ -182,7 +182,7 @@
 .adm-sat-trend-chart-caption {
   margin: 0 0 0.5rem;
   padding: 0 0.1rem;
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
   font-weight: 700;
   color: #0f172a;
   letter-spacing: -0.01em;
@@ -196,7 +196,7 @@
   gap: 0.65rem;
   min-height: 280px;
   color: var(--text-secondary);
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
 }
 
 .adm-sat-chart-loading .spinner {
@@ -207,7 +207,7 @@
   margin: 0;
   padding: 2rem 1.25rem;
   text-align: center;
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
   font-weight: 600;
   color: var(--danger, #dc2626);
   min-height: 200px;
@@ -220,7 +220,7 @@
   margin: 0 0 1rem;
   padding: 0.65rem 0.85rem;
   border-radius: 10px;
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   font-weight: 600;
   color: #b91c1c;
   background: rgba(254, 226, 226, 0.65);
@@ -240,7 +240,7 @@
 
 .adm-sat-members-caption {
   margin: 0 0 0.65rem;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: var(--text-tertiary);
   line-height: 1.45;
 }
@@ -251,7 +251,7 @@
 
 .adm-sat-page .adm-sat-members-loading p {
   margin: 0;
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
 }
 
 .adm-sat-members-table-wrap {
@@ -277,6 +277,161 @@
   box-shadow:
     inset 0 0 0 1px rgba(10, 126, 164, 0.18),
     0 8px 20px rgba(10, 126, 164, 0.12);
+}
+
+/* 구성원 상세 — 4지표 열 정렬 그리드 (Dashboard adm-mmg 와 클래스 분리) */
+.adm-sat-member-detail-card .member-card-header {
+  flex-wrap: nowrap;
+  align-items: center;
+  padding: 8px 12px;
+  gap: 8px;
+}
+
+.adm-sat-member-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(4.75rem, 1fr));
+  grid-template-rows: 1.25rem 1.35rem;
+  column-gap: 12px;
+  row-gap: 0;
+  align-items: center;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: min(100%, 32rem);
+  margin-left: auto;
+  padding: 4px 10px 4px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border, rgba(15, 23, 42, 0.12));
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(248, 250, 252, 0.92) 100%);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+  overflow: hidden;
+}
+
+.adm-smg-h {
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+  line-height: 1.2;
+  color: var(--text-primary, #111827);
+}
+
+.adm-smg-h--main {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.adm-smg-h--five {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.adm-smg-h--gen {
+  grid-column: 3;
+  grid-row: 1;
+}
+
+.adm-smg-h--prob {
+  grid-column: 4;
+  grid-row: 1;
+}
+
+.adm-smg-v {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 800;
+  text-align: center;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  white-space: nowrap;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.adm-smg-v .adm-sat-pct {
+  display: block;
+  width: 100%;
+  text-align: center;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+}
+
+.adm-smg-v--main {
+  grid-column: 1;
+  grid-row: 2;
+  color: #5b21b6;
+}
+
+.adm-smg-v--five {
+  grid-column: 2;
+  grid-row: 2;
+  color: #1e40af;
+}
+
+.adm-smg-v--gen {
+  grid-column: 3;
+  grid-row: 2;
+  color: #065f46;
+}
+
+.adm-smg-v--prob {
+  grid-column: 4;
+  grid-row: 2;
+  color: #92400e;
+}
+
+.adm-smg-v .adm-sat-pct--ok {
+  color: #16a34a;
+}
+
+.adm-smg-v .adm-sat-pct--no {
+  color: #dc2626;
+}
+
+@media (max-width: 900px) {
+  .adm-sat-member-detail-card .member-card-header {
+    flex-wrap: wrap;
+    row-gap: 6px;
+  }
+
+  .adm-sat-member-metrics-grid {
+    flex: 1 1 100%;
+    max-width: 100%;
+    margin-left: 0;
+    order: 3;
+  }
+}
+
+@media (max-width: 640px) {
+  .adm-sat-member-metrics-grid {
+    grid-template-columns: repeat(2, minmax(4.5rem, 1fr));
+    grid-template-rows: 1.25rem 1.35rem 1.25rem 1.35rem;
+    column-gap: 10px;
+  }
+
+  .adm-smg-h--gen {
+    grid-column: 1;
+    grid-row: 3;
+  }
+
+  .adm-smg-h--prob {
+    grid-column: 2;
+    grid-row: 3;
+  }
+
+  .adm-smg-v--gen {
+    grid-column: 1;
+    grid-row: 4;
+  }
+
+  .adm-smg-v--prob {
+    grid-column: 2;
+    grid-row: 4;
+  }
 }
 
 .adm-sat-member-mcs-wide {
@@ -348,7 +503,7 @@
 
 .adm-sat-exclude-hint {
   margin: 0;
-  font-size: 0.77rem;
+  font-size: 0.8125rem;
   color: #475569;
   line-height: 1.45;
 }
@@ -375,7 +530,7 @@
 }
 
 .adm-sat-exclude-field span {
-  font-size: 0.72rem;
+  font-size: 0.8125rem;
   font-weight: 700;
   color: #334155;
 }
@@ -386,7 +541,7 @@
   border-radius: 8px;
   border: 1px solid rgba(15, 23, 42, 0.16);
   background: #fff;
-  font-size: 0.78rem;
+  font-size: 0.8125rem;
 }
 
 .adm-sat-exclude-datetime {
@@ -395,7 +550,7 @@
   border-radius: 8px;
   border: 1px solid rgba(15, 23, 42, 0.16);
   background: #fff;
-  font-size: 0.78rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: #0f172a;
 }
@@ -410,7 +565,7 @@
   color: #166534;
   border-radius: 10px;
   padding: 0.58rem 0.74rem;
-  font-size: 0.78rem;
+  font-size: 0.8125rem;
   font-weight: 600;
 }
 
@@ -429,14 +584,14 @@
 
 .adm-sat-exclude-history-title {
   margin: 0 0 0.5rem;
-  font-size: 0.82rem;
+  font-size: 0.875rem;
   font-weight: 700;
   color: #0f172a;
 }
 
 .adm-sat-exclude-history-empty {
   margin: 0;
-  font-size: 0.78rem;
+  font-size: 0.8125rem;
   color: #64748b;
 }
 
@@ -476,7 +631,7 @@
 .adm-sat-exclude-history-meta {
   margin-left: auto;
   color: #64748b;
-  font-size: 0.72rem;
+  font-size: 0.8125rem;
 }
 
 .adm-sat-row-modal {
@@ -512,7 +667,7 @@
 .adm-sat-row-modal-sub {
   margin: 0.3rem 0 0;
   color: var(--text-secondary);
-  font-size: 0.8rem;
+  font-size: 0.875rem;
 }
 
 .adm-sat-row-modal-month-nav {
@@ -815,7 +970,7 @@
 
 .adm-sat-modal-rows-table {
   margin: 0;
-  font-size: 0.72rem;
+  font-size: 0.8125rem;
 }
 
 .adm-sat-modal-rows-table thead th {
@@ -913,7 +1068,7 @@
   border: 1px solid rgba(15, 23, 42, 0.16);
   border-radius: 8px;
   padding: 0.24rem 0.55rem;
-  font-size: 0.72rem;
+  font-size: 0.8125rem;
   font-weight: 700;
   background: #fff;
   cursor: pointer;
@@ -938,7 +1093,7 @@
   justify-content: space-between;
   gap: 0.5rem;
   padding: 0.56rem 0.82rem;
-  font-size: 0.82rem;
+  font-size: 0.875rem;
   border-bottom: 1px solid rgba(15, 23, 42, 0.07);
   background: rgba(15, 23, 42, 0.03);
 }
@@ -968,7 +1123,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.48rem;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: var(--text-secondary);
 }
 
@@ -1119,7 +1274,7 @@
   border-radius: 12px;
   background: rgba(248, 250, 252, 0.95);
   border: 1px dashed rgba(15, 23, 42, 0.12);
-  font-size: 0.82rem;
+  font-size: 0.875rem;
   color: #64748b;
   line-height: 1.45;
 }
@@ -1180,7 +1335,7 @@
   border-radius: 12px;
   border: 1px solid rgba(15, 23, 42, 0.1);
   background: rgba(255, 255, 255, 0.92);
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   font-weight: 600;
   color: #0f172a;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
@@ -1244,7 +1399,7 @@
 }
 
 .adm-hourly-meta-txt {
-  font-size: 0.78rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: #475569;
   letter-spacing: -0.02em;
@@ -1381,7 +1536,7 @@
 }
 
 .adm-hourly-slot__time {
-  font-size: 0.78rem;
+  font-size: 0.8125rem;
   font-weight: 800;
   letter-spacing: -0.03em;
   color: #0f172a;
@@ -1495,7 +1650,7 @@
   }
 
   .adm-sat-member-detail-card .member-card-header {
-    align-items: flex-start;
+    align-items: center;
   }
 
   .adm-sat-row-modal-backdrop {
@@ -1556,7 +1711,7 @@
   border-top: 2px solid rgba(15, 23, 42, 0.12);
   border-bottom: 1px solid var(--divider, rgba(60, 60, 67, 0.12));
   background: rgba(241, 245, 249, 0.88);
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
 }
 
 .adm-sat-page .adm-sat-summary-table tfoot td.adm-sat-table-tfoot-label {
@@ -1611,7 +1766,7 @@
 }
 
 .adm-sat-achv-slash {
-  font-size: 0.72rem;
+  font-size: 0.8125rem;
   font-weight: 700;
   color: #64748b;
   line-height: 1;
@@ -1625,7 +1780,7 @@
   gap: 0.65rem;
   min-height: 8rem;
   color: var(--text-secondary);
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
 }
 
 /* ── 스켈레톤 (공통 Skeleton + 실제 KPI/테이블 레이아웃) ── */
@@ -1699,7 +1854,7 @@
 }
 
 .adm-sat-rank-col__title {
-  font-size: 0.78rem;
+  font-size: 0.8125rem;
   font-weight: 700;
   color: var(--text-primary);
   letter-spacing: -0.02em;
@@ -1714,7 +1869,7 @@
 
 .adm-sat-rank-mini {
   margin: 0;
-  font-size: 0.72rem;
+  font-size: 0.8125rem;
 }
 
 .adm-sat-rank-mini thead th {
@@ -1823,7 +1978,7 @@
 }
 
 .adm-sat-kpi-center-row {
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   padding-top: 0.1rem;
 }
 
@@ -1846,7 +2001,7 @@
 }
 
 .adm-sat-kpi-badge {
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-weight: 700;
   padding: 0.13rem 0.34rem;
   border-radius: 6px;
@@ -1869,7 +2024,7 @@
 .adm-sat-kpi-empty {
   margin: 0;
   color: var(--text-tertiary);
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
 }
 
 /* KPI 주요 수치 + 전일 대비 배지 */
@@ -1885,7 +2040,7 @@
   gap: 0.2rem;
   padding: 0.2rem 0.45rem 0.22rem;
   border-radius: 999px;
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;

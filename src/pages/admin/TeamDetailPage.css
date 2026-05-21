@@ -19,7 +19,7 @@
 }
 
 .team-detail-kicker {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -29,14 +29,14 @@
 
 .team-detail-header-main h1,
 .team-detail-header .page-title {
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 700;
   color: var(--text-primary);
   letter-spacing: -0.03em;
 }
 
 .team-detail-header .page-sub {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--text-secondary);
   margin-top: 3px;
 }
@@ -104,7 +104,7 @@
   border-radius: 50%;
   background: var(--accent);
   color: #fff;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 600;
   display: flex;
   align-items: center;
@@ -113,14 +113,14 @@
 }
 
 .member-card-name {
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 600;
   color: var(--text-primary);
   letter-spacing: -0.025em;
 }
 
 .member-card-pos {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--text-tertiary);
   margin-top: 1px;
 }
@@ -156,9 +156,9 @@
 }
 
 .member-detail-card--metrics .member-card-header {
-  flex-wrap: wrap;
-  align-items: flex-start;
-  padding: 10px 12px;
+  flex-wrap: nowrap;
+  align-items: center;
+  padding: 8px 12px;
   gap: 8px;
 }
 
@@ -170,15 +170,15 @@
 .member-detail-card--metrics .member-avatar-lg {
   width: 34px;
   height: 34px;
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .member-detail-card--metrics .member-card-name {
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .member-detail-card--metrics .member-card-pos {
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .mcs-item--with-bar {
@@ -262,7 +262,7 @@
 }
 
 .mcs-label {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 500;
   color: var(--text-tertiary);
   letter-spacing: -0.02em;
@@ -314,7 +314,7 @@
 
 .adm-member-metrics-grid .mcs-label {
   text-transform: none;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
   line-height: 1.25;
   max-width: none;
@@ -326,7 +326,7 @@
 }
 
 .adm-member-metrics-grid .mcs-value {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 800;
   line-height: 1.2;
   width: 100%;
@@ -361,39 +361,50 @@
 }
 
 .adm-member-metrics-grid .mcs-item--case-combo {
-  min-width: 6.5rem;
+  min-width: 7.25rem;
 }
 
-.adm-member-metrics-grid .mcs-case-combo-body {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 2px;
-  width: 100%;
-}
-
-.adm-member-metrics-grid .mcs-case-combo-line {
+.adm-member-metrics-grid .mcs-case-combo-row,
+.adm-member-metrics-grid .mcs-reward-tier-row {
+  margin: 0;
   display: flex;
   align-items: baseline;
   justify-content: center;
-  gap: 4px;
+  flex-wrap: nowrap;
+  gap: 5px;
+  width: 100%;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.adm-member-metrics-grid .mcs-case-combo-part {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 3px;
+}
+
+.adm-member-metrics-grid .mcs-inline-sep {
+  color: #cbd5e1;
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 1;
+  user-select: none;
 }
 
 .adm-member-metrics-grid .mcs-case-combo-k {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
   color: var(--text-tertiary, #94a3b8);
 }
 
 .adm-member-metrics-grid .mcs-item--annual .mcs-case-combo-v {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 800;
   color: #1d4ed8;
 }
 
 .adm-member-metrics-grid .mcs-item--monthly .mcs-case-combo-v {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 800;
   color: #047857;
 }
@@ -407,25 +418,19 @@
 }
 
 .adm-member-metrics-grid .mcs-item--reward-tier {
-  min-width: 7.5rem;
+  min-width: 8.5rem;
 }
 
 .adm-member-metrics-grid .mcs-item--reward-tier .mcs-label {
   color: #92400e;
 }
 
-.adm-member-metrics-grid .mcs-reward-tier-body {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  width: 100%;
+.adm-member-metrics-grid .mcs-reward-tier-row {
   text-align: center;
 }
 
 .adm-member-metrics-grid .mcs-reward-tier-grade {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 800;
   line-height: 1.25;
   color: #b45309;
@@ -433,7 +438,7 @@
 }
 
 .adm-member-metrics-grid .mcs-reward-tier-won {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   line-height: 1.2;
   color: #78350f;
@@ -472,6 +477,199 @@
     grid-template-columns: repeat(2, minmax(4.85rem, 1fr));
     width: 100%;
   }
+
+  .adm-member-metrics-grid .mcs-case-combo-row,
+  .adm-member-metrics-grid .mcs-reward-tier-row {
+    flex-wrap: wrap;
+    white-space: normal;
+    justify-content: center;
+    row-gap: 2px;
+  }
+}
+
+/* 구성원 카드 — 열 정렬 그리드 (YOU PRO Dashboard 전용, CS 만족도 카드 제외) */
+.member-detail-card--metrics:not(.adm-sat-member-detail-card) .adm-member-metrics-grid {
+  display: grid;
+  grid-template-columns: 2.75rem 4.5rem 4.5rem 5.75rem minmax(8.5rem, max-content);
+  grid-template-rows: 1.25rem 1.35rem 1.35rem;
+  column-gap: 14px;
+  row-gap: 0;
+  align-items: center;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: min(100%, 44rem);
+  margin-left: auto;
+  padding: 4px 10px 4px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(248, 250, 252, 0.92) 100%);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+.adm-mmg-h {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-tertiary, #94a3b8);
+  text-align: center;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.adm-mmg-h--corner {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.adm-mmg-h--sub {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.adm-mmg-h--cert {
+  grid-column: 3;
+  grid-row: 1;
+}
+
+.adm-mmg-h--sat {
+  grid-column: 4;
+  grid-row: 1;
+}
+
+.adm-mmg-h--reward {
+  grid-column: 5;
+  grid-row: 1;
+}
+
+.adm-mmg-period {
+  font-size: 12px;
+  font-weight: 700;
+  text-align: left;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.adm-mmg-period--annual {
+  grid-column: 1;
+  grid-row: 2;
+  color: #3b6ea8;
+}
+
+.adm-mmg-period--monthly {
+  grid-column: 1;
+  grid-row: 3;
+  color: #2d6a4f;
+}
+
+.adm-mmg-v {
+  font-size: 14px;
+  font-weight: 800;
+  text-align: center;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.adm-mmg-v--sub.adm-mmg-v--annual {
+  grid-column: 2;
+  grid-row: 2;
+  color: #1d4ed8;
+}
+
+.adm-mmg-v--cert.adm-mmg-v--annual {
+  grid-column: 3;
+  grid-row: 2;
+  color: #1d4ed8;
+  font-weight: 700;
+}
+
+.adm-mmg-v--sub.adm-mmg-v--monthly {
+  grid-column: 2;
+  grid-row: 3;
+  color: #047857;
+}
+
+.adm-mmg-v--cert.adm-mmg-v--monthly {
+  grid-column: 3;
+  grid-row: 3;
+  color: #047857;
+  font-weight: 700;
+}
+
+.adm-mmg-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  text-align: center;
+  align-self: center;
+  min-height: 0;
+}
+
+.adm-mmg-stack--sat {
+  grid-column: 4;
+  grid-row: 2 / 4;
+  font-size: 14px;
+  font-weight: 800;
+  color: #5b21b6;
+  letter-spacing: -0.02em;
+}
+
+.adm-mmg-stack--reward {
+  grid-column: 5;
+  grid-row: 2 / 4;
+  gap: 1px;
+  max-width: 12rem;
+}
+
+.adm-mmg-reward-tier {
+  font-size: 13px;
+  font-weight: 800;
+  color: #b45309;
+  line-height: 1.2;
+  word-break: keep-all;
+}
+
+.adm-mmg-reward-won {
+  font-size: 12px;
+  font-weight: 700;
+  color: #78350f;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .member-detail-card--metrics .member-card-header {
+    flex-wrap: wrap;
+    align-items: center;
+    row-gap: 6px;
+  }
+
+  .member-detail-card--metrics:not(.adm-sat-member-detail-card) .adm-member-metrics-grid {
+    flex: 1 1 100%;
+    max-width: 100%;
+    margin-left: 0;
+    order: 3;
+  }
+}
+
+@media (max-width: 640px) {
+  .member-detail-card--metrics:not(.adm-sat-member-detail-card) .adm-member-metrics-grid {
+    grid-template-columns: 2.5rem 1fr 1fr 5rem minmax(6.5rem, 1fr);
+    column-gap: 8px;
+    padding: 4px 8px;
+  }
+
+  .adm-mmg-stack--reward {
+    max-width: none;
+    white-space: normal;
+  }
+
+  .adm-mmg-reward-won {
+    white-space: normal;
+  }
 }
 
 .adm-dashboard--yp .member-detail-card--metrics .member-card-header {
@@ -485,7 +683,7 @@
 }
 
 .mcs-value {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
   color: var(--text-primary);
   letter-spacing: -0.03em;
@@ -551,7 +749,7 @@
 
 .member-cases-header {
   padding: 8px 16px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--text-tertiary);
   text-transform: uppercase;
@@ -561,7 +759,7 @@
 
 .no-cases {
   padding: 16px;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--text-tertiary);
   text-align: center;
 }
@@ -589,7 +787,7 @@
 }
 
 .case-row-title {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   color: var(--text-primary);
   letter-spacing: -0.02em;
@@ -601,7 +799,7 @@
 }
 
 .case-row-meta {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--text-tertiary);
   margin-top: 2px;
 }

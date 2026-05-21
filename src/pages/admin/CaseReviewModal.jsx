@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { X, AlertTriangle, Loader2, Save } from 'lucide-react';
+import { X, AlertTriangle, Loader2, Save, ChevronLeft, ChevronRight } from 'lucide-react';
 import { judgeCase } from '../../api/adminApi';
 import useAuthStore from '../../store/authStore';
 import CaseReviewStageBadge from '../../components/common/CaseReviewStageBadge';
@@ -34,6 +34,10 @@ export default function CaseReviewModal({
   onClose,
   overlayClassName = '',
   onRefreshCase,
+  /** 다중 검토: { currentIndex, total, onPrev, onNext } */
+  reviewNavigation = null,
+  /** 최종 저장 후 true 반환 시 모달 유지(다음 건으로 이동) */
+  onAfterFinalSave,
 }) {
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
@@ -95,7 +99,7 @@ export default function CaseReviewModal({
 
   const mutation = useMutation({
     mutationFn: (payload) => judgeCase({ caseId: caseData.id, ...payload }),
-    onSuccess: (_data, variables) => {
+    onSuccess: async (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['team-detail'] });
       queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
       queryClient.invalidateQueries({ queryKey: ['pending-cases'] });
@@ -108,6 +112,9 @@ export default function CaseReviewModal({
         if (typeof onRefreshCase === 'function') {
           onRefreshCase();
         }
+      } else if (typeof onAfterFinalSave === 'function') {
+        const stayOpen = await onAfterFinalSave();
+        if (!stayOpen) onClose();
       } else {
         onClose();
       }
@@ -160,6 +167,39 @@ export default function CaseReviewModal({
     >
       <div className="review-modal review-modal--single">
         <div className="review-modal-header review-modal-header--compact">
+          {reviewNavigation && reviewNavigation.total > 1 ? (
+            <div
+              className="review-modal-bulk-nav"
+              role="navigation"
+              aria-label="선택한 사례 순서 이동"
+            >
+              <button
+                type="button"
+                className="review-modal-bulk-nav-btn"
+                onClick={reviewNavigation.onPrev}
+                disabled={reviewNavigation.currentIndex <= 0}
+                aria-label="이전 사례"
+              >
+                <ChevronLeft size={18} strokeWidth={2.25} aria-hidden />
+              </button>
+              <span className="review-modal-bulk-nav-pos" aria-live="polite">
+                <span className="review-modal-bulk-nav-current">
+                  {reviewNavigation.currentIndex + 1}
+                </span>
+                <span className="review-modal-bulk-nav-sep">/</span>
+                <span className="review-modal-bulk-nav-total">{reviewNavigation.total}</span>
+              </span>
+              <button
+                type="button"
+                className="review-modal-bulk-nav-btn"
+                onClick={reviewNavigation.onNext}
+                disabled={reviewNavigation.currentIndex >= reviewNavigation.total - 1}
+                aria-label="다음 사례"
+              >
+                <ChevronRight size={18} strokeWidth={2.25} aria-hidden />
+              </button>
+            </div>
+          ) : null}
           <div className="review-modal-title-row">
             <div className="review-modal-title-main">
               <h2 className="review-modal-title">{displayMemberName}</h2>

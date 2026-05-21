@@ -1,15 +1,15 @@
 /* YOU PRO — 구성원 홈 (Toss-inspired) */
 
 .hp-home.adm-dashboard--yp {
-  gap: 20px;
+  gap: 14px;
   /* 본문·라벨·불릿 — 만족도 인사이트와 동일 톤 */
-  --hp-fs-caption: 12px;
-  --hp-fs-label: 12.5px;
-  --hp-fs-body: 13.5px;
-  --hp-fs-subtitle: 14.5px;
-  --hp-fs-title: 16.5px;
-  --hp-fs-headline: 24px;
-  --hp-fs-stat: 20px;
+  --hp-fs-caption: 13px;
+  --hp-fs-label: 13.5px;
+  --hp-fs-body: 14.5px;
+  --hp-fs-subtitle: 15.5px;
+  --hp-fs-title: 17.5px;
+  --hp-fs-headline: 26px;
+  --hp-fs-stat: 22px;
   /* 접수 CTA — 따뜻한 코랄 */
   --hp-action: #e06b4f;
   --hp-action-mid: #d45a3f;
@@ -22,6 +22,13 @@
   --hp-brand-muted: rgba(13, 148, 136, 0.1);
   --hp-brand-border: rgba(13, 148, 136, 0.2);
   --hp-brand-soft-bg: #f0fdfa;
+  /* 표면·모션 — 카드·인터랙션 공통 */
+  --hp-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --hp-hairline: rgba(60, 60, 67, 0.1);
+  --hp-card-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.94),
+    0 1px 2px rgba(15, 23, 42, 0.04),
+    0 10px 28px -12px rgba(15, 23, 42, 0.09);
 }
 
 
@@ -76,7 +83,7 @@
 
 .hp-home .hp-intro-logo-you {
   font-family: inherit;
-  font-size: 32px;
+  font-size: 35px;
   font-weight: 700;
   fill: #0F4A3E;
   letter-spacing: -1.5px;
@@ -84,7 +91,7 @@
 
 .hp-home .hp-intro-logo-pro {
   font-family: inherit;
-  font-size: 32px;
+  font-size: 35px;
   font-weight: 500;
   fill: #0D9488;
   letter-spacing: -2px;
@@ -128,9 +135,9 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 4px;
-  font-size: 13.5px;
+  font-size: 14.5px;
   font-weight: 500;
-  line-height: 1.4;
+  line-height: 1.45;
   letter-spacing: -0.02em;
   color: #8b95a1;
 }
@@ -184,7 +191,7 @@
   border: none;
   border-radius: 16px;
   font-family: inherit;
-  font-size: 17px;
+  font-size: 19px;
   font-weight: 800;
   letter-spacing: -0.025em;
   color: #ffffff;
@@ -295,7 +302,7 @@
     width: 100%;
     min-height: 58px;
     padding: 16px 24px;
-    font-size: 18px;
+    font-size: 20px;
   }
 
   .hp-home .hp-intro-line {
@@ -315,16 +322,19 @@
   box-sizing: border-box;
   margin: 0 0 2px;
   padding: 12px 14px;
-  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  background: linear-gradient(180deg, #fafbfc 0%, #f1f5f9 100%);
   border: 1px solid #e2e8f0;
   border-radius: 14px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 1px 2px rgba(15, 23, 42, 0.03);
   position: relative;
   z-index: 1;
 }
 
 .hp-home .hp-program-note-title {
   margin: 0 0 8px;
-  font-size: 14.5px;
+  font-size: 16.5px;
   font-weight: 800;
   letter-spacing: -0.03em;
   color: #334155;
@@ -336,7 +346,7 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  font-size: 13.5px;
+  font-size: 14.5px;
   font-weight: 500;
   color: #64748b;
   letter-spacing: -0.02em;
@@ -354,7 +364,7 @@
   gap: 5px;
   padding: 9px 14px;
   border-radius: 10px;
-  font-size: 14.5px;
+  font-size: 16.5px;
   font-weight: 600;
   letter-spacing: -0.02em;
   cursor: pointer;
@@ -394,7 +404,7 @@
   border-radius: 980px;
   background: #007aff;
   color: #ffffff;
-  font-size: 14.5px;
+  font-size: 16.5px;
   font-weight: 600;
   letter-spacing: -0.015em;
   border: 0;
@@ -453,7 +463,7 @@
 }
 
 .hp-month-stats-label {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 800;
   color: #1f4f93;
   letter-spacing: -0.02em;
@@ -470,7 +480,7 @@
 
 .hp-btn--month-stats .hp-month-chip {
   padding: 4px 8px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   line-height: 1;
   border: 1px solid rgba(0, 0, 0, 0.04);
@@ -489,7 +499,7 @@
   gap: 12px;
   min-height: 200px;
   color: #8b95a1;
-  font-size: 15px;
+  font-size: 17px;
 }
 
 .hp-spinner {
@@ -510,7 +520,7 @@
 .hp-error {
   padding: 24px;
   color: #f04452;
-  font-size: 15px;
+  font-size: 17px;
 }
 
 /* ── 카드 공통 ──────────────────────────────────────────────── */
@@ -531,14 +541,14 @@
 }
 
 .hp-card-title {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 700;
   letter-spacing: -0.03em;
   color: #191f28;
 }
 
 .hp-card-meta {
-  font-size: 14.5px;
+  font-size: 16.5px;
   font-weight: 500;
   color: #8b95a1;
   letter-spacing: -0.01em;
@@ -608,7 +618,7 @@
 
 .hp-home .hp-month-split-col-title--sub {
   width: 100%;
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 700;
   letter-spacing: -0.02em;
   color: #64748b;
@@ -642,7 +652,7 @@
 }
 
 .hp-home .hp-top-rank-range {
-  font-size: 11.5px;
+  font-size: 12.5px;
   font-weight: 800;
   letter-spacing: -0.02em;
   color: #0f766e;
@@ -653,10 +663,12 @@
 .hp-home .hp-top-rank-table-wrap {
   min-width: 0;
   border-radius: 10px;
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  border: 1px solid var(--hp-hairline);
   background: #ffffff;
   overflow: hidden;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 1px 2px rgba(15, 23, 42, 0.04);
 }
 
 .hp-home .hp-top-rank-table {
@@ -680,7 +692,7 @@
 
 .hp-home .hp-top-rank-table thead th {
   padding: 9px 5px 8px;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: -0.01em;
   line-height: 1.25;
@@ -713,7 +725,7 @@
 
 .hp-home .hp-top-rank-table tbody td {
   padding: 8px 5px;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
   letter-spacing: -0.02em;
   color: #1d1d1f;
@@ -728,11 +740,23 @@
 
 .hp-home .hp-top-rank-row {
   background: #ffffff;
-  transition: background 0.15s ease;
+  transition: background 0.18s var(--hp-ease);
+}
+
+.hp-home .hp-top-rank-table tbody tr:nth-child(even) {
+  background: rgba(248, 250, 252, 0.65);
 }
 
 .hp-home .hp-top-rank-row:hover td {
-  background: rgba(0, 0, 0, 0.02);
+  background: rgba(13, 148, 136, 0.05);
+}
+
+.hp-home .hp-top-rank-row--first td {
+  background: linear-gradient(90deg, rgba(255, 247, 237, 0.9) 0%, rgba(255, 255, 255, 0) 72%);
+}
+
+.hp-home .hp-top-rank-row--first:hover td {
+  background: linear-gradient(90deg, rgba(255, 243, 224, 0.95) 0%, rgba(13, 148, 136, 0.04) 100%);
 }
 
 .hp-home .hp-top-rank-row--first .hp-top-rank-num {
@@ -745,14 +769,14 @@
 }
 
 .hp-home .hp-top-rank-num {
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 700;
   color: #1d1d1f;
 }
 
 .hp-home .hp-top-rank-suffix {
   margin-left: 1px;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
   color: #86868b;
 }
@@ -770,7 +794,7 @@
   white-space: nowrap;
   color: #0071e3;
   font-weight: 600;
-  font-size: 11.5px;
+  font-size: 12.5px;
 }
 
 .hp-home .hp-top-rank-cell--cert {
@@ -779,14 +803,14 @@
 }
 
 .hp-home .hp-top-rank-cell--cert strong {
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 700;
   color: #1d1d1f;
 }
 
 .hp-home .hp-top-rank-unit {
   margin-left: 1px;
-  font-size: 10.5px;
+  font-size: 11.5px;
   font-weight: 500;
   color: #86868b;
 }
@@ -835,7 +859,7 @@
 }
 
 .hp-home .hp-top-suggest-why-main {
-  font-size: 14.5px;
+  font-size: 16.5px;
   font-weight: 800;
   letter-spacing: -0.035em;
   line-height: 1.3;
@@ -859,7 +883,7 @@
 
 .hp-home .hp-top-trend-label {
   margin: 0;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: -0.02em;
   color: #0d9488;
@@ -868,7 +892,7 @@
 
 .hp-home .hp-top-trend-summary {
   margin: 0;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   line-height: 1.55;
   letter-spacing: -0.02em;
@@ -884,7 +908,7 @@
 }
 
 .hp-home .hp-top-trend-bullet {
-  font-size: 12.5px;
+  font-size: 13.5px;
   line-height: 1.48;
   color: #6b7684;
 }
@@ -895,11 +919,11 @@
 }
 
 .hp-home .hp-top-trend--compact .hp-top-trend-label {
-  font-size: 10.5px;
+  font-size: 11.5px;
 }
 
 .hp-home .hp-top-trend--compact .hp-top-trend-summary {
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.42;
   display: -webkit-box;
   -webkit-box-orient: vertical;
@@ -912,7 +936,7 @@
 }
 
 .hp-home .hp-top-trend--compact .hp-top-trend-bullet {
-  font-size: 11.5px;
+  font-size: 12.5px;
   line-height: 1.38;
   display: -webkit-box;
   -webkit-box-orient: vertical;
@@ -927,7 +951,7 @@
 
 .hp-home .hp-top-suggest-trend .csx-toss-ai-fallback {
   margin-top: 4px;
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .hp-home .hp-top-entry {
@@ -947,7 +971,7 @@
 }
 
 .hp-home .hp-top-entry-rank {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 800;
   letter-spacing: -0.03em;
   line-height: 1.2;
@@ -961,7 +985,7 @@
 .hp-home .hp-top-entry-tier {
   padding: 2px 7px;
   border-radius: 999px;
-  font-size: 10.5px;
+  font-size: 11.5px;
   font-weight: 700;
   letter-spacing: -0.02em;
   color: #0f766e;
@@ -971,7 +995,7 @@
 }
 
 .hp-home .hp-top-entry-cert {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
   color: #64748b;
   white-space: nowrap;
@@ -985,7 +1009,7 @@
 .hp-home .hp-top-entry-title {
   margin: 0 0 5px;
   min-height: calc(13.5px * 1.35 * 2);
-  font-size: 13.5px;
+  font-size: 14.5px;
   font-weight: 700;
   letter-spacing: -0.03em;
   line-height: 1.35;
@@ -1022,7 +1046,7 @@
   display: block;
   flex-shrink: 0;
   margin-bottom: 3px;
-  font-size: 10.5px;
+  font-size: 11.5px;
   font-weight: 800;
   letter-spacing: -0.01em;
   color: #94a3b8;
@@ -1034,7 +1058,7 @@
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 500;
   line-height: 1.55;
   letter-spacing: -0.02em;
@@ -1117,7 +1141,7 @@
 }
 
 .hp-home .hp-board-meta-rank-num {
-  font-size: 16.5px;
+  font-size: 18.5px;
   font-weight: 700;
   letter-spacing: -0.04em;
   line-height: 1;
@@ -1125,7 +1149,7 @@
 }
 
 .hp-home .hp-board-meta-rank-unit {
-  font-size: 11.5px;
+  font-size: 12.5px;
   font-weight: 600;
   letter-spacing: -0.02em;
   line-height: 1.15;
@@ -1133,7 +1157,7 @@
 }
 
 .hp-home .hp-board-meta-tier {
-  font-size: 11.5px;
+  font-size: 12.5px;
   font-weight: 600;
   letter-spacing: -0.03em;
   line-height: 1.15;
@@ -1151,7 +1175,7 @@
 }
 
 .hp-home .hp-board-meta-cert {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
   letter-spacing: -0.02em;
   line-height: 1.15;
@@ -1178,7 +1202,7 @@
 }
 
 .hp-home .hp-board-compact-quote-inner {
-  font-size: 14.5px;
+  font-size: 16.5px;
   font-weight: 500;
   font-style: italic;
   letter-spacing: -0.015em;
@@ -1212,8 +1236,9 @@
   background: linear-gradient(165deg, #ffffff 0%, #fafaf9 100%);
   border: 1px solid #ebe9e6;
   box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.92),
     0 1px 2px rgba(15, 23, 42, 0.04),
-    0 6px 18px -8px rgba(28, 25, 23, 0.08);
+    0 8px 20px -10px rgba(28, 25, 23, 0.07);
 }
 
 .hp-home .hp-month-split-col-head--main {
@@ -1233,7 +1258,7 @@
 }
 
 .hp-home .hp-month-split-col-month {
-  font-size: 21px;
+  font-size: 23px;
   font-weight: 800;
   letter-spacing: -0.04em;
   color: var(--hp-brand-deep);
@@ -1241,7 +1266,7 @@
 }
 
 .hp-home .hp-month-split-col-title-text {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 800;
   letter-spacing: -0.03em;
   color: #191f28;
@@ -1249,7 +1274,7 @@
 
 .hp-home .hp-month-cs--seal-sm {
   padding: 3px 8px 3px 6px;
-  font-size: 11.5px;
+  font-size: 12.5px;
 }
 
 /* 컴팩트 선정/대기/비선정 — 메인 열에서만 약간 크게 */
@@ -1276,25 +1301,25 @@
 }
 
 .hp-home .hp-month-block-item--compact .hp-month-block-item-label-top {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
 }
 
 .hp-home .hp-month-split-col--mine .hp-month-block-item--compact .hp-month-block-item-label-top {
-  font-size: 12.5px;
+  font-size: 13.5px;
 }
 
 .hp-home .hp-month-block-item--compact .hp-month-block-val {
-  font-size: 19px;
+  font-size: 21px;
   font-weight: 800;
 }
 
 .hp-home .hp-month-split-col--mine .hp-month-block-item--compact .hp-month-block-val {
-  font-size: 24px;
+  font-size: 27px;
 }
 
 .hp-home .hp-month-block-item--compact .hp-month-block-unit {
-  font-size: 12.5px;
+  font-size: 13.5px;
 }
 
 .hp-home .hp-month-block-item--compact .hp-month-block-num-row {
@@ -1352,14 +1377,16 @@
 .hp-home .hp-month-split-col--mine .hp-mine-suggest {
   --hp-suggest-blue: #2563eb;
   --hp-suggest-blue-deep: #1d4ed8;
-  --hp-suggest-blue-border: rgba(37, 99, 235, 0.34);
+  --hp-suggest-blue-border: rgba(37, 99, 235, 0.28);
   --hp-suggest-blue-soft: rgba(37, 99, 235, 0.06);
   margin-top: 10px;
   padding: 10px 11px 9px;
   border-radius: 10px;
   border: 1px solid var(--hp-suggest-blue-border);
-  background: #ffffff;
-  box-shadow: none;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    0 1px 2px rgba(37, 99, 235, 0.06);
 }
 
 .hp-home .hp-month-split-col--mine .hp-mine-suggest .csx-ai-insight-trend-kicker {
@@ -1406,7 +1433,7 @@
 }
 
 .hp-home .hp-month-split-col--mine .hp-month-preview-label {
-  font-size: 13.5px;
+  font-size: 14.5px;
   font-weight: 800;
   color: #334155;
 }
@@ -1425,7 +1452,7 @@
 
 .hp-home .hp-month-preview--compact .hp-month-preview-empty {
   padding: 8px 10px;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 @media (max-width: 720px) {
@@ -1447,11 +1474,11 @@
   }
 
   .hp-home .hp-month-split-col-month {
-    font-size: 19px;
+    font-size: 21px;
   }
 
   .hp-home .hp-month-split-col-title-text {
-    font-size: 17px;
+    font-size: 19px;
   }
 }
 
@@ -1474,7 +1501,7 @@
   --hp-corner-size: 26px;
   --hp-corner-thick: 2px;
   --hp-corner-radius: 18px;
-  background: #ffffff;
+  background: linear-gradient(180deg, #ffffff 0%, #fcfcfd 100%);
   border-radius: var(--hp-corner-radius);
   border: 1px solid #e6e8ec;
   padding: 18px 16px;
@@ -1482,9 +1509,7 @@
   flex-direction: column;
   gap: 14px;
   position: relative;
-  box-shadow:
-    0 1px 2px rgba(15, 23, 42, 0.04),
-    0 8px 24px -10px rgba(15, 23, 42, 0.08);
+  box-shadow: var(--hp-card-shadow);
 }
 
 .hp-hero>* {
@@ -1555,7 +1580,7 @@
 }
 
 .hp-hero-label {
-  font-size: 14.5px;
+  font-size: 16.5px;
   font-weight: 500;
   color: #6b7684;
   margin: 0;
@@ -1603,7 +1628,7 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-size: 13.5px;
+  font-size: 14.5px;
   font-weight: 500;
   color: #6b7684;
   margin: 2px 0 0;
@@ -1641,7 +1666,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 14.5px;
+  font-size: 16.5px;
   letter-spacing: -0.02em;
 }
 
@@ -1672,7 +1697,7 @@
   align-items: center;
   padding: 2px 9px;
   border-radius: 999px;
-  font-size: 13.5px;
+  font-size: 14.5px;
   font-weight: 800;
   letter-spacing: -0.01em;
 }
@@ -1696,7 +1721,7 @@
 }
 
 .hp-breakdown-row--total {
-  font-size: 15px;
+  font-size: 17px;
 }
 
 .hp-breakdown-row--total .hp-breakdown-label {
@@ -1705,7 +1730,7 @@
 }
 
 .hp-breakdown-row--total .hp-breakdown-value strong {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 800;
   color: #3182f6;
   letter-spacing: -0.02em;
@@ -1722,7 +1747,7 @@
   padding: 9px 12px;
   background: #eef6ff;
   border-radius: 10px;
-  font-size: 13.5px;
+  font-size: 14.5px;
   color: #4b5662;
   letter-spacing: -0.02em;
   line-height: 1.45;
@@ -1753,7 +1778,7 @@
   border-radius: 999px;
   background: rgba(239, 68, 68, 0.09);
   border: 1px solid rgba(239, 68, 68, 0.2);
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 700;
   color: #dc2626;
   letter-spacing: -0.01em;
@@ -1788,7 +1813,7 @@
 }
 
 .hp-month-strip-title {
-  font-size: 13.5px;
+  font-size: 14.5px;
   font-weight: 700;
   color: #4b5662;
   letter-spacing: -0.02em;
@@ -1810,7 +1835,7 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 13.5px;
+  font-size: 14.5px;
   letter-spacing: -0.02em;
   padding: 4px 10px 4px 8px;
   border-radius: 999px;
@@ -1830,7 +1855,7 @@
 }
 
 .hp-month-stat-val {
-  font-size: 16.5px;
+  font-size: 18.5px;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.03em;
@@ -1892,7 +1917,7 @@
   display: inline-flex;
   align-items: center;
   gap: 1px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   color: #8b95a1;
   letter-spacing: -0.02em;
@@ -1927,7 +1952,7 @@
 }
 
 .hp-month-block-title {
-  font-size: 14.5px;
+  font-size: 16.5px;
   font-weight: 700;
   color: #333d4b;
   letter-spacing: -0.02em;
@@ -1937,7 +1962,7 @@
   display: inline-flex;
   align-items: center;
   gap: 2px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   color: #8b95a1;
   text-decoration: none;
@@ -1965,7 +1990,9 @@
   border-radius: 10px;
   background: #ffffff;
   border: 1px solid rgba(0, 0, 0, 0.04);
-  box-shadow: 0 1px 3px rgba(25, 31, 40, 0.05);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.88),
+    0 1px 3px rgba(25, 31, 40, 0.05);
 }
 
 button.hp-month-block-item--btn {
@@ -1973,12 +2000,17 @@ button.hp-month-block-item--btn {
   text-align: left;
   cursor: pointer;
   width: 100%;
-  transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+  transition:
+    transform 0.14s var(--hp-ease),
+    box-shadow 0.14s var(--hp-ease),
+    border-color 0.14s var(--hp-ease);
 }
 
 button.hp-month-block-item--btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 10px rgba(25, 31, 40, 0.08);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.85),
+    0 4px 12px rgba(25, 31, 40, 0.08);
 }
 
 button.hp-month-block-item--btn:active {
@@ -1987,12 +2019,12 @@ button.hp-month-block-item--btn:active {
 }
 
 button.hp-month-block-item--btn:focus-visible {
-  outline: 2px solid #3182f6;
+  outline: 2px solid var(--hp-brand);
   outline-offset: 2px;
 }
 
 .hp-month-block-item-label-top {
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 700;
   letter-spacing: -0.01em;
 }
@@ -2004,7 +2036,7 @@ button.hp-month-block-item--btn:focus-visible {
 }
 
 .hp-month-block-val {
-  font-size: 24px;
+  font-size: 27px;
   font-weight: 800;
   letter-spacing: -0.03em;
   font-variant-numeric: tabular-nums;
@@ -2012,7 +2044,7 @@ button.hp-month-block-item--btn:focus-visible {
 }
 
 .hp-month-block-unit {
-  font-size: 14.5px;
+  font-size: 16.5px;
   font-weight: 600;
   letter-spacing: -0.01em;
   opacity: 0.6;
@@ -2084,7 +2116,7 @@ button.hp-month-block-item--btn:focus-visible {
   background: #ffffff;
   border: 1px solid #e5e8eb;
   border-radius: 10px;
-  font-size: 13.5px;
+  font-size: 14.5px;
   font-weight: 500;
   color: #6b7684;
   letter-spacing: -0.01em;
@@ -2105,7 +2137,7 @@ button.hp-month-block-item--btn:focus-visible {
 }
 
 .hp-month-block--main .hp-month-block-title {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 800;
   letter-spacing: -0.03em;
   color: #191f28;
@@ -2120,7 +2152,7 @@ button.hp-month-block-item--btn:focus-visible {
 }
 
 .hp-month-block--main .hp-month-block-item-label-top {
-  font-size: 13.5px;
+  font-size: 14.5px;
 }
 
 /* 통합 카드 안에서는 컴팩트 그리드만 사용 */
@@ -2146,14 +2178,14 @@ button.hp-month-block-item--btn:focus-visible {
 }
 
 .hp-home .hp-month-preview-label {
-  font-size: 13.5px;
+  font-size: 14.5px;
   font-weight: 800;
   letter-spacing: -0.02em;
   color: #475569;
 }
 
 .hp-home .hp-month-preview-hint {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
   color: #94a3b8;
   letter-spacing: -0.01em;
@@ -2162,7 +2194,7 @@ button.hp-month-block-item--btn:focus-visible {
 .hp-home .hp-month-preview-empty {
   margin: 0;
   padding: 11px 12px;
-  font-size: 13.5px;
+  font-size: 14.5px;
   font-weight: 500;
   color: #94a3b8;
   text-align: center;
@@ -2187,17 +2219,28 @@ button.hp-month-block-item--btn:focus-visible {
   align-items: center;
   gap: 8px 10px;
   padding: 8px 10px;
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.92);
   border: 1px solid #e2e8f0;
   border-radius: 10px;
   text-decoration: none;
   color: inherit;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    border-color 0.18s var(--hp-ease),
+    box-shadow 0.18s var(--hp-ease),
+    background 0.18s var(--hp-ease),
+    transform 0.12s var(--hp-ease);
 }
 
 .hp-home .hp-month-preview-row:hover {
   border-color: var(--hp-brand-border);
-  box-shadow: 0 2px 10px rgba(13, 148, 136, 0.1);
+  background: #ffffff;
+  box-shadow: 0 2px 12px rgba(13, 148, 136, 0.1);
+  transform: translateY(-0.5px);
+}
+
+.hp-home .hp-month-preview-row:hover .hp-month-preview-chev {
+  color: var(--hp-brand);
+  transform: translateX(1px);
 }
 
 .hp-home .hp-month-preview-badge {
@@ -2208,7 +2251,7 @@ button.hp-month-block-item--btn:focus-visible {
 }
 
 .hp-home .hp-month-preview-title {
-  font-size: 13.5px;
+  font-size: 14.5px;
   font-weight: 600;
   letter-spacing: -0.02em;
   color: #1e293b;
@@ -2219,7 +2262,7 @@ button.hp-month-block-item--btn:focus-visible {
 }
 
 .hp-home .hp-month-preview-date {
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: #64748b;
@@ -2231,6 +2274,7 @@ button.hp-month-block-item--btn:focus-visible {
 .hp-home .hp-month-preview-chev {
   color: #cbd5e1;
   flex-shrink: 0;
+  transition: color 0.18s var(--hp-ease), transform 0.18s var(--hp-ease);
 }
 
 .hp-home .hp-month-preview--loading {
@@ -2252,7 +2296,7 @@ button.hp-month-block-item--btn:focus-visible {
   background: #f9fafb;
   border-radius: 12px;
   border: 1px solid #e8ecf0;
-  font-size: 13.5px;
+  font-size: 14.5px;
   font-weight: 500;
   color: #4b5662;
   letter-spacing: -0.02em;
@@ -2290,7 +2334,7 @@ button.hp-month-block-item--btn:focus-visible {
 
 .hp-home .hp-hero-compact-meta {
   flex-shrink: 0;
-  font-size: 13px;
+  font-size: 14px;
   font-variant-numeric: tabular-nums;
   color: #6b7684;
 }
@@ -2298,7 +2342,7 @@ button.hp-month-block-item--btn:focus-visible {
 .hp-home .hp-hero-compact-hint {
   flex: 1;
   min-width: 0;
-  font-size: 13px;
+  font-size: 14px;
   color: #8b95a1;
 }
 
@@ -2308,7 +2352,7 @@ button.hp-month-block-item--btn:focus-visible {
   align-items: center;
   padding: 3px 9px;
   border-radius: 999px;
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 700;
   letter-spacing: -0.01em;
   white-space: nowrap;
@@ -2341,7 +2385,7 @@ button.hp-month-block-item--btn:focus-visible {
   border-width: 1.5px;
   text-transform: uppercase;
   letter-spacing: 0.02em;
-  font-size: 12px;
+  font-size: 13px;
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.6) inset, 0 1px 2px rgba(15, 23, 42, 0.06);
 }
 
@@ -2388,7 +2432,7 @@ button.hp-month-block-item--btn:focus-visible {
   }
 
   .hp-month-stat-val {
-    font-size: 14.5px;
+    font-size: 16.5px;
   }
 
   .hp-month-strip-link {
@@ -2408,12 +2452,10 @@ button.hp-month-block-item--btn:focus-visible {
   flex-direction: column;
   gap: 14px;
   padding: 18px 16px;
-  background: #ffffff;
+  background: linear-gradient(180deg, #ffffff 0%, #fffcfa 100%);
   border: 1px solid #e6e8ec;
   border-radius: var(--hp-corner-radius);
-  box-shadow:
-    0 1px 2px rgba(15, 23, 42, 0.04),
-    0 8px 24px -10px rgba(15, 23, 42, 0.08);
+  box-shadow: var(--hp-card-shadow);
   position: relative;
   z-index: 1;
   color: #191f28;
@@ -2484,7 +2526,7 @@ button.hp-month-block-item--btn:focus-visible {
 }
 
 .hp-home .hp-tier-block-title {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 800;
   letter-spacing: -0.03em;
   color: #191f28;
@@ -2545,14 +2587,14 @@ button.hp-month-block-item--btn:focus-visible {
 }
 
 .hp-home .hp-reflect-inline-title {
-  font-size: 13.5px;
+  font-size: 14.5px;
   font-weight: 800;
   letter-spacing: -0.02em;
   color: #333d4b;
 }
 
 .hp-home .hp-reflect-inline-rule {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   color: #6b7684;
   letter-spacing: -0.01em;
@@ -2563,7 +2605,7 @@ button.hp-month-block-item--btn:focus-visible {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   color: #6b7684;
   letter-spacing: -0.01em;
@@ -2633,7 +2675,7 @@ button.hp-month-block-item--btn:focus-visible {
 }
 
 .hp-home .hp-gauge-seg-pick {
-  font-size: 14.5px;
+  font-size: 16.5px;
   font-weight: 800;
   letter-spacing: -0.02em;
   color: #ffffff;
@@ -2656,7 +2698,7 @@ button.hp-month-block-item--btn:focus-visible {
 
 .hp-home .hp-gauge-axis-tick {
   text-align: center;
-  font-size: 11.5px;
+  font-size: 12.5px;
   font-weight: 700;
   letter-spacing: -0.02em;
   color: #94a3b8;
@@ -2682,7 +2724,7 @@ button.hp-month-block-item--btn:focus-visible {
 }
 
 .hp-home .hp-gauge-foot-label {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 800;
   color: #047857;
   letter-spacing: -0.02em;
@@ -2696,7 +2738,7 @@ button.hp-month-block-item--btn:focus-visible {
 }
 
 .hp-home .hp-gauge-foot-val strong {
-  font-size: 21px;
+  font-size: 23px;
   font-weight: 800;
   letter-spacing: -0.03em;
   color: #047857;
@@ -2704,7 +2746,7 @@ button.hp-month-block-item--btn:focus-visible {
 }
 
 .hp-home .hp-gauge-foot-unit {
-  font-size: 13.5px;
+  font-size: 14.5px;
   font-weight: 700;
   color: #059669;
   opacity: 0.8;
@@ -2712,7 +2754,7 @@ button.hp-month-block-item--btn:focus-visible {
 
 .hp-home .hp-gauge-foot-help {
   margin: 0;
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 500;
   line-height: 1.45;
   letter-spacing: -0.02em;
@@ -2731,11 +2773,11 @@ button.hp-month-block-item--btn:focus-visible {
   }
 
   .hp-home .hp-gauge-seg-pick {
-    font-size: 13.5px;
+    font-size: 14.5px;
   }
 
   .hp-home .hp-gauge-axis-tick {
-    font-size: 11.5px;
+    font-size: 12.5px;
   }
 }
 
@@ -2747,10 +2789,12 @@ button.hp-month-block-item--btn:focus-visible {
   flex-direction: column;
   gap: 12px;
   padding: 14px 14px 12px;
-  background: #ffffff;
-  border: 1px solid rgba(0, 0, 0, 0.04);
+  background: linear-gradient(180deg, #ffffff 0%, #fafbfc 100%);
+  border: 1px solid rgba(0, 0, 0, 0.05);
   border-radius: 10px;
-  box-shadow: 0 1px 3px rgba(25, 31, 40, 0.05);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 1px 3px rgba(25, 31, 40, 0.05);
   font-family:
     -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display',
     'Helvetica Neue', Arial, sans-serif;
@@ -2766,14 +2810,14 @@ button.hp-month-block-item--btn:focus-visible {
 
 .hp-home .hp-rfx-title {
   margin: 0;
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 700;
   letter-spacing: -0.022em;
   color: #1d1d1f;
 }
 
 .hp-home .hp-rfx-sub {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
   color: #94a3b8;
   letter-spacing: 0.02em;
@@ -2800,8 +2844,9 @@ button.hp-month-block-item--btn:focus-visible {
   border-radius: 10px;
   background: #f8fafc;
   box-shadow: inset 0 0 0 1px #e2e8f0;
-  transition: transform 0.18s cubic-bezier(0.32, 0.72, 0, 1),
-    box-shadow 0.18s ease;
+  transition:
+    transform 0.2s var(--hp-ease),
+    box-shadow 0.2s var(--hp-ease);
 }
 
 .hp-home .hp-rfx-cell:hover {
@@ -2844,7 +2889,7 @@ button.hp-month-block-item--btn:focus-visible {
 }
 
 .hp-home .hp-rfx-cell-month {
-  font-size: 11.5px;
+  font-size: 12.5px;
   font-weight: 700;
   color: #94a3b8;
   letter-spacing: 0.02em;
@@ -2872,7 +2917,7 @@ button.hp-month-block-item--btn:focus-visible {
 }
 
 .hp-home .hp-rfx-cell-num {
-  font-size: 24px;
+  font-size: 27px;
   font-weight: 700;
   letter-spacing: -0.04em;
   color: #1d1d1f;
@@ -2883,7 +2928,7 @@ button.hp-month-block-item--btn:focus-visible {
 }
 
 .hp-home .hp-rfx-cell-cap {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   color: #94a3b8;
   letter-spacing: -0.01em;
@@ -2901,7 +2946,7 @@ button.hp-month-block-item--btn:focus-visible {
   left: 0;
   right: 0;
   text-align: center;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   color: #cbd5e1;
   letter-spacing: 0.02em;
@@ -3015,7 +3060,9 @@ button.hp-month-block-item--btn:focus-visible {
   border-radius: 10px;
   background: linear-gradient(160deg, var(--hp-brand-soft-bg) 0%, #ecfdf5 100%);
   border: 1px solid var(--hp-brand-border);
-  box-shadow: 0 1px 3px rgba(25, 31, 40, 0.05);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.75),
+    0 1px 3px rgba(25, 31, 40, 0.05);
 }
 
 .hp-home .hp-tier-summary-item {
@@ -3031,7 +3078,7 @@ button.hp-month-block-item--btn:focus-visible {
 .hp-home .hp-tier-summary-label {
   display: block;
   width: 100%;
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 700;
   color: var(--hp-brand-deep);
   letter-spacing: -0.01em;
@@ -3048,14 +3095,14 @@ button.hp-month-block-item--btn:focus-visible {
 }
 
 .hp-home .hp-tier-summary-val strong {
-  font-size: 24px;
+  font-size: 27px;
   font-weight: 800;
   letter-spacing: -0.03em;
   color: var(--hp-brand);
 }
 
 .hp-home .hp-tier-summary-unit {
-  font-size: 13.5px;
+  font-size: 14.5px;
   font-weight: 700;
   color: var(--hp-brand);
   margin-left: 2px;
@@ -3077,7 +3124,7 @@ button.hp-month-block-item--btn:focus-visible {
 }
 
 .hp-home .hp-tier-summary-val--money {
-  font-size: 24px;
+  font-size: 27px;
   font-weight: 800;
   letter-spacing: -0.03em;
   color: var(--hp-brand);
@@ -3094,7 +3141,7 @@ button.hp-month-block-item--btn:focus-visible {
 
 .hp-home .hp-rfx-help {
   margin: 0;
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 500;
   letter-spacing: -0.02em;
   color: #6b7684;
@@ -3110,7 +3157,7 @@ button.hp-month-block-item--btn:focus-visible {
 
   .hp-home .hp-tier-summary-val strong,
   .hp-home .hp-tier-summary-val--money {
-    font-size: 19px;
+    font-size: 21px;
   }
 }
 
@@ -3128,11 +3175,11 @@ button.hp-month-block-item--btn:focus-visible {
   }
 
   .hp-home .hp-rfx-cell-num {
-    font-size: 19px;
+    font-size: 21px;
   }
 
   .hp-home .hp-rfx-cell-cap {
-    font-size: 11px;
+    font-size: 12px;
   }
 
   .hp-home .hp-rfx-cell-raw {
@@ -3151,7 +3198,7 @@ button.hp-month-block-item--btn:focus-visible {
   }
 
   .hp-home .hp-rfx-cell-num {
-    font-size: 17px;
+    font-size: 19px;
     letter-spacing: -0.03em;
   }
 }
@@ -3179,14 +3226,14 @@ button.hp-month-block-item--btn:focus-visible {
 }
 
 .hp-home .hp-reflect-tl-title {
-  font-size: 14.5px;
+  font-size: 16.5px;
   font-weight: 800;
   letter-spacing: -0.02em;
   color: #1d1d1f;
 }
 
 .hp-home .hp-reflect-tl-sub {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
   color: #94a3b8;
   letter-spacing: -0.01em;
@@ -3204,7 +3251,7 @@ button.hp-month-block-item--btn:focus-visible {
   gap: 3px;
   padding: 2px 7px;
   border-radius: 999px;
-  font-size: 11.5px;
+  font-size: 12.5px;
   font-weight: 800;
   letter-spacing: -0.01em;
   font-variant-numeric: tabular-nums;
@@ -3262,14 +3309,14 @@ button.hp-month-block-item--btn:focus-visible {
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 800;
   color: #047857;
   letter-spacing: -0.02em;
 }
 
 .hp-home .hp-reflect-tl-foot-val {
-  font-size: 13.5px;
+  font-size: 14.5px;
   font-weight: 700;
   color: #059669;
   letter-spacing: -0.02em;
@@ -3277,7 +3324,7 @@ button.hp-month-block-item--btn:focus-visible {
 }
 
 .hp-home .hp-reflect-tl-foot-val strong {
-  font-size: 24px;
+  font-size: 27px;
   font-weight: 900;
   letter-spacing: -0.03em;
   color: #047857;
@@ -3289,7 +3336,7 @@ button.hp-month-block-item--btn:focus-visible {
   margin: 0;
   flex: 1;
   min-width: 0;
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 500;
   line-height: 1.45;
   letter-spacing: -0.02em;
@@ -3324,7 +3371,7 @@ button.hp-month-block-item--btn:focus-visible {
 }
 
 .hp-home .hp-reflect-tip-month {
-  font-size: 13.5px;
+  font-size: 14.5px;
   font-weight: 800;
   letter-spacing: -0.02em;
   color: #1d1d1f;
@@ -3333,7 +3380,7 @@ button.hp-month-block-item--btn:focus-visible {
 .hp-home .hp-reflect-tip-pill {
   padding: 1px 7px;
   border-radius: 999px;
-  font-size: 11.5px;
+  font-size: 12.5px;
   font-weight: 800;
   letter-spacing: -0.01em;
 }
@@ -3367,14 +3414,14 @@ button.hp-month-block-item--btn:focus-visible {
   align-items: baseline;
   justify-content: space-between;
   gap: 8px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   color: #475569;
   letter-spacing: -0.02em;
 }
 
 .hp-home .hp-reflect-tip-list li strong {
-  font-size: 14.5px;
+  font-size: 16.5px;
   font-weight: 800;
   color: #1d1d1f;
   font-variant-numeric: tabular-nums;
@@ -3402,7 +3449,7 @@ button.hp-month-block-item--btn:focus-visible {
   align-items: center;
   gap: 8px;
   padding: 4px 10px;
-  font-size: 11.5px;
+  font-size: 12.5px;
   font-weight: 700;
   letter-spacing: 0.04em;
   color: #94a3b8;
@@ -3464,7 +3511,7 @@ button.hp-month-block-item--btn:focus-visible {
 }
 
 .hp-home .hp-reflect-row-month {
-  font-size: 13.5px;
+  font-size: 14.5px;
   font-weight: 800;
   letter-spacing: -0.02em;
   color: #1d1d1f;
@@ -3485,7 +3532,7 @@ button.hp-month-block-item--btn:focus-visible {
   align-items: center;
   padding: 2px 8px;
   border-radius: 999px;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 800;
   letter-spacing: -0.01em;
   white-space: nowrap;
@@ -3511,7 +3558,7 @@ button.hp-month-block-item--btn:focus-visible {
 
 .hp-home .hp-reflect-row-num {
   text-align: right;
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 800;
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
@@ -3555,7 +3602,7 @@ button.hp-month-block-item--btn:focus-visible {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   color: #6b7684;
   letter-spacing: -0.01em;
@@ -3581,7 +3628,7 @@ button.hp-month-block-item--btn:focus-visible {
 }
 
 .hp-home .hp-tier-rank-aside-v2-title {
-  font-size: 11.5px;
+  font-size: 12.5px;
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -3636,7 +3683,7 @@ button.hp-month-block-item--btn:focus-visible {
 }
 
 .hp-home .hp-tier-rank-aside-v2 .hp-tier-rank-card-name {
-  font-size: 13.5px;
+  font-size: 14.5px;
   font-weight: 800;
   line-height: 1.2;
   letter-spacing: -0.02em;
@@ -3647,7 +3694,7 @@ button.hp-month-block-item--btn:focus-visible {
 }
 
 .hp-home .hp-tier-rank-aside-v2 .hp-tier-rank-card-range {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   color: #8b95a1;
   letter-spacing: -0.01em;
@@ -3659,7 +3706,7 @@ button.hp-month-block-item--btn:focus-visible {
 
 .hp-home .hp-tier-rank-aside-v2 .hp-tier-rank-card-rate {
   margin-top: 0;
-  font-size: 13.5px;
+  font-size: 14.5px;
   font-weight: 800;
   letter-spacing: -0.02em;
   color: #191f28;
@@ -3706,7 +3753,7 @@ button.hp-month-block-item--btn:focus-visible {
   margin-left: 0;
   padding: 1px 5px;
   border-radius: 999px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: -0.01em;
   background: #3182f6;
@@ -3745,7 +3792,7 @@ button.hp-month-block-item--btn:focus-visible {
 }
 
 .hp-home .hp-tier-kpi-item-label {
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 700;
   letter-spacing: -0.01em;
   color: #2563b0;
@@ -3775,7 +3822,7 @@ button.hp-month-block-item--btn:focus-visible {
 }
 
 .hp-home .hp-tier-kpi-item-unit {
-  font-size: 14.5px;
+  font-size: 16.5px;
   font-weight: 600;
   letter-spacing: -0.01em;
   color: #4b5662;
@@ -3833,7 +3880,7 @@ button.hp-month-block-item--btn:focus-visible {
 }
 
 .hp-home .hp-tier-rank-card-name {
-  font-size: 13.5px;
+  font-size: 14.5px;
   font-weight: 800;
   letter-spacing: -0.02em;
   color: #191f28;
@@ -3841,7 +3888,7 @@ button.hp-month-block-item--btn:focus-visible {
 }
 
 .hp-home .hp-tier-rank-card-range {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   letter-spacing: -0.01em;
   color: #8b95a1;
@@ -3850,7 +3897,7 @@ button.hp-month-block-item--btn:focus-visible {
 
 .hp-home .hp-tier-rank-card-rate {
   margin-top: 2px;
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 800;
   letter-spacing: -0.03em;
   color: #191f28;
@@ -3864,7 +3911,7 @@ button.hp-month-block-item--btn:focus-visible {
   right: 8px;
   padding: 2px 7px;
   border-radius: 999px;
-  font-size: 11.5px;
+  font-size: 12.5px;
   font-weight: 800;
   letter-spacing: -0.01em;
   background: #3182f6;
@@ -3931,7 +3978,7 @@ button.hp-month-block-item--btn:focus-visible {
 }
 
 .hp-home .hp-reflect-block-title {
-  font-size: 14.5px;
+  font-size: 16.5px;
   font-weight: 800;
   letter-spacing: -0.02em;
   color: #333d4b;
@@ -3941,7 +3988,7 @@ button.hp-month-block-item--btn:focus-visible {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 600;
   color: #6b7684;
   letter-spacing: -0.01em;
@@ -3995,7 +4042,7 @@ button.hp-month-block-item--btn:focus-visible {
 }
 
 .hp-home .hp-reflect-cell-month {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
   color: #6b7684;
   letter-spacing: -0.02em;
@@ -4012,7 +4059,7 @@ button.hp-month-block-item--btn:focus-visible {
 }
 
 .hp-home .hp-reflect-cell .hp-reflect-raw {
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 800;
   letter-spacing: -0.03em;
   font-variant-numeric: tabular-nums;
@@ -4052,7 +4099,7 @@ button.hp-month-block-item--btn:focus-visible {
   border-radius: 8px;
   background: rgba(49, 130, 246, 0.06);
   border: 1px solid rgba(49, 130, 246, 0.14);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   line-height: 1.45;
   letter-spacing: -0.02em;
@@ -4085,7 +4132,7 @@ button.hp-month-block-item--btn:focus-visible {
   }
 
   .hp-home .hp-reflect-cell .hp-reflect-raw {
-    font-size: 13.5px;
+    font-size: 14.5px;
   }
 }
 
@@ -4113,7 +4160,7 @@ button.hp-month-block-item--btn:focus-visible {
 
 .hp-tier-dash-title {
   margin: 0;
-  font-size: 21px;
+  font-size: 23px;
   font-weight: 600;
   letter-spacing: -0.03em;
   color: #1d1d1f;
@@ -4174,7 +4221,7 @@ button.hp-month-block-item--btn:focus-visible {
 .hp-tier-kpi-sub {
   display: block;
   margin-top: 8px;
-  font-size: 13.5px;
+  font-size: 14.5px;
   font-weight: 500;
   color: #86868b;
   letter-spacing: -0.02em;
@@ -4193,7 +4240,7 @@ button.hp-month-block-item--btn:focus-visible {
   border-radius: 10px;
   background: rgba(0, 122, 255, 0.06);
   box-shadow: inset 0 0 0 0.5px rgba(0, 122, 255, 0.14);
-  font-size: 13.5px;
+  font-size: 14.5px;
   font-weight: 500;
   line-height: 1.45;
   letter-spacing: -0.02em;
@@ -4207,7 +4254,7 @@ button.hp-month-block-item--btn:focus-visible {
 
 .hp-tier-kpi-label {
   display: block;
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 500;
   color: #86868b;
   letter-spacing: -0.01em;
@@ -4216,7 +4263,7 @@ button.hp-month-block-item--btn:focus-visible {
 
 .hp-tier-kpi-value {
   display: block;
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 600;
   letter-spacing: -0.02em;
   color: #1d1d1f;
@@ -4233,7 +4280,7 @@ button.hp-month-block-item--btn:focus-visible {
 
 .hp-tier-kpi-unit {
   margin-left: 2px;
-  font-size: 14.5px;
+  font-size: 16.5px;
   font-weight: 600;
   color: #6e6e73;
 }
@@ -4241,7 +4288,7 @@ button.hp-month-block-item--btn:focus-visible {
 .hp-tier-sat-badge.hp-tier-sat-badge--apple {
   padding: 5px 11px;
   border-radius: 980px;
-  font-size: 14.5px;
+  font-size: 16.5px;
   font-weight: 600;
   letter-spacing: -0.02em;
   border: none;
@@ -4270,7 +4317,7 @@ button.hp-month-block-item--btn:focus-visible {
 
 .hp-tier-rank-aside-title {
   display: block;
-  font-size: 11.5px;
+  font-size: 12.5px;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -4336,7 +4383,7 @@ button.hp-month-block-item--btn:focus-visible {
 }
 
 .hp-tier-rank-name {
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 600;
   letter-spacing: -0.02em;
   color: #1d1d1f;
@@ -4344,7 +4391,7 @@ button.hp-month-block-item--btn:focus-visible {
 }
 
 .hp-tier-rank-line {
-  font-size: 11.5px;
+  font-size: 12.5px;
   font-weight: 500;
   letter-spacing: -0.01em;
   color: #86868b;
@@ -4389,7 +4436,7 @@ button.hp-month-block-item--btn:focus-visible {
 }
 
 .hp-tier-month-title {
-  font-size: 14.5px;
+  font-size: 16.5px;
   font-weight: 600;
   letter-spacing: -0.02em;
   color: #1d1d1f;
@@ -4400,7 +4447,7 @@ button.hp-month-block-item--btn:focus-visible {
   flex-wrap: wrap;
   align-items: center;
   gap: 10px;
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 500;
   color: #86868b;
 }
@@ -4462,7 +4509,7 @@ button.hp-month-block-item--btn:focus-visible {
 }
 
 .hp-reflect-node-month {
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 600;
   color: #424245;
   letter-spacing: -0.02em;
@@ -4491,7 +4538,7 @@ button.hp-month-block-item--btn:focus-visible {
 }
 
 .hp-reflect-raw {
-  font-size: 13.5px;
+  font-size: 14.5px;
   font-weight: 600;
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
@@ -4515,7 +4562,7 @@ button.hp-month-block-item--btn:focus-visible {
 
 .hp-tier-footnote {
   margin: 12px 4px 0;
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 400;
   line-height: 1.45;
   color: #86868b;
@@ -4524,7 +4571,7 @@ button.hp-month-block-item--btn:focus-visible {
 
 .hp-tier-code {
   font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
-  font-size: 11.5px;
+  font-size: 12.5px;
   font-weight: 500;
   color: #6e6e73;
   background: rgba(0, 0, 0, 0.04);
@@ -4551,11 +4598,11 @@ button.hp-month-block-item--btn:focus-visible {
   }
 
   .hp-tier-kpi-value {
-    font-size: 21px;
+    font-size: 23px;
   }
 
   .hp-tier-kpi--combined .hp-tier-kpi-value {
-    font-size: 24px;
+    font-size: 27px;
   }
 
   .hp-tier-kpi-value--badge {
@@ -4611,11 +4658,11 @@ button.hp-month-block-item--btn:focus-visible {
 
 @media (max-width: 360px) {
   .hp-reflect-node-month {
-    font-size: 11.5px;
+    font-size: 12.5px;
   }
 
   .hp-reflect-raw {
-    font-size: 12.5px;
+    font-size: 13.5px;
   }
 
   .hp-reflect-rail {
@@ -4626,7 +4673,7 @@ button.hp-month-block-item--btn:focus-visible {
 
 .hp-tier-sat-badge--compact {
   padding: 3px 8px;
-  font-size: 11.5px;
+  font-size: 12.5px;
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -4665,7 +4712,7 @@ button.hp-month-block-item--btn:focus-visible {
 }
 
 .hp-tier-sat-title {
-  font-size: 14.5px;
+  font-size: 16.5px;
   font-weight: 800;
   letter-spacing: -0.03em;
   color: #1e293b;
@@ -4677,7 +4724,7 @@ button.hp-month-block-item--btn:focus-visible {
   align-items: center;
   padding: 4px 10px;
   border-radius: 999px;
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 800;
   letter-spacing: -0.02em;
 }
@@ -4703,7 +4750,7 @@ button.hp-month-block-item--btn:focus-visible {
 
 .hp-tier-sat-skill {
   margin: 0 0 10px;
-  font-size: 13.5px;
+  font-size: 14.5px;
   font-weight: 500;
   color: #64748b;
   letter-spacing: -0.02em;
@@ -4722,7 +4769,7 @@ button.hp-month-block-item--btn:focus-visible {
 }
 
 .hp-tier-sat-ratio-main {
-  font-size: 24px;
+  font-size: 27px;
   font-weight: 800;
   letter-spacing: -0.04em;
   color: #0f172a;
@@ -4740,7 +4787,7 @@ button.hp-month-block-item--btn:focus-visible {
 }
 
 .hp-tier-sat-ratio-caption {
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 600;
   color: #64748b;
   letter-spacing: -0.02em;
@@ -4751,7 +4798,7 @@ button.hp-month-block-item--btn:focus-visible {
   flex-wrap: wrap;
   align-items: center;
   gap: 4px 10px;
-  font-size: 13.5px;
+  font-size: 14.5px;
   font-weight: 500;
   color: #475569;
   letter-spacing: -0.02em;
@@ -4770,7 +4817,7 @@ button.hp-month-block-item--btn:focus-visible {
 
 .hp-tier-sat-footnote {
   margin: 10px 0 0;
-  font-size: 11.5px;
+  font-size: 12.5px;
   font-weight: 500;
   color: #94a3b8;
   letter-spacing: -0.01em;
@@ -4799,20 +4846,20 @@ button.hp-month-block-item--btn:focus-visible {
   border-radius: 999px;
   background: #3182f6;
   color: #ffffff;
-  font-size: 13.5px;
+  font-size: 14.5px;
   font-weight: 700;
   letter-spacing: -0.02em;
 }
 
 .hp-tier-now-cases {
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 500;
   color: #4b5662;
   letter-spacing: -0.02em;
 }
 
 .hp-tier-now-cases strong {
-  font-size: 17px;
+  font-size: 19px;
   font-weight: 800;
   color: #191f28;
   font-variant-numeric: tabular-nums;
@@ -4820,7 +4867,7 @@ button.hp-month-block-item--btn:focus-visible {
 }
 
 .hp-tier-now-rank {
-  font-size: 13.5px;
+  font-size: 14.5px;
   font-weight: 500;
   color: #8b95a1;
   letter-spacing: -0.02em;
@@ -4845,7 +4892,7 @@ button.hp-month-block-item--btn:focus-visible {
 }
 
 .hp-rank-chip-num {
-  font-size: 24px;
+  font-size: 27px;
   font-weight: 900;
   color: #b45309;
   letter-spacing: -0.04em;
@@ -4860,7 +4907,7 @@ button.hp-month-block-item--btn:focus-visible {
 }
 
 .hp-rank-chip-unit {
-  font-size: 13.5px;
+  font-size: 14.5px;
   font-weight: 800;
   color: #b45309;
   letter-spacing: -0.02em;
@@ -4868,7 +4915,7 @@ button.hp-month-block-item--btn:focus-visible {
 }
 
 .hp-rank-chip-total {
-  font-size: 11.5px;
+  font-size: 12.5px;
   font-weight: 500;
   color: #92400e;
   letter-spacing: -0.01em;
@@ -4882,7 +4929,7 @@ button.hp-month-block-item--btn:focus-visible {
   padding: 8px 12px;
   background: #eef6ff;
   border-radius: 8px;
-  font-size: 13.5px;
+  font-size: 14.5px;
   font-weight: 500;
   color: #4b5662;
   text-align: center;
@@ -4925,7 +4972,7 @@ button.hp-month-block-item--btn:focus-visible {
 }
 
 .hp-prog-title {
-  font-size: 13.5px;
+  font-size: 14.5px;
   font-weight: 700;
   color: #4b5662;
   letter-spacing: -0.02em;
@@ -4941,7 +4988,7 @@ button.hp-month-block-item--btn:focus-visible {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 600;
   color: #6b7684;
   letter-spacing: -0.01em;
@@ -5036,7 +5083,7 @@ button.hp-month-block-item--btn:focus-visible {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 900;
   line-height: 1;
   color: #b0b8c1;
@@ -5052,7 +5099,7 @@ button.hp-month-block-item--btn:focus-visible {
 }
 
 .hp-prog-stamp-name {
-  font-size: 11.5px;
+  font-size: 12.5px;
   font-weight: 700;
   letter-spacing: -0.02em;
   white-space: nowrap;
@@ -5159,7 +5206,7 @@ button.hp-month-block-item--btn:focus-visible {
   gap: 3px;
   padding: 3px 9px;
   border-radius: 999px;
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 700;
   letter-spacing: -0.01em;
   white-space: nowrap;
@@ -5206,7 +5253,7 @@ button.hp-month-block-item--btn:focus-visible {
   justify-content: space-between;
   align-items: center;
   margin-top: 10px;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   color: #b0b8c1;
   letter-spacing: -0.01em;
@@ -5219,7 +5266,7 @@ button.hp-month-block-item--btn:focus-visible {
 }
 
 .hp-prog-scale-tier {
-  font-size: 11.5px;
+  font-size: 12.5px;
   font-weight: 700;
   padding: 2px 7px;
   border-radius: 999px;
@@ -5282,7 +5329,7 @@ button.hp-month-block-item--btn:focus-visible {
 }
 
 .hp-tier-row-name {
-  font-size: 13.5px;
+  font-size: 14.5px;
   font-weight: 700;
   color: #333d4b;
   letter-spacing: -0.02em;
@@ -5293,7 +5340,7 @@ button.hp-month-block-item--btn:focus-visible {
 }
 
 .hp-tier-row-range {
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 500;
   color: #8b95a1;
   letter-spacing: -0.01em;
@@ -5301,7 +5348,7 @@ button.hp-month-block-item--btn:focus-visible {
 }
 
 .hp-tier-row-rate {
-  font-size: 13.5px;
+  font-size: 14.5px;
   font-weight: 800;
   color: #191f28;
   letter-spacing: -0.03em;
@@ -5314,7 +5361,7 @@ button.hp-month-block-item--btn:focus-visible {
   padding: 8px 10px;
   background: #f2f4f6;
   border-radius: 8px;
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 500;
   color: #8b95a1;
   letter-spacing: -0.01em;
@@ -5393,7 +5440,7 @@ button.hp-month-block-item--btn:focus-visible {
   transform: translateX(-50%);
   padding: 2px 8px;
   border-radius: 999px;
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 800;
   color: #1e40af;
   background: rgba(255, 255, 255, 0.96);
@@ -5413,7 +5460,7 @@ button.hp-month-block-item--btn:focus-visible {
   padding: 0 4px;
   width: 100%;
   box-sizing: border-box;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   color: #8b95a1;
   letter-spacing: -0.02em;
@@ -5430,7 +5477,7 @@ button.hp-month-block-item--btn:focus-visible {
 .hp-home .hp-tier-next--simple {
   padding: 8px 12px;
   border-radius: 10px;
-  font-size: 13.5px;
+  font-size: 14.5px;
   font-weight: 500;
   color: #333d4b;
   text-align: center;
@@ -5488,14 +5535,14 @@ button.hp-month-block-item--btn:focus-visible {
 }
 
 .hp-home .hp-tier-inline-name {
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 800;
   color: #191f28;
   letter-spacing: -0.02em;
 }
 
 .hp-home .hp-tier-inline-meta {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
   color: #8b95a1;
   letter-spacing: -0.01em;
@@ -5503,7 +5550,7 @@ button.hp-month-block-item--btn:focus-visible {
 }
 
 .hp-home .hp-tier-inline-rate {
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 800;
   color: #191f28;
   letter-spacing: -0.02em;
@@ -5516,7 +5563,7 @@ button.hp-month-block-item--btn:focus-visible {
   padding: 8px 12px;
   background: #f2f4f6;
   border-radius: 10px;
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 500;
   color: #6b7684;
   letter-spacing: -0.02em;
@@ -5561,14 +5608,14 @@ button.hp-month-block-item--btn:focus-visible {
 }
 
 .hp-tier-summary-label {
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 500;
   color: #8b95a1;
   letter-spacing: -0.02em;
 }
 
 .hp-tier-summary-val {
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 700;
   color: #191f28;
   letter-spacing: -0.03em;
@@ -5593,7 +5640,7 @@ button.hp-month-block-item--btn:focus-visible {
   display: inline-flex;
   align-items: center;
   gap: 2px;
-  font-size: 14.5px;
+  font-size: 16.5px;
   font-weight: 600;
   color: #3182f6;
 }
@@ -5616,7 +5663,7 @@ button.hp-month-block-item--btn:focus-visible {
 }
 
 .hp-cases-item-val {
-  font-size: 24px;
+  font-size: 27px;
   font-weight: 800;
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
@@ -5627,7 +5674,7 @@ button.hp-month-block-item--btn:focus-visible {
 }
 
 .hp-cases-item-label {
-  font-size: 13.5px;
+  font-size: 14.5px;
   font-weight: 600;
   color: #6b7684;
   letter-spacing: -0.01em;
@@ -5659,7 +5706,7 @@ button.hp-month-block-item--btn:focus-visible {
 
 .hp-cases-note {
   margin: 10px 0 0;
-  font-size: 13.5px;
+  font-size: 14.5px;
   font-weight: 500;
   color: #3182f6;
   text-align: center;
@@ -5679,11 +5726,11 @@ button.hp-month-block-item--btn:focus-visible {
   }
 
   .hp-prog-label-name {
-    font-size: 12.5px;
+    font-size: 13.5px;
   }
 
   .hp-prog-label-rate {
-    font-size: 11.5px;
+    font-size: 12.5px;
   }
 
   .hp-prog-label-range {
@@ -5695,15 +5742,15 @@ button.hp-month-block-item--btn:focus-visible {
   }
 
   .hp-tier-summary-val {
-    font-size: 14.5px;
+    font-size: 16.5px;
   }
 
   .hp-tier-summary-label {
-    font-size: 12.5px;
+    font-size: 13.5px;
   }
 
   .hp-cases-item-val {
-    font-size: 24px;
+    font-size: 27px;
   }
 
   .hp-prog-header {
@@ -5713,6 +5760,51 @@ button.hp-month-block-item--btn:focus-visible {
   }
 
   .hp-rank-chip-num {
-    font-size: 19px;
+    font-size: 21px;
   }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   디테일 폴리시 — 인트로·카드 인터랙션
+   ═══════════════════════════════════════════════════════════ */
+.hp-home .hp-intro-cta {
+  transition:
+    filter 0.15s ease,
+    transform 0.14s var(--hp-ease),
+    box-shadow 0.18s var(--hp-ease);
+}
+
+.hp-home .hp-intro-sep {
+  opacity: 0.85;
+}
+
+.hp-home .hp-month-split-col-head--main {
+  border-bottom-color: var(--hp-hairline);
+}
+
+.hp-home .hp-tier-rank-aside-v2 .hp-tier-rank-card {
+  transition: background 0.18s var(--hp-ease);
+}
+
+.hp-home .hp-tier-rank-aside-v2 .hp-tier-rank-card.is-current {
+  box-shadow:
+    inset 3px 0 0 #3182f6,
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.hp-home .hp-tier-rank-aside-v2 .hp-tier-rank-card--mangju.is-current {
+  box-shadow:
+    inset 3px 0 0 #d97706,
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.hp-home .hp-tier-rank-aside-v2 .hp-tier-rank-card--topia.is-current {
+  box-shadow:
+    inset 3px 0 0 #059669,
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.hp-home .hp-top-trend {
+  border-radius: 8px;
+  transition: background 0.18s var(--hp-ease), border-color 0.18s var(--hp-ease);
 }

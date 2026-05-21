@@ -18,7 +18,7 @@ import {
   fetchAdminLeafTeams,
   fetchAdminReviewQueue,
   fetchCaseForReview,
-  uploadCasesMigrationExcel,
+  uploadCaseHistoryMigrationExcel,
 } from '../../api/adminApi';
 import CaseReviewModal from './CaseReviewModal';
 import CaseReviewStageBadge from '../../components/common/CaseReviewStageBadge';
@@ -87,6 +87,9 @@ function collectSkidsFromLeafTeams(teams) {
 
 export default function PendingCasesPage() {
   const [reviewCase, setReviewCase] = useState(null);
+  /** 다중 검토 큐 — { cases, index } */
+  const [reviewQueue, setReviewQueue] = useState(null);
+  const [checkedCaseIds, setCheckedCaseIds] = useState(() => new Set());
   const [selectedTeamKey, setSelectedTeamKey] = useState(null);
   const [loadingCaseId, setLoadingCaseId] = useState(null);
   /** 'all' | 2depth dept_id 문자열 (대시보드와 동일) */
@@ -97,6 +100,7 @@ export default function PendingCasesPage() {
   /** 전체 | 대기 | 1차완료 | 2차완료 */
   const [stageFilter, setStageFilter] = useState('waiting');
   const migrateFileRef = useRef(null);
+  const selectAllCheckRef = useRef(null);
   const [migratePending, setMigratePending] = useState(false);
   const [migrateMessage, setMigrateMessage] = useState('');
 
@@ -247,6 +251,11 @@ export default function PendingCasesPage() {
     setTableSort({ key: 'submitted', direction: 'asc' });
   }, [selectedTeamKey, monthKey, stageFilter]);
 
+  /** 목록 스코프가 바뀌면 체크 해제 */
+  useEffect(() => {
+    setCheckedCaseIds(new Set());
+  }, [monthKey, stageFilter, secondDepthKey, selectedTeamKey]);
+
   const selectedTeam = useMemo(
     () => teamRows.find((r) => r.key === selectedTeamKey) ?? null,
     [teamRows, selectedTeamKey]
@@ -326,15 +335,17 @@ export default function PendingCasesPage() {
       setMigratePending(true);
       setMigrateMessage('');
       try {
-        const res = await uploadCasesMigrationExcel(file, {
+        const res = await uploadCaseHistoryMigrationExcel(file, {
           year: migrationYear,
           fromMonth: MIGRATION_FROM_MONTH,
           toMonth: MIGRATION_TO_MONTH,
         });
-        const rows = res.parsedRowCount ?? 0;
         const skipped = res.skippedRows ?? 0;
+        const warns = Array.isArray(res.warnings) && res.warnings.length > 0
+          ? ` · 경고 ${res.warnings.length}건`
+          : '';
         setMigrateMessage(
-          `${res.message ?? '파싱 완료'} (${migrationYear}년 ${MIGRATION_FROM_MONTH}~${MIGRATION_TO_MONTH}월 · 데이터 ${rows}행, 빈행 제외 ${skipped}건)`
+          `${res.message ?? '마이그레이션 완료'} (사례 ${res.casesCreated ?? 0}건, 인센티브 ${res.reflectsCreated ?? 0}건, 건너뜀 ${skipped}건${warns})`
         );
         refetch();
       } catch (err) {
@@ -346,16 +357,100 @@ export default function PendingCasesPage() {
     [migrationYear, refetch]
   );
 
-  const openReview = useCallback(async (c) => {
+  const loadReviewCase = useCallback(async (c) => {
     setLoadingCaseId(c.id);
     try {
       const full = await fetchCaseForReview(c.id);
       setReviewCase(full);
+      return full;
     } catch {
       setReviewCase(c);
+      return c;
     } finally {
       setLoadingCaseId(null);
     }
+  }, []);
+
+  const openReview = useCallback(
+    async (c, queue = null) => {
+      setReviewQueue(queue);
+      await loadReviewCase(c);
+    },
+    [loadReviewCase],
+  );
+
+  const checkedCount = useMemo(() => {
+    let n = 0;
+    for (const c of sortedCases) {
+      if (checkedCaseIds.has(c.id)) n++;
+    }
+    return n;
+  }, [sortedCases, checkedCaseIds]);
+
+  const allVisibleChecked =
+    sortedCases.length > 0 && sortedCases.every((c) => checkedCaseIds.has(c.id));
+  const someVisibleChecked = sortedCases.some((c) => checkedCaseIds.has(c.id));
+
+  useEffect(() => {
+    const el = selectAllCheckRef.current;
+    if (el) el.indeterminate = someVisibleChecked && !allVisibleChecked;
+  }, [someVisibleChecked, allVisibleChecked]);
+
+  const toggleCaseCheck = useCallback((caseId, checked) => {
+    setCheckedCaseIds((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(caseId);
+      else next.delete(caseId);
+      return next;
+    });
+  }, []);
+
+  const toggleAllVisibleChecks = useCallback(() => {
+    setCheckedCaseIds((prev) => {
+      const next = new Set(prev);
+      if (allVisibleChecked) {
+        for (const c of sortedCases) next.delete(c.id);
+      } else {
+        for (const c of sortedCases) next.add(c.id);
+      }
+      return next;
+    });
+  }, [allVisibleChecked, sortedCases]);
+
+  const openBulkReview = useCallback(async () => {
+    const queueCases = sortedCases.filter((c) => checkedCaseIds.has(c.id));
+    if (queueCases.length === 0) return;
+    await openReview(queueCases[0], { cases: queueCases, index: 0 });
+  }, [sortedCases, checkedCaseIds, openReview]);
+
+  const navigateReviewQueue = useCallback(
+    async (direction) => {
+      if (!reviewQueue?.cases?.length) return;
+      const delta = direction === 'next' ? 1 : -1;
+      const nextIndex = Math.min(
+        Math.max(0, reviewQueue.index + delta),
+        reviewQueue.cases.length - 1,
+      );
+      if (nextIndex === reviewQueue.index) return;
+      const target = reviewQueue.cases[nextIndex];
+      await loadReviewCase(target);
+      setReviewQueue((q) => (q ? { ...q, index: nextIndex } : null));
+    },
+    [reviewQueue, loadReviewCase],
+  );
+
+  const handleAfterFinalSave = useCallback(async () => {
+    if (!reviewQueue || reviewQueue.index >= reviewQueue.cases.length - 1) {
+      return false;
+    }
+    await navigateReviewQueue('next');
+    refetch();
+    return true;
+  }, [reviewQueue, navigateReviewQueue, refetch]);
+
+  const closeReview = useCallback(() => {
+    setReviewCase(null);
+    setReviewQueue(null);
   }, []);
 
   if (queueLoading) {
@@ -401,7 +496,7 @@ export default function PendingCasesPage() {
                 className="btn btn-secondary btn-sm pending-migrate-btn"
                 onClick={() => migrateFileRef.current?.click()}
                 disabled={migratePending}
-                title={`${migrationYear}년 1~4월 접수 엑셀 업로드 (양식 확정 전 · DB 미반영)`}
+                title={`${migrationYear}년 1~4월 엑셀 일괄 적재 (사례+인센티브, 재업로드 시 해당 월 기존 마이그레이션 건 삭제)`}
               >
                 <Upload size={14} aria-hidden />
                 {migratePending ? '업로드 중…' : '1~4월 엑셀 마이그레이션 (임시)'}
@@ -552,6 +647,16 @@ export default function PendingCasesPage() {
                       </h2>
                     </div>
                     <div className="pending-panel-head-right">
+                      {checkedCount >= 2 ? (
+                        <button
+                          type="button"
+                          className="btn btn-primary btn-sm pending-bulk-open-btn"
+                          onClick={openBulkReview}
+                          disabled={loadingCaseId != null}
+                        >
+                          다중 선택하여 열기 ({checkedCount}건)
+                        </button>
+                      ) : null}
                       <button
                         type="button"
                         className="btn btn-secondary btn-sm pending-refresh-btn pending-panel-refresh"
@@ -630,6 +735,16 @@ export default function PendingCasesPage() {
                     <table className="pending-table pending-table--compact pending-table--with-team pending-table--center">
                       <thead>
                         <tr>
+                          <th scope="col" className="pending-th pending-th--check">
+                            <input
+                              ref={selectAllCheckRef}
+                              type="checkbox"
+                              className="pending-row-check"
+                              checked={allVisibleChecked}
+                              onChange={toggleAllVisibleChecks}
+                              aria-label="현재 목록 전체 선택"
+                            />
+                          </th>
                           <th
                             scope="col"
                             className="pending-th pending-th--status"
@@ -738,15 +853,37 @@ export default function PendingCasesPage() {
                         </tr>
                       </thead>
                       <tbody>
-                        {sortedCases.map((c) => (
+                        {sortedCases.map((c) => {
+                          const isChecked = checkedCaseIds.has(c.id);
+                          const isQueueCurrent =
+                            reviewQueue?.cases?.[reviewQueue.index]?.id === c.id;
+                          return (
                           <tr
                             key={c.id}
-                            className="pending-table-row--clickable"
+                            className={[
+                              'pending-table-row--clickable',
+                              isChecked ? 'pending-table-row--checked' : '',
+                              isQueueCurrent ? 'pending-table-row--queue-current' : '',
+                            ]
+                              .filter(Boolean)
+                              .join(' ')}
                             onClick={() => {
                               if (loadingCaseId === c.id) return;
-                              openReview(c);
+                              openReview(c, null);
                             }}
                           >
+                            <td
+                              className="pending-td-check"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <input
+                                type="checkbox"
+                                className="pending-row-check"
+                                checked={isChecked}
+                                onChange={(e) => toggleCaseCheck(c.id, e.target.checked)}
+                                aria-label={`${c.memberName ?? '구성원'} 사례 선택`}
+                              />
+                            </td>
                             <td className="pending-td-status">
                               <CaseReviewStageBadge caseItem={c} size="sm" />
                             </td>
@@ -778,7 +915,8 @@ export default function PendingCasesPage() {
                               </span>
                             </td>
                           </tr>
-                        ))}
+                          );
+                        })}
                       </tbody>
                     </table>
                   )}
@@ -794,10 +932,22 @@ export default function PendingCasesPage() {
           caseData={reviewCase}
           memberName={reviewCase.memberName}
           deptHierarchy={skidToTeamHierarchy.get(reviewCase.skid)?.hierarchyPath}
-          onClose={() => setReviewCase(null)}
+          onClose={closeReview}
+          reviewNavigation={
+            reviewQueue && reviewQueue.cases.length > 1
+              ? {
+                  currentIndex: reviewQueue.index,
+                  total: reviewQueue.cases.length,
+                  onPrev: () => navigateReviewQueue('prev'),
+                  onNext: () => navigateReviewQueue('next'),
+                }
+              : null
+          }
+          onAfterFinalSave={reviewQueue ? handleAfterFinalSave : undefined}
           onRefreshCase={async () => {
             const full = await fetchCaseForReview(reviewCase.id);
             setReviewCase(full);
+            refetch();
           }}
         />
       )}

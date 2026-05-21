@@ -19,7 +19,7 @@
 .sat-setup-lead {
   margin: 0.35rem 0 0;
   max-width: 40rem;
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
   line-height: 1.55;
   color: var(--text-secondary);
 }
@@ -95,7 +95,7 @@
 }
 
 .sat-setup-ribbon-kicker {
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -114,7 +114,7 @@
   border-radius: 11px;
   border: 1px solid var(--pending-a22, rgba(10, 126, 164, 0.22));
   background: #fff;
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   font-weight: 700;
   color: var(--text-primary);
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
@@ -227,7 +227,7 @@
 
 .sat-setup-pane-sub {
   margin: 0.28rem 0 0;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   line-height: 1.45;
   color: var(--text-secondary);
   max-width: 22rem;
@@ -243,7 +243,7 @@
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 800;
   color: #fff;
   background: linear-gradient(145deg, var(--accent, #0a7ea4), #0369a1);
@@ -266,7 +266,7 @@
 
 .sat-setup-muted {
   margin: 0;
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   color: var(--text-tertiary);
 }
 
@@ -303,7 +303,7 @@
 }
 
 .sat-setup-target-name {
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   font-weight: 600;
   color: var(--text-primary);
   min-width: 0;
@@ -320,7 +320,7 @@
   padding: 0.38rem 0.45rem;
   border-radius: 9px;
   border: 1px solid var(--adm-hairline, rgba(60, 60, 67, 0.16));
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
   font-weight: 600;
   text-align: right;
   background: #fff;
@@ -333,7 +333,7 @@
 }
 
 .sat-setup-target-suffix {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 700;
   color: var(--text-secondary);
 }
@@ -359,7 +359,7 @@
 
 .sat-setup-inline-msg {
   margin: 0;
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
 }
 
 .sat-setup-ok {
@@ -447,7 +447,7 @@
 
 .sat-setup-drop-locked-text {
   margin: 0;
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   font-weight: 600;
   line-height: 1.45;
   color: var(--text-secondary);
@@ -479,13 +479,13 @@
 }
 
 .sat-setup-drop-title {
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
   font-weight: 700;
   color: var(--text-primary);
 }
 
 .sat-setup-drop-hint {
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--text-tertiary);
   letter-spacing: 0.04em;
@@ -499,7 +499,7 @@
 
 .sat-setup-picked {
   margin: 0;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   line-height: 1.4;
   color: var(--text-secondary);
   word-break: break-all;
@@ -553,7 +553,7 @@
 
 .sat-target-group-title {
   margin: 0;
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--text-primary);
@@ -566,7 +566,7 @@
   display: inline-flex;
   padding: 0.15rem 0.5rem;
   border-radius: 6px;
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-weight: 800;
   letter-spacing: 0.02em;
   background: linear-gradient(145deg, rgba(99, 102, 241, 0.12), rgba(79, 70, 229, 0.08));
@@ -648,7 +648,7 @@
 
 .sat-setup-modal-lead {
   margin: 0.35rem 0 0;
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   line-height: 1.5;
   color: var(--text-secondary);
   max-width: 34rem;
@@ -730,7 +730,7 @@
 
 .sat-setup-shell--modal .sat-setup-ribbon-month input[type='month'] {
   padding: 0.38rem 0.55rem;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
 }
 
 /* 이달 영업일 — 스크롤 없이 줄바꿈만 */
@@ -751,14 +751,14 @@
 }
 
 .sat-setup-bizdays-title {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 800;
   letter-spacing: -0.02em;
   color: var(--text-primary);
 }
 
 .sat-setup-bizdays-count {
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-weight: 700;
   color: var(--accent, #0a7ea4);
   font-variant-numeric: tabular-nums;
@@ -786,7 +786,7 @@
 }
 
 .sat-setup-bizday-num {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 800;
   letter-spacing: -0.03em;
   color: var(--text-primary);
@@ -856,7 +856,7 @@
   border: none;
   border-radius: 10px 10px 0 0;
   background: transparent;
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
   font-weight: 700;
   color: var(--text-tertiary);
   cursor: pointer;
@@ -901,7 +901,7 @@
 }
 
 .sat-setup-pane-head--minimal .sat-setup-pane-title {
-  font-size: 0.9375rem;
+  font-size: 1rem;
 }
 
 .sat-setup-pane-body--upload {
@@ -970,7 +970,7 @@
   width: 1.35rem;
   height: 1.35rem;
   border-radius: 7px;
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-weight: 900;
   color: #fff;
   background: linear-gradient(145deg, #0a7ea4, #0891b2);
@@ -1076,7 +1076,7 @@
 }
 
 .sat-compact-label {
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-weight: 800;
   letter-spacing: -0.02em;
   color: var(--text-primary);
@@ -1171,7 +1171,7 @@
 }
 
 .sat-compact-unit {
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   font-weight: 900;
   color: #0a7ea4;
   min-width: 1.05rem;
@@ -1199,7 +1199,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 700;
   color: #0f766e;
 }

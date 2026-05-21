@@ -337,10 +337,10 @@ export const uploadCsTargetMembersExcel = async (file) =>
   uploadTargetMembersExcelTo('/api/admin/cs-satisfaction/target-members/upload', file);
 
 /**
- * 접수 내역 엑셀 마이그레이션(임시) — 1~4월 등, 파싱만(DB 미반영)
- * POST /api/admin/cases/migration-excel
+ * 접수·인센티브 엑셀 일괄 마이그레이션(임시)
+ * POST /api/admin/temp/case-history-migration/upload
  */
-export const uploadCasesMigrationExcel = async (file, { year, fromMonth = 1, toMonth = 4 } = {}) => {
+export const uploadCaseHistoryMigrationExcel = async (file, { year, fromMonth = 1, toMonth = 4 } = {}) => {
   const y = year ?? new Date().getFullYear();
   const baseURL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080';
   const formData = new FormData();
@@ -350,7 +350,7 @@ export const uploadCasesMigrationExcel = async (file, { year, fromMonth = 1, toM
     fromMonth: String(fromMonth),
     toMonth: String(toMonth),
   });
-  const res = await fetch(`${baseURL}/api/admin/cases/migration-excel?${qs}`, {
+  const res = await fetch(`${baseURL}/api/admin/temp/case-history-migration/upload?${qs}`, {
     method: 'POST',
     body: formData,
   });

@@ -8,6 +8,7 @@ import {
   Inbox,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   X,
   HelpCircle,
   ArrowRight,
@@ -851,50 +852,103 @@ function ResponseCoachPanel({ cases, pending: dataPending }) {
     );
   }
 
+  const scenarioPanelId = 'csx-coach-scenario-panel';
+  const multiCase = cases.length > 1;
+
   return (
     <div className="csx-coach" role="region" aria-label="불만족 대응 코칭">
       <header className="csx-coach-head">
         <h4 className="csx-coach-title">대응 코칭</h4>
-        <p className="csx-coach-sub">불만족 유형별 대응 피드백</p>
+        <p className="csx-coach-sub">
+          {multiCase
+            ? '위 항목을 누르면 아래 대응 가이드가 해당 유형으로 바뀝니다.'
+            : '선택한 불만족 유형의 대응 가이드를 확인하세요.'}
+        </p>
       </header>
 
-      <ul className="csx-coach-cases">
-        {cases.map((c) => {
-          const active = c.id === selectedId;
-          return (
-            <li key={c.id}>
-              <button
-                type="button"
-                className={`csx-coach-case${active ? ' is-active' : ''}`}
-                onClick={() => setSelectedId(c.id)}
-                aria-pressed={active}
-              >
-                <span className="csx-coach-case-tag">{c.typeLabel}</span>
-                <span className="csx-coach-case-title">{c.title}</span>
-                <span className="csx-coach-case-cta">
-                  이렇게 대응해보세요
-                  <ArrowRight size={14} strokeWidth={2.4} aria-hidden />
-                </span>
-              </button>
-            </li>
-          );
-        })}
-      </ul>
+      <div className="csx-coach-body">
+        {multiCase ? (
+          <p className="csx-coach-pick-label" id="csx-coach-pick-label">
+            불만족 유형 선택
+            <span className="csx-coach-pick-count">{cases.length}</span>
+          </p>
+        ) : null}
 
-      {selected ? (
-        <div
-          className="csx-coach-scenario"
-          role="region"
-          aria-label="선택한 상황의 대응 시나리오"
-          aria-busy={scenarioPending}
-        >
-          {scenarioPending ? (
-            <CoachFeedbackSkeleton />
-          ) : scenario ? (
-            <CoachTypeFeedback typeLabel={selected.typeLabel} scenario={scenario} badMent={selected.badMent} usedFallback={scenarioUsedFallback} />
-          ) : null}
-        </div>
-      ) : null}
+        <ul className="csx-coach-cases" aria-labelledby={multiCase ? 'csx-coach-pick-label' : undefined}>
+          {cases.map((c) => {
+            const active = c.id === selectedId;
+            return (
+              <li key={c.id}>
+                <button
+                  type="button"
+                  className={`csx-coach-case${active ? ' is-active' : ''}`}
+                  onClick={() => setSelectedId(c.id)}
+                  aria-pressed={active}
+                  aria-controls={scenarioPanelId}
+                  aria-expanded={active}
+                >
+                  <span className="csx-coach-case-tag">{c.typeLabel}</span>
+                  <span className="csx-coach-case-title">{c.title}</span>
+                  <span className="csx-coach-case-foot">
+                    {active ? (
+                      <>
+                        <span className="csx-coach-case-selected-pill">선택됨</span>
+                        <span className="csx-coach-case-cta csx-coach-case-cta--active">
+                          아래 가이드 확인
+                          <ChevronDown size={14} strokeWidth={2.5} aria-hidden />
+                        </span>
+                      </>
+                    ) : (
+                      <span className="csx-coach-case-cta">
+                        눌러 대응 보기
+                        <ArrowRight size={14} strokeWidth={2.4} aria-hidden />
+                      </span>
+                    )}
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+
+        {selected ? (
+          <div className="csx-coach-scenario-stack">
+            {multiCase ? (
+              <div className="csx-coach-scenario-connector" aria-hidden>
+                <span className="csx-coach-scenario-connector-line" />
+                <ChevronDown size={16} strokeWidth={2.5} />
+              </div>
+            ) : null}
+            <div
+              key={selectedId}
+              id={scenarioPanelId}
+              className="csx-coach-scenario"
+              role="region"
+              aria-label={`${selected.typeLabel} 대응 시나리오`}
+              aria-live="polite"
+              aria-busy={scenarioPending}
+            >
+              <header className="csx-coach-scenario-head">
+                <span className="csx-coach-scenario-badge">
+                  <span className="csx-coach-scenario-head-kicker">선택 항목</span>
+                  {selected.typeLabel}
+                </span>
+                <span className="csx-coach-scenario-head-hint">대응 가이드</span>
+              </header>
+              {scenarioPending ? (
+                <CoachFeedbackSkeleton />
+              ) : scenario ? (
+                <CoachTypeFeedback
+                  typeLabel={selected.typeLabel}
+                  scenario={scenario}
+                  badMent={selected.badMent}
+                  usedFallback={scenarioUsedFallback}
+                />
+              ) : null}
+            </div>
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -1055,8 +1109,8 @@ function GaugeRing({ actual, target, met, size = 'default' }) {
           <stop offset="100%" stopColor="#34d399" />
         </linearGradient>
         <linearGradient id="gaugeGradNo" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#64748b" />
-          <stop offset="100%" stopColor="#94a3b8" />
+          <stop offset="0%" stopColor="#e11d48" />
+          <stop offset="100%" stopColor="#fb7185" />
         </linearGradient>
         <linearGradient id="gaugeGradNeutral" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor="#94a3b8" />
@@ -1109,7 +1163,9 @@ function GaugeRing({ actual, target, met, size = 'default' }) {
             transformOrigin: `${ringCx}px ${ringCy}px`,
             filter: met === true
               ? 'drop-shadow(0 0 5px rgba(16,185,129,0.5))'
-              : 'drop-shadow(0 0 5px rgba(100,116,139,0.35))',
+              : met === false
+                ? 'drop-shadow(0 0 5px rgba(225,29,72,0.42))'
+                : 'drop-shadow(0 0 5px rgba(100,116,139,0.35))',
           }}
         />
       )}
@@ -1124,7 +1180,7 @@ function GaugeRing({ actual, target, met, size = 'default' }) {
           <circle
             cx={px} cy={py} r={4}
             fill="#ffffff"
-            stroke={met === true ? '#059669' : met === false ? '#64748b' : '#94a3b8'}
+            stroke={met === true ? '#059669' : met === false ? '#e11d48' : '#94a3b8'}
             strokeWidth={2.5}
           />
         );
@@ -1534,7 +1590,6 @@ function SatisfactionRateDeck({
   shortage,
   target,
   intakeStats,
-  met,
 }) {
   const d = data ?? {};
   const hasBase = received > 0;
@@ -1548,18 +1603,12 @@ function SatisfactionRateDeck({
   const evalCount = intakeStats?.totalReceived ?? received;
   const satCount = intakeStats?.satisfiedCount ?? toNum(d.satisfiedCount, 0) ?? 0;
 
-  const shortageMod = shortage?.status === 'met' ? 'met'
-    : shortage?.status === 'short' ? 'no'
-      : 'none';
-  const satMod = met === true ? 'met' : met === false ? 'no' : 'none';
-
   const numClass = (mod) => (mod && mod !== 'none' ? `csx-stat-num csx-stat-num--${mod}` : 'csx-stat-num');
 
   const monthKpiCards = [
     {
       key: 'eval',
       label: '총 평가건수',
-      numMod: null,
       value: hasBase ? (
         <>
           <strong className={numClass(null)}>{numKo(evalCount)}</strong>
@@ -1571,10 +1620,9 @@ function SatisfactionRateDeck({
     {
       key: 'sat-count',
       label: '만족도 건수',
-      numMod: satMod !== 'none' ? satMod : null,
       value: hasBase ? (
         <>
-          <strong className={numClass(satMod !== 'none' ? satMod : null)}>{numKo(satCount)}</strong>
+          <strong className={numClass(null)}>{numKo(satCount)}</strong>
           <span className="csx-month-kpi-unit">건</span>
         </>
       ) : <strong className="csx-stat-num">—</strong>,
@@ -1583,12 +1631,11 @@ function SatisfactionRateDeck({
     {
       key: 'shortage',
       label: '목표 달성 필요 건수',
-      numMod: shortageMod !== 'none' ? shortageMod : null,
       value: (() => {
         if (shortage?.status === 'short') {
           return (
             <>
-              <strong className={numClass('no')}>{numKo(shortage.count)}</strong>
+              <strong className={numClass(null)}>{numKo(shortage.count)}</strong>
               <span className="csx-month-kpi-unit">건</span>
             </>
           );
@@ -1661,14 +1708,13 @@ function SatisfactionRateDeck({
         if (!focusMetrics.hasRowDetail) return null;
         return '해당 0건';
       }
-      const fMod = statusMod !== 'none' ? statusMod : null;
       return (
         <>
           {it.denomLabel}{' '}
-          <strong className={numClass(fMod)}>{numKo(it.denom)}</strong>건
+          <strong className={numClass(null)}>{numKo(it.denom)}</strong>건
           <span className="csx-rate-card-formula-sep" aria-hidden>·</span>
           {it.numerLabel}{' '}
-          <strong className={numClass(fMod)}>{numKo(it.numer)}</strong>건
+          <strong className={numClass(null)}>{numKo(it.numer)}</strong>건
         </>
       );
     })();
@@ -1827,7 +1873,6 @@ function ReceptionFocusSection({
         shortage={shortage}
         target={target}
         intakeStats={intakeStats}
-        met={met}
       />
 
       <UnsatisfiedTypeDeck data={d} />

@@ -8,7 +8,7 @@
 .mce-section-label {
   margin: 0;
   padding: 0 4px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -41,7 +41,7 @@
 
 .mce-panel-text {
   margin: 0;
-  font-size: 15px;
+  font-size: 17px;
   line-height: 1.55;
   letter-spacing: -0.022em;
   color: #1d1d1f;
@@ -51,7 +51,7 @@
 
 .mce-panel-text--muted {
   color: #aeaeb2;
-  font-size: 14px;
+  font-size: 15px;
 }
 
 /* 요약 — 종합점수 | 비고 */
@@ -93,7 +93,7 @@
 }
 
 .mce-summary-remarks-label {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.02em;
   color: #86868b;
@@ -107,7 +107,7 @@
   border-radius: 8px;
   border: 1px solid #d1d1d6;
   background: #ffffff;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.5;
   letter-spacing: -0.02em;
   color: #1d1d1f;
@@ -132,7 +132,7 @@
   border: 1px solid #d1d1d6;
   background: #ffffff;
   font: inherit;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.5;
   letter-spacing: -0.02em;
   color: #1d1d1f;
@@ -150,14 +150,14 @@
 }
 
 .mce-summary-total-label {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.02em;
   color: #86868b;
 }
 
 .mce-summary-total-val {
-  font-size: 40px;
+  font-size: 43px;
   font-weight: 700;
   letter-spacing: -0.04em;
   line-height: 1.05;
@@ -175,7 +175,7 @@
 
 .mce-summary-total-unit {
   margin-left: 2px;
-  font-size: 17px;
+  font-size: 19px;
   font-weight: 600;
   color: #86868b;
 }
@@ -213,7 +213,7 @@
 }
 
 .mce-summary-total-hint {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 400;
   color: #86868b;
   margin-top: 2px;
@@ -237,7 +237,7 @@
 .mce-group-caption {
   margin: 0;
   padding: 0;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
   letter-spacing: -0.02em;
   color: #1d1d1f;
@@ -245,7 +245,7 @@
 
 .mce-scores-hint {
   margin: 0;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
   color: #636366;
   letter-spacing: -0.02em;
@@ -311,7 +311,7 @@
   padding: 6px 8px 4px;
   border-bottom: none;
   background: #f5f5f7;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   line-height: 1.3;
   flex-wrap: wrap;
@@ -346,7 +346,7 @@
 }
 
 .mce-section--inline-scores .mce-score-cell-num {
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .mce-section--inline-scores .mce-score-cell-input-wrap {
@@ -356,13 +356,13 @@
 }
 
 .mce-section--inline-scores .mce-score-cell-input {
-  font-size: 14px;
+  font-size: 15px;
   padding: 5px 2px 5px 4px;
 }
 
 .mce-section--inline-scores .mce-score-cell-input-suffix {
   padding: 5px 4px 5px 0;
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .mce-section--inline-scores.mce-section--compact .mce-summary-row {
@@ -370,7 +370,7 @@
 }
 
 .mce-section--inline-scores.mce-section--compact .mce-summary-total-val {
-  font-size: 24px;
+  font-size: 27px;
 }
 
 .mce-section--inline-scores.mce-section--compact .mce-summary-remarks-input {
@@ -408,7 +408,7 @@
 }
 
 .mce-section--compact .mce-summary-total-val {
-  font-size: 28px;
+  font-size: 31px;
 }
 
 .mce-section--compact .mce-summary-remarks-input {
@@ -421,7 +421,7 @@
 
 .mce-section--cols-4 .mce-score-cell-label {
   padding: 7px 8px 6px;
-  font-size: 11.5px;
+  font-size: 12.5px;
   min-height: 2.6em;
   align-items: flex-start;
 }
@@ -439,7 +439,7 @@
 }
 
 .mce-section--cols-4 .mce-score-cell-num {
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .mce-score-cell {
@@ -465,7 +465,7 @@
   width: 100%;
   box-sizing: border-box;
   padding: 8px 10px 7px;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
   letter-spacing: -0.02em;
   color: #1d1d1f;
@@ -486,14 +486,14 @@
 
 .mce-score-cell-max {
   flex-shrink: 0;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   color: #86868b;
   font-variant-numeric: tabular-nums;
 }
 
 .mce-section--inline-scores .mce-score-cell-max {
-  font-size: 9px;
+  font-size: 10px;
   margin-left: 1px;
 }
 
@@ -515,20 +515,20 @@
 }
 
 .mce-score-cell-num {
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 700;
   letter-spacing: -0.03em;
   color: #1d1d1f;
 }
 
 .mce-score-cell-unit {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
   color: #86868b;
 }
 
 .mce-score-cell-val--empty {
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 500;
   color: #aeaeb2;
 }
@@ -569,7 +569,7 @@
   border: none;
   border-radius: 0;
   background: transparent;
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 700;
   letter-spacing: -0.03em;
   font-variant-numeric: tabular-nums;
@@ -581,7 +581,7 @@
 .mce-score-cell-input::placeholder {
   color: #aeaeb2;
   font-weight: 600;
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .mce-score-cell-input:focus {
@@ -591,7 +591,7 @@
 .mce-score-cell-input-suffix {
   flex-shrink: 0;
   padding: 7px 6px 7px 0;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   color: #636366;
   background: transparent;

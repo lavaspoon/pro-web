@@ -20,11 +20,11 @@
 /* Modal */
 .review-modal {
   --rm-gap: 1.125rem;
-  --rm-fs-title: 1.125rem;
-  --rm-fs-subtitle: 1rem;
-  --rm-fs-body: 0.9375rem;
-  --rm-fs-label: 0.8125rem;
-  --rm-fs-caption: 0.75rem;
+  --rm-fs-title: 1.1875rem;
+  --rm-fs-subtitle: 1.0625rem;
+  --rm-fs-body: 1rem;
+  --rm-fs-label: 0.875rem;
+  --rm-fs-caption: 0.8125rem;
   --rm-section-border: rgba(15, 23, 42, 0.1);
   --rm-section-shadow: 0 1px 0 rgba(255, 255, 255, 0.88) inset, 0 8px 28px rgba(15, 23, 42, 0.07);
   background: var(--surface);
@@ -67,6 +67,64 @@
   flex-shrink: 0;
   border-bottom: 1px solid var(--border-strong);
   background: linear-gradient(180deg, var(--surface) 0%, var(--surface-inset) 100%);
+}
+
+.review-modal-bulk-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+  padding: 4px 6px;
+  border-radius: var(--r-full);
+  background: rgba(10, 126, 164, 0.08);
+  border: 1px solid rgba(10, 126, 164, 0.18);
+}
+
+.review-modal-bulk-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-full);
+  color: var(--accent);
+  transition: background var(--duration-fast) var(--ease-out);
+}
+
+.review-modal-bulk-nav-btn:hover:not(:disabled) {
+  background: rgba(10, 126, 164, 0.14);
+}
+
+.review-modal-bulk-nav-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.review-modal-bulk-nav-pos {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 3px;
+  min-width: 3.5rem;
+  justify-content: center;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+
+.review-modal-bulk-nav-current {
+  color: var(--accent);
+}
+
+.review-modal-bulk-nav-sep {
+  font-weight: 500;
+  color: var(--text-tertiary);
+}
+
+.review-modal-bulk-nav-total {
+  font-weight: 600;
+  color: var(--text-secondary);
 }
 
 .review-modal-header--compact .review-modal-title {
@@ -161,7 +219,7 @@
   align-items: center;
   gap: 6px;
   padding: 10px 14px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   color: var(--text-secondary);
   border-bottom: 2px solid transparent;
@@ -198,7 +256,7 @@
   display: flex;
   align-items: center;
   gap: 7px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--text-primary);
   padding: 10px 14px;
@@ -221,7 +279,7 @@
 
 .review-stt-transcript {
   padding: 12px 14px;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.65;
   color: var(--text-primary);
   white-space: pre-wrap;
@@ -248,7 +306,7 @@
 
 .existing-judgment strong,
 .judgment-label-inline {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--text-primary);
   display: flex;
@@ -258,7 +316,7 @@
 }
 
 .existing-judgment p {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--text-secondary);
   line-height: 1.6;
 }
@@ -283,7 +341,7 @@
   background: var(--accent-lighter);
   border: 1px solid rgba(0, 122, 255, 0.2);
   border-radius: var(--r-sm);
-  font-size: 13px;
+  font-size: 14px;
   color: var(--text-secondary);
   flex-wrap: wrap;
 }
@@ -314,7 +372,7 @@
 }
 
 .judge-label {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--text-primary);
   letter-spacing: -0.01em;
@@ -333,7 +391,7 @@
   gap: 7px;
   padding: 11px;
   border-radius: var(--r-md);
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   border: 2px solid;
   transition: all var(--duration-fast);
@@ -407,7 +465,7 @@
   background: var(--surface);
   border: 1px solid var(--border-strong);
   border-radius: var(--r-sm);
-  font-size: 13px;
+  font-size: 14px;
   color: var(--text-primary);
   line-height: 1.55;
   resize: none;
@@ -426,7 +484,7 @@
 }
 
 .input-hint-text {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--text-tertiary);
   text-align: right;
 }
@@ -439,7 +497,7 @@
   background: var(--danger-light);
   border: 1px solid rgba(255, 59, 48, 0.2);
   border-radius: var(--r-sm);
-  font-size: 13px;
+  font-size: 14px;
   color: var(--danger);
   font-weight: 500;
 }
@@ -467,7 +525,7 @@
   justify-content: center;
   gap: 4px 2px;
   padding: 8px 12px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--text-secondary);
   background: var(--surface-inset);
@@ -513,7 +571,7 @@
 }
 
 .review-block__tag {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -529,7 +587,7 @@
 }
 
 .review-block__hint {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--text-tertiary);
   flex: 1;
   min-width: 0;
@@ -551,7 +609,7 @@
 }
 
 .review-stt-preview--compact {
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.5;
   max-height: 96px;
   padding: 8px 10px;
@@ -561,7 +619,7 @@
   display: flex;
   align-items: flex-start;
   gap: 6px;
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.45;
   margin: 0;
   color: var(--text-secondary);
@@ -978,7 +1036,7 @@
 }
 
 .review-detail-ai-card__na {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--text-tertiary);
 }
@@ -1043,7 +1101,7 @@
 }
 
 .review-ai-step-head .review-step-title {
-  font-size: 13px;
+  font-size: 14px;
   letter-spacing: -0.02em;
   text-transform: none;
   color: var(--text-primary);
@@ -1051,7 +1109,7 @@
 
 .review-ai-step-hint {
   margin: 0;
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.5;
   color: var(--text-secondary);
   letter-spacing: -0.02em;
@@ -1066,7 +1124,7 @@
   padding: 13px 18px;
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: var(--r-md);
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
   letter-spacing: -0.02em;
   color: #fff;
@@ -1110,7 +1168,7 @@
 
 .review-ai-verdict.review-ai-verdict--compact {
   padding: 12px 14px;
-  font-size: 14px;
+  font-size: 15px;
   gap: 10px;
   border-radius: var(--r-md);
   display: flex;
@@ -1127,12 +1185,12 @@
 
 .review-ai-verdict__main strong {
   font-weight: 800;
-  font-size: 15px;
+  font-size: 17px;
   letter-spacing: -0.02em;
 }
 
 .review-ai-meta-inline {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--text-secondary);
   margin-left: auto;
@@ -1163,7 +1221,7 @@
 
 .review-ai-summary-card__label {
   display: block;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -1172,7 +1230,7 @@
 }
 
 .review-ai-one-liner {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--text-primary);
   margin: 0;
   line-height: 1.55;
@@ -1186,7 +1244,7 @@
 }
 
 .review-ai-chat-wrap__label {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -1195,7 +1253,7 @@
 }
 
 .review-ai-why {
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.45;
   color: var(--text-secondary);
   margin: 0;
@@ -1203,7 +1261,7 @@
 
 .review-ai-why__lbl {
   display: inline-block;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--text-primary);
   margin-right: 6px;
@@ -1211,7 +1269,7 @@
 }
 
 .review-ai-details {
-  font-size: 11px;
+  font-size: 12px;
   border: 1px dashed var(--border);
   border-radius: var(--r-sm);
   padding: 0 8px;
@@ -1245,7 +1303,7 @@
 }
 
 .review-ai-chat--compact .review-ai-msg-bubble {
-  font-size: 11px;
+  font-size: 12px;
   padding: 5px 8px;
   border-radius: 10px;
 }
@@ -1253,7 +1311,7 @@
 .review-ai-bullets {
   margin: 0;
   padding-left: 16px;
-  font-size: 11px;
+  font-size: 12px;
   color: var(--text-tertiary);
   line-height: 1.4;
 }
@@ -1265,12 +1323,12 @@
 .review-edited-textarea--compact {
   min-height: 0;
   padding: 8px 10px;
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.45;
 }
 
 .review-edited-readonly--compact {
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.5;
   max-height: 120px;
   overflow-y: auto;
@@ -1287,12 +1345,12 @@
 
 .judge-options--compact .judge-option {
   padding: 8px 10px;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .judge-label--compact {
   margin-top: 6px;
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .review-req {
@@ -1302,7 +1360,7 @@
 
 .judge-textarea--compact {
   padding: 8px 10px;
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.45;
 }
 
@@ -1330,7 +1388,7 @@
 
 .review-calltime-date,
 .review-calltime-time {
-  font-size: 11.5px;
+  font-size: 12.5px;
   font-weight: 700;
   letter-spacing: -0.02em;
   color: #1d1d1f;
@@ -1338,7 +1396,7 @@
 }
 
 .review-calltime-sep {
-  font-size: 11.5px;
+  font-size: 12.5px;
   font-weight: 500;
   color: #8a7d3a;
   user-select: none;
@@ -1509,7 +1567,7 @@
   gap: 8px 12px;
   padding: 10px 12px;
   border-radius: var(--r-md);
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .review-ai-verdict.is-sel {
@@ -1529,14 +1587,14 @@
 }
 
 .review-ai-meta {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
   color: var(--text-secondary);
   width: 100%;
 }
 
 .review-ai-summary {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--text-primary);
   margin: 0;
   line-height: 1.55;
@@ -1578,7 +1636,7 @@
 }
 
 .review-ai-msg-role {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -1586,7 +1644,7 @@
 }
 
 .review-ai-msg-bubble {
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.5;
   padding: 8px 11px;
   border-radius: 12px;
@@ -1608,13 +1666,13 @@
 .review-ai-msg--system .review-ai-msg-bubble {
   background: var(--surface);
   border: 1px dashed var(--border-strong);
-  font-size: 12px;
+  font-size: 13px;
   color: var(--text-secondary);
   text-align: center;
 }
 
 .review-ai-rationale {
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.55;
   color: var(--text-secondary);
 }
@@ -1622,7 +1680,7 @@
 .review-ai-rationale strong {
   display: block;
   color: var(--text-primary);
-  font-size: 12px;
+  font-size: 13px;
   margin-bottom: 6px;
 }
 
@@ -1643,7 +1701,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--text-primary);
   margin-bottom: 8px;
@@ -1656,7 +1714,7 @@
   background: var(--surface);
   border: 1px solid var(--border-strong);
   border-radius: var(--r-sm);
-  font-size: 13px;
+  font-size: 14px;
   color: var(--text-primary);
   line-height: 1.55;
   resize: vertical;
@@ -1671,7 +1729,7 @@
 
 .review-edited-readonly {
   margin: 0;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.6;
   white-space: pre-wrap;
   word-break: break-word;
@@ -1685,7 +1743,7 @@
 
 .btn-sm {
   padding: 8px 12px;
-  font-size: 12px;
+  font-size: 13px;
 }
 
 /* ── Wizard (단계별 전환) ─────────────────────────────────── */
@@ -1893,7 +1951,7 @@
 }
 
 .review-stt-empty-short {
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.5;
   color: var(--text-secondary);
   letter-spacing: -0.02em;
@@ -1904,7 +1962,7 @@
 }
 
 .review-stt-hint {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--text-tertiary);
   line-height: 1.45;
 }
@@ -1916,7 +1974,7 @@
   background: var(--surface);
   border: 1px solid var(--border-strong);
   border-radius: var(--r-sm);
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.5;
   color: var(--text-primary);
   resize: vertical;
@@ -1976,12 +2034,12 @@
 }
 
 .review-ai-chat--step .review-ai-msg-role {
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.05em;
 }
 
 .review-ai-chat--step .review-ai-msg-bubble {
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.5;
   padding: 8px 12px;
   border-radius: 14px;
@@ -2181,7 +2239,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 8px 12px;
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .review-detail-verdict.is-sel {
@@ -2194,7 +2252,7 @@
 
 .review-detail-verdict__date {
   margin-left: auto;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
   color: var(--text-tertiary);
 }
@@ -2205,7 +2263,7 @@
 
 .review-detail-ai-rationale {
   margin: 0 0 8px;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   line-height: 1.55;
   color: var(--text-primary);
@@ -2217,7 +2275,7 @@
 
 .review-detail-ai-summary {
   margin: 0;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.55;
   color: var(--text-secondary);
 }
@@ -2234,7 +2292,7 @@
   align-items: center;
   padding: 4px 10px;
   border-radius: 999px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   background: var(--surface-inset);
   border: 1px solid var(--border);
@@ -2253,7 +2311,7 @@
 .review-detail-ai-highlights {
   margin: 0 0 12px;
   padding-left: 18px;
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.5;
   color: var(--text-secondary);
 }
@@ -2272,7 +2330,7 @@
 }
 
 .review-ai-chat--detail .review-ai-msg-bubble {
-  font-size: 12px;
+  font-size: 13px;
 }
 
 /* ── 점수 평가 그리드 ───────────────────────────────────── */
@@ -2281,7 +2339,7 @@
   align-items: center;
   padding: 3px 8px;
   border-radius: 999px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   color: #b45309;
   background: rgba(245, 158, 11, 0.14);
@@ -2300,7 +2358,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--accent);
   margin-bottom: 10px;
@@ -2308,7 +2366,7 @@
 
 .review-intake-card__body {
   margin: 0;
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.55;
   color: var(--text-primary);
   white-space: pre-wrap;
@@ -2316,7 +2374,7 @@
 
 .review-intake-card__hint {
   margin: 10px 0 0;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--text-secondary);
 }
 
@@ -2338,7 +2396,7 @@
 }
 
 .review-detail-verdict__score {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--accent);
 }
@@ -2376,13 +2434,13 @@
 }
 
 .review-case-body .mce-section--compact .mce-section-label {
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .review-case-body .mce-panel-text {
   max-height: 4.2em;
   overflow-y: auto;
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.45;
 }
 

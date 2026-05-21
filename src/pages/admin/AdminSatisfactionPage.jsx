@@ -1109,52 +1109,48 @@ export default function AdminSatisfactionPage() {
                         </div>
                       </div>
 
-                      <div className="member-card-stats member-card-stats--metrics adm-member-metrics-grid adm-member-metrics-grid--cols-4">
-                        <div className="mcs-item mcs-item--panel">
-                          <span className="mcs-label">만족도</span>
-                          <span className="mcs-value">
-                            <SatPctCell
-                              value={m.satisfactionRate}
-                              achievementRate={satisfactionAchievementFromTarget(
-                                m.satisfactionRate,
-                                m.targetPercent,
-                              )}
-                            />
-                          </span>
-                        </div>
-                        <div className="mcs-item mcs-item--panel">
-                          <span className="mcs-label">5대도시</span>
-                          <span className="mcs-value">
-                            <SatPctCell
-                              value={m.fiveMajorCitiesPct}
-                              targetPct={annualMetricTargets.fiveMajor}
-                            />
-                          </span>
-                        </div>
-                        <div className="mcs-item mcs-item--panel">
-                          <span className="mcs-label">5060</span>
-                          <span className="mcs-value">
-                            <SatPctCell
-                              value={m.gen5060Pct}
-                              targetPct={annualMetricTargets.gen5060}
-                            />
-                          </span>
-                        </div>
-                        <div className="mcs-item mcs-item--panel">
-                          <span className="mcs-label">문제해결</span>
-                          <span className="mcs-value">
-                            <SatPctCell
-                              value={m.problemResolvedPct}
-                              achievementRate={
-                                m.problemResolvedInverseAchievementPct ??
-                                problemInverseAchievementPct(
-                                  m.problemResolvedPct,
-                                  memberProblemTarget,
-                                )
-                              }
-                            />
-                          </span>
-                        </div>
+                      <div
+                        className="adm-sat-member-metrics-grid"
+                        role="group"
+                        aria-label={`${m.mbName?.trim() ? m.mbName : m.skid} 만족도 지표`}
+                      >
+                        <span className="adm-smg-h adm-smg-h--main">만족도</span>
+                        <span className="adm-smg-h adm-smg-h--five">5대도시</span>
+                        <span className="adm-smg-h adm-smg-h--gen">5060</span>
+                        <span className="adm-smg-h adm-smg-h--prob">문제해결</span>
+                        <span className="adm-smg-v adm-smg-v--main">
+                          <SatPctCell
+                            value={m.satisfactionRate}
+                            achievementRate={satisfactionAchievementFromTarget(
+                              m.satisfactionRate,
+                              m.targetPercent,
+                            )}
+                          />
+                        </span>
+                        <span className="adm-smg-v adm-smg-v--five">
+                          <SatPctCell
+                            value={m.fiveMajorCitiesPct}
+                            targetPct={annualMetricTargets.fiveMajor}
+                          />
+                        </span>
+                        <span className="adm-smg-v adm-smg-v--gen">
+                          <SatPctCell
+                            value={m.gen5060Pct}
+                            targetPct={annualMetricTargets.gen5060}
+                          />
+                        </span>
+                        <span className="adm-smg-v adm-smg-v--prob">
+                          <SatPctCell
+                            value={m.problemResolvedPct}
+                            achievementRate={
+                              m.problemResolvedInverseAchievementPct ??
+                              problemInverseAchievementPct(
+                                m.problemResolvedPct,
+                                memberProblemTarget,
+                              )
+                            }
+                          />
+                        </span>
                       </div>
                     </div>
                   </article>
