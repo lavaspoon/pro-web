@@ -24,46 +24,10 @@ import {
 } from '../../api/adminApi';
 import { mergeSecondDepthOptions } from '../../utils/adminSecondDepth';
 import CsSatisfactionModalDayStats from '../../components/cs/CsSatisfactionModalDayStats';
-import Skeleton from '../../components/common/Skeleton';
+import { KpiOverviewSkeleton, SummaryTableSkeletonRows } from './adminLoadingSkeletons';
 import './DashboardPage.css';
 import './TeamDetailPage.css';
 import './AdminSatisfactionPage.css';
-
-function KpiOverviewSkeleton() {
-  return (
-    <div className="adm-overview-grid adm-sat-kpi-grid adm-sat-kpi-grid--four">
-      {[0, 1, 2, 3].map((i) => (
-        <div key={i} className="adm-kpi-card adm-kpi-card--tone-files adm-sat-kpi-card--centers">
-          <div className="adm-kpi-head" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Skeleton width={28} height={28} radius={8} />
-            <Skeleton variant="text" width={90} height={14} />
-          </div>
-          <div className="adm-sat-kpi-center-list" style={{ marginTop: 10 }}>
-            {[0, 1, 2].map((j) => (
-              <div key={j} className="adm-sat-kpi-center-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '6px 0' }}>
-                <Skeleton variant="text" width={28} height={12} />
-                <Skeleton variant="text" width={48} height={12} />
-                <Skeleton width={42} height={20} radius={999} />
-              </div>
-            ))}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function SummaryTableSkeletonRows({ rows = 6, cols = 9 }) {
-  return Array.from({ length: rows }).map((_, r) => (
-    <tr key={`sk-${r}`}>
-      {Array.from({ length: cols }).map((__, c) => (
-        <td key={c}>
-          <Skeleton variant="text" width={c < 3 ? 70 : 44} height={12} />
-        </td>
-      ))}
-    </tr>
-  ));
-}
 
 const MEMBER_ROWS_PAGE_SIZE = 10;
 
@@ -415,7 +379,7 @@ export default function AdminSatisfactionPage() {
       : '—';
 
   const kpiData = dashboardKpisQuery.data;
-  const overviewLoading = dashboardKpisQuery.isPending;
+  const overviewLoading = dashboardKpisQuery.isLoading || !kpiData;
   const overviewError = dashboardKpisQuery.error;
 
   const centerDetailEnabled =
@@ -810,7 +774,11 @@ export default function AdminSatisfactionPage() {
         </div>
       </header>
 
-      <section className="adm-section adm-section--center-overview" aria-labelledby="adm-sat-overview-title">
+      <section
+        className="adm-section adm-section--center-overview"
+        aria-labelledby="adm-sat-overview-title"
+        aria-busy={overviewLoading}
+      >
         <div className="adm-section-title">
           <span className="adm-title-bar" />
           <div>
@@ -847,7 +815,7 @@ export default function AdminSatisfactionPage() {
         </div>
       </section>
 
-      <section className="adm-section" aria-labelledby="adm-sat-table-title">
+      <section className="adm-section" aria-labelledby="adm-sat-table-title" aria-busy={loading}>
         <div className="adm-section-title">
           <div className="adm-sat-section-heading">
             <span className="adm-title-bar" aria-hidden />

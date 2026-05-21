@@ -1,0 +1,48 @@
+.case-stage-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border-radius: 999px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.case-stage-badge--sm {
+  font-size: 11px;
+  padding: 3px 8px;
+}
+
+.case-stage-badge--md {
+  font-size: 12px;
+  padding: 4px 10px;
+}
+
+/* 대기중 — 노란색 */
+.case-stage-badge--waiting {
+  color: #8a6d00;
+  background: rgba(255, 214, 10, 0.35);
+  border: 1px solid rgba(255, 193, 7, 0.55);
+}
+
+/* 1차 완료 — 주황색 */
+.case-stage-badge--phase1 {
+  color: #c45c00;
+  background: rgba(255, 149, 0, 0.22);
+  border: 1px solid rgba(255, 149, 0, 0.45);
+}
+
+/* 2차 완료 — 초록색 */
+.case-stage-badge--phase2 {
+  color: #1e7a36;
+  background: rgba(52, 199, 89, 0.2);
+  border: 1px solid rgba(52, 199, 89, 0.4);
+}
+
+.case-stage-badge--neutral {
+  color: var(--text-secondary);
+  background: var(--surface-inset);
+  border: 1px solid var(--border);
+}

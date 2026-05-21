@@ -234,31 +234,20 @@
   padding: 0 2px;
 }
 
-.mce-scores-head--spaced {
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid #d1d1d6;
-}
-
 .mce-group-caption {
   margin: 0;
   padding: 0;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  color: #86868b;
-}
-
-.mce-group-caption--inline {
-  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #1d1d1f;
 }
 
 .mce-scores-hint {
   margin: 0;
   font-size: 11px;
   font-weight: 500;
-  color: #6e6e73;
+  color: #636366;
   letter-spacing: -0.02em;
   white-space: nowrap;
 }
@@ -286,6 +275,173 @@
   background: #d1d1d6;
 }
 
+.mce-section--cols-4 .mce-score-list {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.mce-section--cols-variable .mce-score-list {
+  grid-template-columns: repeat(var(--mce-score-cols, 4), minmax(0, 1fr));
+}
+
+/* ── 인라인(한 줄) 셀 — 행 수 최소화 ─────────────────────── */
+.mce-section--inline-scores .mce-panel-block--scores {
+  padding: 8px 10px 10px;
+}
+
+.mce-section--inline-scores.mce-section--compact .mce-scores-head {
+  margin-bottom: 4px;
+}
+
+/* 13개 항목 → 5열 × 3행 (관리자 인라인) */
+.mce-section--inline-scores.mce-section--cols-variable .mce-score-list {
+  grid-template-columns: repeat(var(--mce-score-cols, 5), minmax(0, 1fr));
+}
+
+.mce-section--inline-scores .mce-score-cell {
+  flex-direction: column;
+  align-items: stretch;
+  min-height: 0;
+}
+
+.mce-section--inline-scores .mce-score-cell-label {
+  flex: 0 0 auto;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 6px 8px 4px;
+  border-bottom: none;
+  background: #f5f5f7;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.3;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: baseline;
+  gap: 0 4px;
+  text-align: center;
+}
+
+.mce-section--inline-scores .mce-score-cell-label-text {
+  display: inline;
+  overflow: visible;
+  text-overflow: unset;
+  white-space: normal;
+  word-break: keep-all;
+  line-height: 1.3;
+}
+
+.mce-section--inline-scores .mce-score-cell-control {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 8px 6px;
+}
+
+.mce-section--inline-scores .mce-score-cell-val {
+  justify-content: center;
+  width: auto;
+  min-width: 2.25rem;
+  padding: 0;
+}
+
+.mce-section--inline-scores .mce-score-cell-num {
+  font-size: 13px;
+}
+
+.mce-section--inline-scores .mce-score-cell-input-wrap {
+  width: 3.25rem;
+  max-width: none;
+  margin: 0 auto;
+}
+
+.mce-section--inline-scores .mce-score-cell-input {
+  font-size: 14px;
+  padding: 5px 2px 5px 4px;
+}
+
+.mce-section--inline-scores .mce-score-cell-input-suffix {
+  padding: 5px 4px 5px 0;
+  font-size: 10px;
+}
+
+.mce-section--inline-scores.mce-section--compact .mce-summary-row {
+  min-height: 56px;
+}
+
+.mce-section--inline-scores.mce-section--compact .mce-summary-total-val {
+  font-size: 24px;
+}
+
+.mce-section--inline-scores.mce-section--compact .mce-summary-remarks-input {
+  min-height: 48px;
+}
+
+@media (max-width: 720px) {
+  .mce-section--inline-scores .mce-score-list {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  .mce-section--inline-scores .mce-score-list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.mce-section--compact .mce-panel-block {
+  padding: 10px 12px;
+}
+
+.mce-section--compact .mce-panel-block--summary {
+  padding: 8px 12px;
+}
+
+.mce-section--compact .mce-summary-row {
+  min-height: 72px;
+}
+
+.mce-section--compact .mce-summary-total {
+  flex: 0 0 120px;
+  padding-right: 12px;
+  margin-right: 12px;
+}
+
+.mce-section--compact .mce-summary-total-val {
+  font-size: 28px;
+}
+
+.mce-section--compact .mce-summary-remarks-input {
+  min-height: 56px;
+}
+
+.mce-section--compact .mce-scores-head {
+  margin-bottom: 6px;
+}
+
+.mce-section--cols-4 .mce-score-cell-label {
+  padding: 7px 8px 6px;
+  font-size: 11.5px;
+  min-height: 2.6em;
+  align-items: flex-start;
+}
+
+.mce-section--cols-4 .mce-score-cell-label-text {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+  line-height: 1.3;
+  word-break: keep-all;
+}
+
+.mce-section--cols-4 .mce-score-cell-val {
+  padding: 7px 8px 8px;
+}
+
+.mce-section--cols-4 .mce-score-cell-num {
+  font-size: 14px;
+}
+
 .mce-score-cell {
   display: flex;
   flex-direction: column;
@@ -300,45 +456,45 @@
   box-shadow: none;
 }
 
-.mce-score-group--bonus .mce-score-list {
-  grid-template-columns: 1fr;
-}
-
 .mce-score-cell-label {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: 6px;
+  text-align: center;
   width: 100%;
   box-sizing: border-box;
   padding: 8px 10px 7px;
-  font-size: 11px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 700;
   letter-spacing: -0.02em;
-  color: #6e6e73;
-  line-height: 1.3;
-  background: #f2f2f7;
+  color: #1d1d1f;
+  line-height: 1.35;
+  background: #f5f5f7;
   border-bottom: 1px solid #d1d1d6;
   cursor: default;
 }
 
 .mce-score-cell-label-text {
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow: visible;
+  text-overflow: unset;
+  white-space: normal;
+  word-break: keep-all;
+  line-height: 1.3;
 }
 
-.mce-score-cell-label-tag {
+.mce-score-cell-max {
   flex-shrink: 0;
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: #007aff;
-  padding: 2px 5px;
-  border-radius: 4px;
-  background: rgba(0, 122, 255, 0.1);
+  color: #86868b;
+  font-variant-numeric: tabular-nums;
+}
+
+.mce-section--inline-scores .mce-score-cell-max {
+  font-size: 9px;
+  margin-left: 1px;
 }
 
 .mce-score-cell--editable .mce-score-cell-label {
@@ -348,8 +504,10 @@
 .mce-score-cell-val {
   display: inline-flex;
   align-items: baseline;
+  justify-content: center;
   gap: 2px;
-  padding: 8px 10px 9px;
+  width: 100%;
+  padding: 8px 6px 9px;
   font-variant-numeric: tabular-nums;
   line-height: 1.1;
   color: #1d1d1f;
@@ -377,12 +535,14 @@
 
 /* 관리자 — 점수 입력 */
 .mce-score-cell-input-wrap {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 0;
-  margin: 6px 8px 8px;
+  width: 4.5rem;
+  max-width: calc(100% - 12px);
+  margin: 7px auto 9px;
   border-radius: 8px;
-  border: 1px solid #c7c7cc;
+  border: 1px solid #aeaeb2;
   background: #ffffff;
   overflow: hidden;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
@@ -401,26 +561,27 @@
 .mce-score-cell-input {
   display: block;
   flex: 1;
+  width: 2.5rem;
   min-width: 0;
   box-sizing: border-box;
   margin: 0;
-  padding: 8px 4px 8px 10px;
+  padding: 7px 2px 7px 6px;
   border: none;
   border-radius: 0;
   background: transparent;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
   letter-spacing: -0.03em;
   font-variant-numeric: tabular-nums;
   color: #1d1d1f;
   line-height: 1.2;
-  text-align: right;
+  text-align: center;
 }
 
 .mce-score-cell-input::placeholder {
-  color: #c7c7cc;
-  font-weight: 500;
-  font-size: 13px;
+  color: #aeaeb2;
+  font-weight: 600;
+  font-size: 12px;
 }
 
 .mce-score-cell-input:focus {
@@ -429,12 +590,12 @@
 
 .mce-score-cell-input-suffix {
   flex-shrink: 0;
-  padding: 8px 10px 8px 2px;
-  font-size: 12px;
-  font-weight: 600;
-  color: #86868b;
-  background: #f2f2f7;
-  border-left: 1px solid #e5e5ea;
+  padding: 7px 6px 7px 0;
+  font-size: 11px;
+  font-weight: 700;
+  color: #636366;
+  background: transparent;
+  border-left: none;
 }
 
 .mce-score-cell-input:disabled {

@@ -77,6 +77,7 @@ export const judgeCase = async ({
   caseId,
   adminSkid,
   draft = false,
+  decision,
   kindGreeting,
   needsIdentification,
   empathy,
@@ -97,6 +98,7 @@ export const judgeCase = async ({
   const body = {
     adminSkid,
     draft: Boolean(draft),
+    ...(decision && !draft ? { decision } : {}),
     kindGreeting,
     needsIdentification,
     empathy,
@@ -333,6 +335,38 @@ export const uploadYouProTargetMembersExcel = async (file) =>
  */
 export const uploadCsTargetMembersExcel = async (file) =>
   uploadTargetMembersExcelTo('/api/admin/cs-satisfaction/target-members/upload', file);
+
+/**
+ * 접수 내역 엑셀 마이그레이션(임시) — 1~4월 등, 파싱만(DB 미반영)
+ * POST /api/admin/cases/migration-excel
+ */
+export const uploadCasesMigrationExcel = async (file, { year, fromMonth = 1, toMonth = 4 } = {}) => {
+  const y = year ?? new Date().getFullYear();
+  const baseURL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080';
+  const formData = new FormData();
+  formData.append('file', file);
+  const qs = new URLSearchParams({
+    year: String(y),
+    fromMonth: String(fromMonth),
+    toMonth: String(toMonth),
+  });
+  const res = await fetch(`${baseURL}/api/admin/cases/migration-excel?${qs}`, {
+    method: 'POST',
+    body: formData,
+  });
+  const text = await res.text();
+  if (!res.ok) {
+    let msg = text || res.statusText;
+    try {
+      const j = JSON.parse(text);
+      msg = j.message || j.error || msg;
+    } catch {
+      /* ignore */
+    }
+    throw new Error(msg);
+  }
+  return text ? JSON.parse(text) : {};
+};
 
 /** @deprecated uploadYouProTargetMembersExcel 사용 */
 export const uploadTargetMembersExcel = uploadYouProTargetMembersExcel;

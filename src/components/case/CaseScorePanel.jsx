@@ -1,69 +1,80 @@
 import React, { useMemo } from 'react';
 import {
   CASE_SCORE_ITEMS,
+  CASE_MAX_TOTAL_SCORE,
   DEFAULT_CERTIFICATION_MIN_TOTAL,
   parseScoreValue,
 } from '../../utils/caseEvaluation';
 import './CaseScorePanel.css';
 
-const SCORE_MAIN_ITEMS = CASE_SCORE_ITEMS.filter(({ key }) => key !== 'bonus');
-const SCORE_BONUS_ITEM = CASE_SCORE_ITEMS.find(({ key }) => key === 'bonus');
-
 function resolveTotalTone({ status, certTone, totalScore, minTotal }) {
+  if (certTone === 'neutral') return 'neutral';
   if (certTone === 'cert' || certTone === 'uncert') return certTone;
   if (status === 'selected') return 'cert';
   if (status === 'rejected') return 'uncert';
+  const st = String(status ?? '').toLowerCase();
+  if (st === 'pending') return 'neutral';
   if (totalScore != null && Number.isFinite(totalScore)) {
     return totalScore >= minTotal ? 'cert' : 'uncert';
   }
   return 'neutral';
 }
 
-function ScoreCell({ label, scoreKey, raw, readonly, onScoreChange, isBonus }) {
-  const n = parseScoreValue(raw);
+function ScoreCell({ label, scoreKey, maxScore, raw, readonly, onScoreChange, inlineLayout }) {
+  const n = parseScoreValue(raw, maxScore);
   const inputId = `case-score-${scoreKey}`;
-  const filled = !readonly && parseScoreValue(raw) != null;
+  const filled = !readonly && parseScoreValue(raw, maxScore) != null;
+
+  const control = readonly ? (
+    <span className={`mce-score-cell-val${n == null ? ' mce-score-cell-val--empty' : ''}`}>
+      {n != null ? (
+        <>
+          <span className="mce-score-cell-num">{n}</span>
+          <span className="mce-score-cell-unit">점</span>
+        </>
+      ) : (
+        '—'
+      )}
+    </span>
+  ) : (
+    <div className={`mce-score-cell-input-wrap${filled ? ' mce-score-cell-input-wrap--filled' : ''}`}>
+      <input
+        id={inputId}
+        type="number"
+        min={0}
+        max={maxScore}
+        step={1}
+        inputMode="numeric"
+        className="mce-score-cell-input"
+        value={raw ?? ''}
+        onChange={(e) => onScoreChange?.(scoreKey, e.target.value)}
+        placeholder="—"
+        aria-label={`${label} 점수 0~${maxScore}`}
+      />
+      <span className="mce-score-cell-input-suffix" aria-hidden>
+        점
+      </span>
+    </div>
+  );
 
   return (
     <li
-      className={`mce-score-cell${isBonus ? ' mce-score-cell--bonus' : ''}${readonly ? '' : ' mce-score-cell--editable'}`}
+      className={[
+        'mce-score-cell',
+        readonly ? '' : 'mce-score-cell--editable',
+        inlineLayout ? 'mce-score-cell--inline' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
       role="listitem"
     >
-      <label className="mce-score-cell-label" htmlFor={readonly ? undefined : inputId}>
+      <label className="mce-score-cell-label" htmlFor={readonly ? undefined : inputId} title={label}>
         <span className="mce-score-cell-label-text">{label}</span>
-        {!readonly && <span className="mce-score-cell-label-tag">점수</span>}
-      </label>
-      {readonly ? (
-        <span className={`mce-score-cell-val${n == null ? ' mce-score-cell-val--empty' : ''}`}>
-          {n != null ? (
-            <>
-              <span className="mce-score-cell-num">{n}</span>
-              <span className="mce-score-cell-unit">점</span>
-            </>
-          ) : (
-            '—'
-          )}
+        <span className="mce-score-cell-max" aria-hidden>
+          /{maxScore}
         </span>
-      ) : (
-        <div className={`mce-score-cell-input-wrap${filled ? ' mce-score-cell-input-wrap--filled' : ''}`}>
-          <input
-            id={inputId}
-            type="number"
-            min={0}
-            max={100}
-            step={1}
-            inputMode="numeric"
-            className="mce-score-cell-input"
-            value={raw ?? ''}
-            onChange={(e) => onScoreChange?.(scoreKey, e.target.value)}
-            placeholder="0–100"
-            aria-label={`${label} 점수 0~100`}
-          />
-          <span className="mce-score-cell-input-suffix" aria-hidden>
-            점
-          </span>
-        </div>
-      )}
+      </label>
+      <div className="mce-score-cell-control">{control}</div>
     </li>
   );
 }
@@ -83,7 +94,7 @@ function SummaryRemarks({ readonly, remarksText, value, onChange }) {
           className="mce-summary-remarks-input"
           value={value ?? ''}
           onChange={(e) => onChange?.('remarks', e.target.value)}
-          placeholder="평가 메모 (선택)"
+          placeholder=""
           aria-label="비고"
         />
       )}
@@ -104,7 +115,13 @@ export default function CaseScorePanel({
   onScoreChange,
   sectionTitle = '평가 결과',
   className = '',
+  scoreColumns = 2,
+  scoreLayout = 'stacked',
+  compact = false,
 }) {
+  const inlineLayout = scoreLayout === 'inline';
+  /** 인라인: 13항목 기준 5열(3행) */
+  const gridColumns = inlineLayout ? 5 : scoreColumns;
   const totalDisplay = useMemo(() => {
     if (totalScore == null || !Number.isFinite(Number(totalScore))) {
       return readonly ? null : 0;
@@ -117,7 +134,7 @@ export default function CaseScorePanel({
 
   const totalBarPct =
     showTotalBlock
-      ? Math.min(100, Math.round((totalDisplay / minTotal) * 100))
+      ? Math.min(100, Math.round((totalDisplay / CASE_MAX_TOTAL_SCORE) * 100))
       : 0;
 
   const totalTone = useMemo(
@@ -127,8 +144,25 @@ export default function CaseScorePanel({
 
   const remarksText = scores?.remarks?.trim() || '';
 
+  const sectionClass = [
+    'mce-section',
+    compact ? 'mce-section--compact' : '',
+    inlineLayout ? 'mce-section--inline-scores' : '',
+    gridColumns > 2 ? 'mce-section--cols-variable' : '',
+    className,
+  ]
+    .filter(Boolean)
+    .join(' ');
+
+  const sectionStyle =
+    gridColumns > 2 ? { '--mce-score-cols': gridColumns } : undefined;
+
   return (
-    <section className={`mce-section ${className}`.trim()} aria-labelledby="case-score-panel-title">
+    <section
+      className={sectionClass}
+      style={sectionStyle}
+      aria-labelledby="case-score-panel-title"
+    >
       <h4 id="case-score-panel-title" className="mce-section-label">
         {sectionTitle}
       </h4>
@@ -155,7 +189,6 @@ export default function CaseScorePanel({
                         style={{ width: `${totalBarPct}%` }}
                       />
                     </div>
-                    <span className="mce-summary-total-hint">{minTotal}점 이상</span>
                   </div>
                 )}
                 <SummaryRemarks
@@ -175,45 +208,26 @@ export default function CaseScorePanel({
         >
           <div className="mce-scores-head">
             <p className="mce-group-caption">평가 항목</p>
-            {!readonly && (
-              <p className="mce-scores-hint">각 항목에 0~100점을 입력하세요</p>
+            {!readonly && !inlineLayout && (
+              <p className="mce-scores-hint">항목별 만점까지 입력 (총 {CASE_MAX_TOTAL_SCORE}점)</p>
             )}
           </div>
           <div className="mce-score-group">
             <ul className="mce-score-list" role="list">
-              {SCORE_MAIN_ITEMS.map(({ key, label }) => (
+              {CASE_SCORE_ITEMS.map(({ key, label, maxScore }) => (
                 <ScoreCell
                   key={key}
                   scoreKey={key}
                   label={label}
+                  maxScore={maxScore}
                   raw={scores[key]}
                   readonly={readonly}
                   onScoreChange={onScoreChange}
+                  inlineLayout={inlineLayout}
                 />
               ))}
             </ul>
           </div>
-
-          {SCORE_BONUS_ITEM && (
-            <>
-              <div className="mce-scores-head mce-scores-head--spaced">
-                <p className="mce-group-caption mce-group-caption--inline">가점</p>
-                {!readonly && <p className="mce-scores-hint">0~100점</p>}
-              </div>
-              <div className="mce-score-group mce-score-group--bonus">
-                <ul className="mce-score-list" role="list">
-                  <ScoreCell
-                    scoreKey={SCORE_BONUS_ITEM.key}
-                    label={SCORE_BONUS_ITEM.label}
-                    raw={scores[SCORE_BONUS_ITEM.key]}
-                    readonly={readonly}
-                    onScoreChange={onScoreChange}
-                    isBonus
-                  />
-                </ul>
-              </div>
-            </>
-          )}
         </div>
       </div>
     </section>

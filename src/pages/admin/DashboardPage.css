@@ -1618,7 +1618,7 @@ button.member-mini-card:focus-visible {
   }
 }
 
-/* 연간 실별 성과 — 만족도 달성률 색상 */
+/* 당월 실별 성과 — 만족도 달성률 색상 */
 .adm-team-cs-achieve--ok {
   color: #16a34a;
   font-weight: 600;

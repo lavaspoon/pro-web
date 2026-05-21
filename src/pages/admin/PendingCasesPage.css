@@ -75,6 +75,40 @@
   flex-shrink: 0;
 }
 
+.pending-migrate-input {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.pending-migrate-btn {
+  border-style: dashed;
+  border-color: rgba(180, 83, 9, 0.45);
+  background: rgba(255, 251, 235, 0.9);
+  color: #92400e;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.pending-migrate-btn:hover:not(:disabled) {
+  border-color: rgba(180, 83, 9, 0.65);
+  background: #fffbeb;
+}
+
+.pending-migrate-msg {
+  flex: 1 1 100%;
+  margin: 0;
+  padding: 0.45rem 0.65rem;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: #57534e;
+  background: rgba(255, 251, 235, 0.75);
+  border: 1px dashed rgba(180, 83, 9, 0.25);
+  border-radius: 8px;
+}
+
 .pending-header-stats {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -671,10 +705,67 @@
     0 1px 3px rgba(15, 23, 42, 0.04);
 }
 
+.pending-stage-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.pending-stage-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--adm-hairline, rgba(60, 60, 67, 0.14));
+  background: var(--surface);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition:
+    border-color 0.12s ease,
+    background 0.12s ease,
+    color 0.12s ease;
+}
+
+.pending-stage-filter:hover {
+  border-color: rgba(10, 126, 164, 0.28);
+  color: var(--accent);
+}
+
+.pending-stage-filter.is-active {
+  border-color: rgba(10, 126, 164, 0.35);
+  background: rgba(10, 126, 164, 0.1);
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.pending-stage-filter__count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: inherit;
+  background: rgba(15, 23, 42, 0.06);
+}
+
+.pending-stage-filter.is-active .pending-stage-filter__count {
+  background: rgba(10, 126, 164, 0.14);
+}
+
 .pending-table-toolbar-month {
   display: inline-flex;
   align-items: center;
   gap: 2px;
+  margin-left: auto;
   padding: 3px 6px 3px 4px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.75);
@@ -779,6 +870,44 @@
   -webkit-font-smoothing: antialiased;
 }
 
+.pending-table--center.pending-table--compact th,
+.pending-table--center.pending-table--compact td {
+  text-align: center;
+}
+
+.pending-table--center.pending-table--compact .pending-th-btn {
+  justify-content: center;
+}
+
+.pending-table--center .pending-td-status {
+  text-align: center;
+}
+
+.pending-table--center .pending-td-team-wrap {
+  align-items: center;
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.pending-table--center .pending-td-team-path,
+.pending-table--center .pending-td-team-text {
+  text-align: center;
+}
+
+.pending-table--center .pending-td-member {
+  justify-content: center;
+}
+
+.pending-table--center .pending-td-name,
+.pending-table--center .pending-td-date-val,
+.pending-table--center .pending-td-call-val {
+  display: block;
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+}
+
 .pending-table--compact .pending-th--action {
   padding: 8px 12px;
   font-size: 11px;
@@ -799,23 +928,23 @@
 }
 
 .pending-table--compact.pending-table--with-team .pending-th--status {
-  width: 9%;
+  width: 8%;
 }
 
 .pending-table--compact.pending-table--with-team .pending-th--team {
-  width: 13%;
+  width: 32%;
 }
 
 .pending-table--compact.pending-table--with-team .pending-th--member {
-  width: 18%;
+  width: 10%;
 }
 
 .pending-table--compact.pending-table--with-team .pending-th--date {
-  width: 12%;
+  width: 9%;
 }
 
 .pending-table--compact.pending-table--with-team .pending-th--callDate {
-  width: 14%;
+  width: 13%;
 }
 
 .pending-table--compact:not(.pending-table--with-team) .pending-th--member {
@@ -837,7 +966,7 @@
 .pending-table--compact .pending-td-team {
   vertical-align: middle;
   min-width: 0;
-  max-width: 220px;
+  max-width: none;
 }
 
 .pending-td-team-wrap {
@@ -845,34 +974,34 @@
   flex-direction: column;
   gap: 2px;
   min-width: 0;
+  max-width: 100%;
 }
 
-.pending-td-team-path {
-  display: block;
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--text-secondary);
-  letter-spacing: -0.02em;
-  line-height: 1.3;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.pending-td-team-wrap--one-line {
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
 }
 
 .pending-table--compact .pending-td-team-text {
   display: block;
-  font-size: 12px;
-  font-weight: 700;
+  font-size: 11.5px;
+  font-weight: 600;
   color: var(--text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   min-width: 0;
+  max-width: 100%;
+  letter-spacing: -0.02em;
 }
 
 .pending-table--compact .pending-td-member {
-  gap: 8px;
+  gap: 4px;
   min-width: 0;
+  max-width: 5.5rem;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .pending-table--compact .pending-td-avatar {
@@ -882,9 +1011,14 @@
 }
 
 .pending-table--compact .pending-td-name {
+  display: block;
   min-width: 0;
-  max-width: none;
-  flex: 1;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .pending-table--compact .pending-td-title {
@@ -1119,8 +1253,9 @@
 
 
 .pending-th--member {
-  width: 22%;
-  min-width: 140px;
+  width: 10%;
+  min-width: 4.5rem;
+  max-width: 6rem;
 }
 
 .pending-th--title {

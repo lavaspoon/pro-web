@@ -282,13 +282,20 @@
 
 .adm-member-metrics-grid--cols-4 {
   grid-template-columns: repeat(4, minmax(5.25rem, 1fr));
-  flex: 1 1 280px;
-  width: 100%;
+  flex: 0 0 auto;
+  width: max-content;
   max-width: 100%;
 }
 
 .adm-member-metrics-grid--cols-5 {
   grid-template-columns: repeat(5, minmax(5rem, 1fr));
+  flex: 0 0 auto;
+  width: max-content;
+  max-width: 100%;
+}
+
+.adm-member-metrics-grid--cols-6 {
+  grid-template-columns: repeat(6, minmax(5rem, 1fr));
   flex: 0 0 auto;
   width: max-content;
   max-width: 100%;
@@ -353,6 +360,86 @@
   color: #047857;
 }
 
+.adm-member-metrics-grid .mcs-item--case-combo {
+  min-width: 6.5rem;
+}
+
+.adm-member-metrics-grid .mcs-case-combo-body {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+  width: 100%;
+}
+
+.adm-member-metrics-grid .mcs-case-combo-line {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+.adm-member-metrics-grid .mcs-case-combo-k {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-tertiary, #94a3b8);
+}
+
+.adm-member-metrics-grid .mcs-item--annual .mcs-case-combo-v {
+  font-size: 12px;
+  font-weight: 800;
+  color: #1d4ed8;
+}
+
+.adm-member-metrics-grid .mcs-item--monthly .mcs-case-combo-v {
+  font-size: 12px;
+  font-weight: 800;
+  color: #047857;
+}
+
+.adm-member-metrics-grid .mcs-item--cs-monthly .mcs-label {
+  color: #6d28d9;
+}
+
+.adm-member-metrics-grid .mcs-item--cs-monthly .mcs-value {
+  color: #5b21b6;
+}
+
+.adm-member-metrics-grid .mcs-item--reward-tier {
+  min-width: 7.5rem;
+}
+
+.adm-member-metrics-grid .mcs-item--reward-tier .mcs-label {
+  color: #92400e;
+}
+
+.adm-member-metrics-grid .mcs-reward-tier-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: 100%;
+  text-align: center;
+}
+
+.adm-member-metrics-grid .mcs-reward-tier-grade {
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.25;
+  color: #b45309;
+  word-break: keep-all;
+}
+
+.adm-member-metrics-grid .mcs-reward-tier-won {
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #78350f;
+  font-variant-numeric: tabular-nums;
+}
+
 .adm-member-metrics-grid .mcs-value--cs-ok,
 .adm-member-metrics-grid .mcs-value .adm-sat-pct--ok {
   color: #16a34a;
@@ -364,8 +451,10 @@
 }
 
 @media (max-width: 900px) {
-  .adm-member-metrics-grid--cols-5 {
-    grid-template-columns: repeat(3, minmax(5rem, 1fr));
+  .adm-member-metrics-grid--cols-4,
+  .adm-member-metrics-grid--cols-5,
+  .adm-member-metrics-grid--cols-6 {
+    grid-template-columns: repeat(2, minmax(5rem, 1fr));
   }
 }
 
@@ -376,7 +465,9 @@
 }
 
 @media (max-width: 560px) {
+  .adm-member-metrics-grid--cols-4,
   .adm-member-metrics-grid--cols-5,
+  .adm-member-metrics-grid--cols-6,
   .adm-member-metrics-grid--cols-4 {
     grid-template-columns: repeat(2, minmax(4.85rem, 1fr));
     width: 100%;

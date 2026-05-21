@@ -1628,6 +1628,35 @@
   font-size: 0.875rem;
 }
 
+/* ── 스켈레톤 (공통 Skeleton + 실제 KPI/테이블 레이아웃) ── */
+.adm-kpi-card--skeleton {
+  pointer-events: none;
+}
+
+.adm-kpi-head--skeleton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.adm-sat-kpi-skeleton-row .sk {
+  justify-self: start;
+}
+
+.adm-table-skeleton-row td {
+  padding-top: 0.65rem;
+  padding-bottom: 0.65rem;
+}
+
+.adm-rank-skeleton-title {
+  display: block;
+  margin: 0.35rem 0 0.5rem 0.15rem;
+}
+
+.adm-rank-skeleton-row .sk {
+  vertical-align: middle;
+}
+
 /* 연간 랭킹 — 3열 × 상위 3위 */
 .adm-sat-ranking-section {
   margin-top: 0.15rem;

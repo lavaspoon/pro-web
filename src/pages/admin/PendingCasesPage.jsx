@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { useQuery, useQueries } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import {
   Clock,
   FileText,
@@ -12,10 +12,23 @@ import {
   ArrowDown,
   ArrowUpDown,
   RefreshCw,
+  Upload,
 } from 'lucide-react';
-import { fetchAdminLeafTeams, fetchAdminReviewQueue, fetchCaseForReview } from '../../api/adminApi';
+import {
+  fetchAdminLeafTeams,
+  fetchAdminReviewQueue,
+  fetchCaseForReview,
+  uploadCasesMigrationExcel,
+} from '../../api/adminApi';
 import CaseReviewModal from './CaseReviewModal';
-import { formatCaseCallDateTime } from '../../utils/caseDisplay';
+import CaseReviewStageBadge from '../../components/common/CaseReviewStageBadge';
+import { formatCaseCallDateMmDdHm, formatSubmittedDateMmDd } from '../../utils/caseDisplay';
+import {
+  CASE_STAGE_FILTERS,
+  caseMatchesStageFilter,
+  countCasesByStageFilter,
+  getCaseReviewStage,
+} from '../../utils/caseReviewStage';
 import { mergeSecondDepthOptions } from '../../utils/adminSecondDepth';
 import {
   buildTeamHierarchyMeta,
@@ -25,22 +38,6 @@ import {
 import './DashboardPage.css';
 import './PendingCasesPage.css';
 import '../../pages/member/CaseListPage.css';
-
-function formatDate(dateStr) {
-  const d = new Date(dateStr);
-  const diff = Math.floor((Date.now() - d) / (1000 * 60 * 60 * 24));
-  if (diff === 0) return '오늘';
-  if (diff === 1) return '어제';
-  return `${diff}일 전`;
-}
-
-function formatCaseStatus(status) {
-  const s = (status && String(status).toLowerCase()) || '';
-  if (s === 'pending') return '검토대기';
-  if (s === 'selected') return '인증';
-  if (s === 'rejected') return '미인증';
-  return status ? String(status) : '—';
-}
 
 function SortGlyph({ active, direction }) {
   if (!active) {
@@ -97,52 +94,48 @@ export default function PendingCasesPage() {
   /** 접수월 yyyy-MM */
   const [monthKey, setMonthKey] = useState(currentMonthKey);
   const [tableSort, setTableSort] = useState({ key: 'submitted', direction: 'asc' });
+  /** 전체 | 대기 | 1차완료 | 2차완료 */
+  const [stageFilter, setStageFilter] = useState('waiting');
+  const migrateFileRef = useRef(null);
+  const [migratePending, setMigratePending] = useState(false);
+  const [migrateMessage, setMigrateMessage] = useState('');
 
-  const { data: queue, isLoading, refetch, isFetching } = useQuery({
+  const migrationYear = new Date().getFullYear();
+  const MIGRATION_FROM_MONTH = 1;
+  const MIGRATION_TO_MONTH = 4;
+
+  const { data: queue, isLoading: queueLoading, refetch, isFetching } = useQuery({
     queryKey: ['admin-review-queue'],
     queryFn: fetchAdminReviewQueue,
   });
 
-  const dashboard = queue?.dashboard;
   const allCasesRaw = useMemo(() => queue?.allCases ?? queue?.pendingCases ?? [], [queue?.allCases, queue?.pendingCases]);
 
-  const filterMeta = dashboard?.filterMeta;
+  const filterMeta = queue?.filterMeta ?? queue?.dashboard?.filterMeta;
   const secondDepthOptions = useMemo(
     () => mergeSecondDepthOptions(filterMeta?.secondDepthDepts),
     [filterMeta?.secondDepthDepts]
   );
 
-  /** 2depth별 leaf(4depth) 팀 — 상단 센터 통계용 (캐시 키가 사이드바와 동일하면 재사용) */
-  const leafStatsQueries = useQueries({
-    queries: secondDepthOptions.map((opt) => ({
-      queryKey: ['admin-leaf-teams', String(opt.id)],
-      queryFn: () => fetchAdminLeafTeams(opt.id),
-      enabled: secondDepthOptions.length > 0,
-    })),
-  });
-
-  /** 선택한 2depth에 맞는 leaf 팀 목록 (사이드바) */
+  /** 선택한 2depth에 맞는 leaf 팀 목록 (사이드바) — review-queue와 병렬 로드 */
   const { data: leafPayload, isLoading: leafTeamsLoading } = useQuery({
     queryKey: ['admin-leaf-teams', secondDepthKey],
     queryFn: () =>
       fetchAdminLeafTeams(secondDepthKey === 'all' ? null : Number(secondDepthKey)),
-    enabled: !!queue,
   });
 
-  /** 상단 카드 — TB_YOU_PRO_CASE 스코프 내 대기 + 2depth 센터별(하위 leaf 구성원 skid 기준) */
+  /** 상단 카드 — API가 센터별 대기 건수를 한 번에 반환 (leaf-teams N회 호출 제거) */
   const pendingByCenter = useMemo(() => {
-    const pendingOnly = allCasesRaw.filter((c) => String(c.status || '').toLowerCase() === 'pending');
-    const centers = secondDepthOptions.map((opt, i) => {
-      const teams = leafStatsQueries[i]?.data?.teams ?? [];
-      const skidSet = collectSkidsFromLeafTeams(teams);
-      const count = pendingOnly.filter((c) => skidSet.has(c.skid)).length;
-      return { id: opt.id, name: opt.name, count };
-    });
+    const centers = (queue?.pendingByCenter ?? []).map((c) => ({
+      id: c.secondDepthDeptId,
+      name: c.centerName,
+      count: Number(c.pendingCount ?? 0),
+    }));
     return {
-      totalAll: pendingOnly.length,
+      totalAll: Number(queue?.totalPendingCount ?? queue?.pendingCases?.length ?? 0),
       centers,
     };
-  }, [allCasesRaw, secondDepthOptions, leafStatsQueries]);
+  }, [queue?.pendingByCenter, queue?.totalPendingCount, queue?.pendingCases?.length]);
 
   const teamsInScope = useMemo(() => leafPayload?.teams ?? [], [leafPayload?.teams]);
 
@@ -170,9 +163,17 @@ export default function PendingCasesPage() {
   );
 
   const casesForTable = useMemo(
-    () => casesInMonth.filter((c) => String(c.status || '').toLowerCase() === 'pending'),
-    [casesInMonth]
+    () => casesInMonth.filter((c) => caseMatchesStageFilter(c, stageFilter)),
+    [casesInMonth, stageFilter],
   );
+
+  const stageFilterCounts = useMemo(() => {
+    const counts = {};
+    for (const { key } of CASE_STAGE_FILTERS) {
+      counts[key] = countCasesByStageFilter(casesInMonth, key);
+    }
+    return counts;
+  }, [casesInMonth]);
 
   const skidToTeamHierarchy = useMemo(() => {
     const map = new Map();
@@ -201,8 +202,9 @@ export default function PendingCasesPage() {
   const teamRows = useMemo(() => {
     const rows = teamsInScope.map((t) => {
       const skids = new Set((t.members ?? []).map((m) => m.id));
-      const list = casesForTable.filter((c) => skids.has(c.skid));
-      const pendingCount = list.filter((c) => String(c.status || '').toLowerCase() === 'pending').length;
+      const monthTeamCases = casesInMonth.filter((c) => skids.has(c.skid));
+      const list = monthTeamCases.filter((c) => caseMatchesStageFilter(c, stageFilter));
+      const pendingCount = monthTeamCases.filter((c) => getCaseReviewStage(c) === 'waiting').length;
       const teamName = t.name ?? '';
       return {
         key: `leaf-${t.id}`,
@@ -226,7 +228,7 @@ export default function PendingCasesPage() {
     });
     rows.sort(compareTeamHierarchy);
     return rows;
-  }, [teamsInScope, casesForTable]);
+  }, [teamsInScope, casesInMonth, stageFilter]);
 
   /** 범위·팀 목록이 바뀌면: 전체 보기(null) 유지, 또는 선택 팀이 없어지면 전체로 복귀 */
   useEffect(() => {
@@ -243,7 +245,7 @@ export default function PendingCasesPage() {
   /** 팀·월이 바뀌면 정렬을 접수일 오름차순으로 초기화 */
   useEffect(() => {
     setTableSort({ key: 'submitted', direction: 'asc' });
-  }, [selectedTeamKey, monthKey]);
+  }, [selectedTeamKey, monthKey, stageFilter]);
 
   const selectedTeam = useMemo(
     () => teamRows.find((r) => r.key === selectedTeamKey) ?? null,
@@ -259,11 +261,13 @@ export default function PendingCasesPage() {
     const { key, direction } = tableSort;
     const mul = direction === 'asc' ? 1 : -1;
     const statusOrder = (x) => {
-      const s = (x.status && String(x.status).toLowerCase()) || '';
-      if (s === 'pending') return 0;
-      if (s === 'selected') return 1;
-      if (s === 'rejected') return 2;
-      return 3;
+      const stage = getCaseReviewStage(x);
+      if (stage === 'waiting') return 0;
+      if (stage === 'phase1') return 1;
+      if (stage === 'phase2') {
+        return String(x.status || '').toLowerCase() === 'selected' ? 2 : 3;
+      }
+      return 4;
     };
     list.sort((a, b) => {
       if (key === 'status') {
@@ -314,6 +318,34 @@ export default function PendingCasesPage() {
     });
   }, []);
 
+  const handleMigrationFile = useCallback(
+    async (e) => {
+      const file = e.target.files?.[0];
+      e.target.value = '';
+      if (!file) return;
+      setMigratePending(true);
+      setMigrateMessage('');
+      try {
+        const res = await uploadCasesMigrationExcel(file, {
+          year: migrationYear,
+          fromMonth: MIGRATION_FROM_MONTH,
+          toMonth: MIGRATION_TO_MONTH,
+        });
+        const rows = res.parsedRowCount ?? 0;
+        const skipped = res.skippedRows ?? 0;
+        setMigrateMessage(
+          `${res.message ?? '파싱 완료'} (${migrationYear}년 ${MIGRATION_FROM_MONTH}~${MIGRATION_TO_MONTH}월 · 데이터 ${rows}행, 빈행 제외 ${skipped}건)`
+        );
+        refetch();
+      } catch (err) {
+        setMigrateMessage(err.message || '업로드에 실패했습니다.');
+      } finally {
+        setMigratePending(false);
+      }
+    },
+    [migrationYear, refetch]
+  );
+
   const openReview = useCallback(async (c) => {
     setLoadingCaseId(c.id);
     try {
@@ -326,12 +358,12 @@ export default function PendingCasesPage() {
     }
   }, []);
 
-  if (isLoading) {
+  if (queueLoading) {
     return (
       <div className="page-container adm-dashboard adm-dashboard--yp">
         <div className="loading-screen">
           <div className="spinner" />
-          <p>불러오는 중...</p>
+          <p>접수 목록을 불러오는 중…</p>
         </div>
       </div>
     );
@@ -355,6 +387,25 @@ export default function PendingCasesPage() {
               <h1 className="adm-title">접수 현황</h1>
             </div>
             <div className="pending-header-actions">
+              <input
+                ref={migrateFileRef}
+                type="file"
+                className="pending-migrate-input"
+                accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                onChange={handleMigrationFile}
+                aria-hidden
+                tabIndex={-1}
+              />
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm pending-migrate-btn"
+                onClick={() => migrateFileRef.current?.click()}
+                disabled={migratePending}
+                title={`${migrationYear}년 1~4월 접수 엑셀 업로드 (양식 확정 전 · DB 미반영)`}
+              >
+                <Upload size={14} aria-hidden />
+                {migratePending ? '업로드 중…' : '1~4월 엑셀 마이그레이션 (임시)'}
+              </button>
               <div className="pending-header-stats" role="group" aria-label="센터별 검토 대기 건수">
                 <div
                   className="pending-header-stat pending-header-stat--card pending-header-stat--total"
@@ -387,14 +438,24 @@ export default function PendingCasesPage() {
                 ))}
               </div>
             </div>
+            {migrateMessage ? (
+              <p className="pending-migrate-msg" role="status">
+                {migrateMessage}
+              </p>
+            ) : null}
             </div>
           </div>
       </header>
 
-      {leafTeamsLoading && filterMeta ? (
-        <div className="loading-screen" style={{ minHeight: '40vh' }}>
-          <div className="spinner" />
-          <p>leaf 팀 목록을 불러오는 중…</p>
+      {leafTeamsLoading ? (
+        <div className="pending-split pending-split--yp pending-split--loading">
+          <aside className="pending-tree pending-tree--skeleton" aria-hidden>
+            <div className="loading-screen" style={{ minHeight: '12rem' }}>
+              <div className="spinner" />
+              <p>팀 목록을 불러오는 중…</p>
+            </div>
+          </aside>
+          <main className="pending-panel pending-panel--skeleton" aria-hidden />
         </div>
       ) : teamsInScope.length === 0 && secondDepthKey !== 'all' ? (
         <div className="empty-state pending-empty-scope">
@@ -507,6 +568,25 @@ export default function PendingCasesPage() {
 
                 <div className="pending-table-wrap">
                   <div className="pending-table-toolbar">
+                    <div className="pending-stage-filters" role="tablist" aria-label="검증 단계 필터">
+                      {CASE_STAGE_FILTERS.map(({ key, label }) => {
+                        const active = stageFilter === key;
+                        const count = stageFilterCounts[key] ?? 0;
+                        return (
+                          <button
+                            key={key}
+                            type="button"
+                            role="tab"
+                            aria-selected={active}
+                            className={`pending-stage-filter${active ? ' is-active' : ''}`}
+                            onClick={() => setStageFilter(key)}
+                          >
+                            {label}
+                            <span className="pending-stage-filter__count">{count}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
                     <div className="pending-table-toolbar-month" role="group" aria-label="접수 월 이동">
                       <button
                         type="button"
@@ -538,16 +618,16 @@ export default function PendingCasesPage() {
                       <p className="pending-panel-empty-title">
                         {casesInMonth.length === 0
                           ? `${formatMonthBarLabel(monthKey)} 접수 건이 없습니다`
-                          : '이 달에 검토 대기 건이 없습니다'}
+                          : `${CASE_STAGE_FILTERS.find((f) => f.key === stageFilter)?.label ?? ''} 건이 없습니다`}
                       </p>
                       <p className="pending-panel-empty-hint">
                         {casesInMonth.length === 0
                           ? '위에서 다른 월로 이동하거나 새 접수를 기다려 주세요.'
-                          : '다른 월을 선택하거나 접수를 기다려 주세요.'}
+                          : '다른 단계 필터를 선택하거나 월을 변경해 보세요.'}
                       </p>
                     </div>
                   ) : (
-                    <table className="pending-table pending-table--compact pending-table--with-team">
+                    <table className="pending-table pending-table--compact pending-table--with-team pending-table--center">
                       <thead>
                         <tr>
                           <th
@@ -649,9 +729,9 @@ export default function PendingCasesPage() {
                               type="button"
                               className="pending-th-btn"
                               onClick={() => toggleSort('callDate')}
-                              aria-label="통화일자 기준 정렬"
+                              aria-label="상담일자 기준 정렬"
                             >
-                              <span>통화일자</span>
+                              <span>상담일자</span>
                               <SortGlyph active={tableSort.key === 'callDate'} direction={tableSort.direction} />
                             </button>
                           </th>
@@ -668,7 +748,7 @@ export default function PendingCasesPage() {
                             }}
                           >
                             <td className="pending-td-status">
-                              <span className="pending-td-status-pill">{formatCaseStatus(c.status)}</span>
+                              <CaseReviewStageBadge caseItem={c} size="sm" />
                             </td>
                             <td className="pending-td-team">
                               {(() => {
@@ -678,33 +758,23 @@ export default function PendingCasesPage() {
                                   (c.teamName && String(c.teamName).trim()) ||
                                   '미지정';
                                 return (
-                                  <span className="pending-td-team-wrap" title={path}>
-                                    {hier?.hierarchyMeta ? (
-                                      <span className="pending-td-team-path">{hier.hierarchyMeta}</span>
-                                    ) : null}
-                                    <span className="pending-td-team-text">
-                                      {hier?.teamName ||
-                                        (c.teamName && String(c.teamName).trim()) ||
-                                        '미지정'}
-                                    </span>
+                                  <span className="pending-td-team-wrap pending-td-team-wrap--one-line" title={path}>
+                                    <span className="pending-td-team-text">{path}</span>
                                   </span>
                                 );
                               })()}
                             </td>
                             <td className="pending-td-member">
                               <span className="pending-td-name">{c.memberName}</span>
-                              {c.judgmentDraft && (
-                                <span className="pending-td-draft" title="임시저장된 평가">
-                                  임시
-                                </span>
-                              )}
                             </td>
                             <td className="pending-td-date">
-                              <span className="pending-td-date-val">{formatDate(c.submittedAt)}</span>
+                              <span className="pending-td-date-val">
+                                {formatSubmittedDateMmDd(c.submittedAt)}
+                              </span>
                             </td>
                             <td className="pending-td-call">
                               <span className="pending-td-call-val">
-                                {c.callDate ? formatCaseCallDateTime(c.callDate) : '—'}
+                                {formatCaseCallDateMmDdHm(c.callDate)}
                               </span>
                             </td>
                           </tr>
@@ -723,6 +793,7 @@ export default function PendingCasesPage() {
         <CaseReviewModal
           caseData={reviewCase}
           memberName={reviewCase.memberName}
+          deptHierarchy={skidToTeamHierarchy.get(reviewCase.skid)?.hierarchyPath}
           onClose={() => setReviewCase(null)}
           onRefreshCase={async () => {
             const full = await fetchCaseForReview(reviewCase.id);

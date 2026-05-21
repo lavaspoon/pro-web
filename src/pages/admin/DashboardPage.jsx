@@ -18,6 +18,11 @@ import {
 import { mergeSecondDepthOptions } from '../../utils/adminSecondDepth';
 import AdminMemberDetailCard from './AdminMemberDetailCard';
 import AdminTargetMembersUploadModal from './AdminTargetMembersUploadModal';
+import {
+  DashboardOverviewSkeleton,
+  RankingCompactSkeleton,
+  SummaryTableSkeletonRows,
+} from './adminLoadingSkeletons';
 import './DashboardPage.css';
 import './AdminSatisfactionPage.css';
 
@@ -67,6 +72,12 @@ function formatAnnualEvalTargetAvg(v) {
   if (v == null || Number.isNaN(Number(v))) return '—';
   const n = Number(v);
   return Number.isInteger(n) ? `${n.toLocaleString('ko-KR')}명` : `${n.toFixed(1)}명`;
+}
+
+/** 평가대상자·인증인원 등 명수 표시 */
+function formatMemberCount(v) {
+  if (v == null || Number.isNaN(Number(v))) return '—';
+  return `${Number(v).toLocaleString('ko-KR')}명`;
 }
 
 /** 전체 센터 현황 힌트 — API latestCallDate(yyyy-MM-dd) 기준 */
@@ -126,9 +137,19 @@ export default function DashboardPage() {
     direction: 'asc',
   });
 
-  const { data, isLoading, isError, error } = useQuery({
+  const {
+    data,
+    isLoading: dashboardLoading,
+    isError,
+    error,
+  } = useQuery({
     queryKey: ['admin-dashboard'],
     queryFn: fetchAdminDashboard,
+  });
+
+  const { data: leafPayload, isLoading: leafTeamsLoading } = useQuery({
+    queryKey: ['admin-leaf-teams'],
+    queryFn: () => fetchAdminLeafTeams(null),
   });
 
   const filterMeta = data?.filterMeta;
@@ -139,9 +160,9 @@ export default function DashboardPage() {
 
   const { year: dashYear } = data ?? {};
 
-  const { data: rankingData } = useQuery({
+  const { data: rankingData, isLoading: rankingLoading } = useQuery({
     queryKey: ['admin-ranking', dashYear, RANK_TOP_N],
-    queryFn: () => fetchAdminRanking(dashYear, RANK_TOP_N),
+    queryFn: () => fetchAdminRanking(dashYear ?? new Date().getFullYear(), RANK_TOP_N),
     enabled: dashYear != null,
   });
 
@@ -149,12 +170,6 @@ export default function DashboardPage() {
     () => rankRowsFromApi(rankingData?.combined?.topMembers),
     [rankingData?.combined?.topMembers]
   );
-
-  const { data: leafPayload } = useQuery({
-    queryKey: ['admin-leaf-teams'],
-    queryFn: () => fetchAdminLeafTeams(null),
-    enabled: data != null,
-  });
 
   const teamsEnriched = useMemo(() => {
     const teams = leafPayload?.teams ?? [];
@@ -201,13 +216,17 @@ export default function DashboardPage() {
   const teamTableTotals = useMemo(() => {
     return sortedTeams.reduce(
       (acc, t) => ({
-        certifiedMemberSum:
-          acc.certifiedMemberSum +
-          Number(t.certifiedMemberCount ?? t.certifiedEvalTargetCount ?? 0),
+        evalTargetSum: acc.evalTargetSum + Number(t.monthlyEvalTargetCount ?? 0),
+        certifiedSum: acc.certifiedSum + Number(t.monthlyCertifiedMemberCount ?? 0),
       }),
-      { certifiedMemberSum: 0 }
+      { evalTargetSum: 0, certifiedSum: 0 }
     );
   }, [sortedTeams]);
+
+  const teamTableOverallCertRate = useMemo(() => {
+    if (teamTableTotals.evalTargetSum <= 0) return null;
+    return Math.round((1000 * teamTableTotals.certifiedSum) / teamTableTotals.evalTargetSum) / 10;
+  }, [teamTableTotals]);
 
   useEffect(() => {
     setSelectedTeamId((id) => {
@@ -275,17 +294,6 @@ export default function DashboardPage() {
     };
   }, [data?.centerOverview]);
 
-  if (isLoading || !data) {
-    return (
-      <div className="page-container">
-        <div className="loading-screen">
-          <div className="spinner" />
-          <p>데이터를 불러오는 중...</p>
-        </div>
-      </div>
-    );
-  }
-
   if (isError) {
     return (
       <div className="page-container">
@@ -294,15 +302,14 @@ export default function DashboardPage() {
     );
   }
 
-  const {
-    year,
-    currentMonth = new Date().getMonth() + 1,
-    centerOverview = [],
-    overallAnnualCertifiedCount = 0,
-    overallAnnualEvalTargetAvg = null,
-    overallAnnualCertificationRate = null,
-    latestCallDate = null,
-  } = data;
+  const year = data?.year ?? new Date().getFullYear();
+  const currentMonth = data?.currentMonth ?? new Date().getMonth() + 1;
+  const centerOverview = data?.centerOverview ?? [];
+  const overallAnnualCertifiedCount = data?.overallAnnualCertifiedCount ?? 0;
+  const overallAnnualEvalTargetAvg = data?.overallAnnualEvalTargetAvg ?? null;
+  const overallAnnualCertificationRate = data?.overallAnnualCertificationRate ?? null;
+  const latestCallDate = data?.latestCallDate ?? null;
+  const overviewLoading = dashboardLoading || !data;
 
   const selectedTeam = teamsFiltered.find((t) => Number(t.id) === Number(selectedTeamId));
 
@@ -347,7 +354,7 @@ export default function DashboardPage() {
       </header>
 
       {/* 전체 센터 개요 */}
-      <section className="adm-section adm-section--center-overview">
+      <section className="adm-section adm-section--center-overview" aria-busy={overviewLoading}>
         <div className="adm-section-title">
           <span className="adm-title-bar" />
           <div>
@@ -358,124 +365,118 @@ export default function DashboardPage() {
           </div>
         </div>
         <div className="adm-overview-shell">
-          <div className="adm-overview-grid adm-overview-grid--two">
-            <div className="adm-kpi-card adm-kpi-card--tone-chart adm-sat-kpi-card--centers adm-kpi-card--annual-by-center">
-              <div className="adm-kpi-head">
-                <span className="adm-kpi-icon-wrap" aria-hidden>
-                  <BadgeCheck className="adm-kpi-ico" size={18} strokeWidth={2.25} />
-                </span>
-                <span className="adm-kpi-title">연간 인증률</span>
-              </div>
-              <div className="adm-sat-kpi-center-list" aria-label="센터별 연간 인증률">
-                <div className="adm-sat-kpi-center-head" aria-hidden>
-                  <span>센터</span>
-                  <span>평가대상자 평균</span>
-                  <span>인증인원</span>
-                  <span>인증률</span>
+          {overviewLoading ? (
+            <DashboardOverviewSkeleton />
+          ) : centerOverview.length === 0 ? (
+            <p className="adm-sat-kpi-empty">센터별 지표를 불러올 수 없습니다.</p>
+          ) : (
+            <div className="adm-overview-grid adm-overview-grid--two">
+              <div className="adm-kpi-card adm-kpi-card--tone-chart adm-sat-kpi-card--centers adm-kpi-card--annual-by-center">
+                <div className="adm-kpi-head">
+                  <span className="adm-kpi-icon-wrap" aria-hidden>
+                    <BadgeCheck className="adm-kpi-ico" size={18} strokeWidth={2.25} />
+                  </span>
+                  <span className="adm-kpi-title">연간 인증률</span>
                 </div>
-                {centerOverview.length === 0 ? (
-                  <p className="adm-sat-kpi-empty">센터별 지표를 불러올 수 없습니다.</p>
-                ) : (
-                  <>
-                    <div className="adm-sat-kpi-center-row">
-                      <span className="adm-sat-kpi-center-name" title="종합">
-                        종합
+                <div className="adm-sat-kpi-center-list" aria-label="센터별 연간 인증률">
+                  <div className="adm-sat-kpi-center-head" aria-hidden>
+                    <span>센터</span>
+                    <span>평가대상자 평균</span>
+                    <span>인증인원</span>
+                    <span>인증률</span>
+                  </div>
+                  <div className="adm-sat-kpi-center-row">
+                    <span className="adm-sat-kpi-center-name" title="종합">
+                      종합
+                    </span>
+                    <span className="adm-sat-kpi-center-pct">
+                      {formatAnnualEvalTargetAvg(overallAnnualEvalTargetAvg)}
+                    </span>
+                    <span className="adm-sat-kpi-center-pct">
+                      {Number(overallAnnualCertifiedCount ?? 0).toLocaleString('ko-KR')}명
+                    </span>
+                    <span className="adm-sat-kpi-center-pct adm-sat-kpi-center-pct--actual">
+                      {overallAnnualCertificationRate != null
+                        ? `${Number(overallAnnualCertificationRate).toFixed(1)}%`
+                        : '—'}
+                    </span>
+                  </div>
+                  {centerOverview.map((c) => (
+                    <div key={c.secondDepthDeptId} className="adm-sat-kpi-center-row">
+                      <span className="adm-sat-kpi-center-name" title={c.centerName}>
+                        {shortCenterLabel(c.centerName)}
                       </span>
                       <span className="adm-sat-kpi-center-pct">
-                        {formatAnnualEvalTargetAvg(overallAnnualEvalTargetAvg)}
+                        {formatAnnualEvalTargetAvg(c.annualEvalTargetAvg)}
                       </span>
                       <span className="adm-sat-kpi-center-pct">
-                        {Number(overallAnnualCertifiedCount ?? 0).toLocaleString('ko-KR')}명
+                        {Number(c.annualCertifiedCount ?? 0).toLocaleString('ko-KR')}명
                       </span>
                       <span className="adm-sat-kpi-center-pct adm-sat-kpi-center-pct--actual">
-                        {overallAnnualCertificationRate != null
-                          ? `${Number(overallAnnualCertificationRate).toFixed(1)}%`
+                        {c.annualCertificationRate != null
+                          ? `${Number(c.annualCertificationRate).toFixed(1)}%`
                           : '—'}
                       </span>
                     </div>
-                    {centerOverview.map((c) => (
-                      <div key={c.secondDepthDeptId} className="adm-sat-kpi-center-row">
-                        <span className="adm-sat-kpi-center-name" title={c.centerName}>
-                          {shortCenterLabel(c.centerName)}
-                        </span>
-                        <span className="adm-sat-kpi-center-pct">
-                          {formatAnnualEvalTargetAvg(c.annualEvalTargetAvg)}
-                        </span>
-                        <span className="adm-sat-kpi-center-pct">
-                          {Number(c.annualCertifiedCount ?? 0).toLocaleString('ko-KR')}명
-                        </span>
-                        <span className="adm-sat-kpi-center-pct adm-sat-kpi-center-pct--actual">
-                          {c.annualCertificationRate != null
-                            ? `${Number(c.annualCertificationRate).toFixed(1)}%`
-                            : '—'}
-                        </span>
-                      </div>
-                    ))}
-                  </>
-                )}
-              </div>
-            </div>
-            <div className="adm-kpi-card adm-kpi-card--tone-users adm-sat-kpi-card--centers adm-kpi-card--center-metrics-3">
-              <div className="adm-kpi-head">
-                <span className="adm-kpi-icon-wrap" aria-hidden>
-                  <Users className="adm-kpi-ico" size={18} strokeWidth={2.25} />
-                </span>
-                <span className="adm-kpi-title">{currentMonth}월 접수 / 인증</span>
-              </div>
-              <div
-                className="adm-sat-kpi-center-list"
-                aria-label={`센터별 ${currentMonth}월 평가대상자·접수·인증`}
-              >
-                <div className="adm-sat-kpi-center-head" aria-hidden>
-                  <span>센터</span>
-                  <span>평가대상자</span>
-                  <span>접수건</span>
-                  <span>인증건</span>
+                  ))}
                 </div>
-                {centerOverview.length === 0 ? (
-                  <p className="adm-sat-kpi-empty">센터별 지표를 불러올 수 없습니다.</p>
-                ) : (
-                  <>
-                    <div className="adm-sat-kpi-center-row">
-                      <span className="adm-sat-kpi-center-name" title="종합">
-                        종합
+              </div>
+              <div className="adm-kpi-card adm-kpi-card--tone-users adm-sat-kpi-card--centers adm-kpi-card--center-metrics-3">
+                <div className="adm-kpi-head">
+                  <span className="adm-kpi-icon-wrap" aria-hidden>
+                    <Users className="adm-kpi-ico" size={18} strokeWidth={2.25} />
+                  </span>
+                  <span className="adm-kpi-title">{currentMonth}월 접수 / 인증</span>
+                </div>
+                <div
+                  className="adm-sat-kpi-center-list"
+                  aria-label={`센터별 ${currentMonth}월 평가대상자·접수·인증`}
+                >
+                  <div className="adm-sat-kpi-center-head" aria-hidden>
+                    <span>센터</span>
+                    <span>평가대상자</span>
+                    <span>접수건</span>
+                    <span>인증건</span>
+                  </div>
+                  <div className="adm-sat-kpi-center-row">
+                    <span className="adm-sat-kpi-center-name" title="종합">
+                      종합
+                    </span>
+                    <span className="adm-sat-kpi-center-pct adm-sat-kpi-center-pct--actual">
+                      {centerOverviewTotals.memberCount}명
+                    </span>
+                    <span className="adm-sat-kpi-center-pct adm-sat-kpi-center-pct--actual">
+                      {Number(centerOverviewTotals.monthlySubmitted).toLocaleString('ko-KR')}건
+                    </span>
+                    <span className="adm-sat-kpi-center-pct adm-sat-kpi-center-pct--actual">
+                      {Number(centerOverviewTotals.monthlyCertifiedCount).toLocaleString('ko-KR')}건
+                    </span>
+                  </div>
+                  {centerOverview.map((c) => (
+                    <div key={`month-${c.secondDepthDeptId}`} className="adm-sat-kpi-center-row">
+                      <span className="adm-sat-kpi-center-name" title={c.centerName}>
+                        {shortCenterLabel(c.centerName)}
                       </span>
                       <span className="adm-sat-kpi-center-pct adm-sat-kpi-center-pct--actual">
-                        {centerOverviewTotals.memberCount}명
+                        {c.memberCount}명
                       </span>
                       <span className="adm-sat-kpi-center-pct adm-sat-kpi-center-pct--actual">
-                        {Number(centerOverviewTotals.monthlySubmitted).toLocaleString('ko-KR')}건
+                        {Number(c.monthlySubmitted ?? 0).toLocaleString('ko-KR')}건
                       </span>
                       <span className="adm-sat-kpi-center-pct adm-sat-kpi-center-pct--actual">
-                        {Number(centerOverviewTotals.monthlyCertifiedCount).toLocaleString('ko-KR')}건
+                        {Number(c.monthlyCertifiedCount ?? 0).toLocaleString('ko-KR')}건
                       </span>
                     </div>
-                    {centerOverview.map((c) => (
-                      <div key={`month-${c.secondDepthDeptId}`} className="adm-sat-kpi-center-row">
-                        <span className="adm-sat-kpi-center-name" title={c.centerName}>
-                          {shortCenterLabel(c.centerName)}
-                        </span>
-                        <span className="adm-sat-kpi-center-pct adm-sat-kpi-center-pct--actual">
-                          {c.memberCount}명
-                        </span>
-                        <span className="adm-sat-kpi-center-pct adm-sat-kpi-center-pct--actual">
-                          {Number(c.monthlySubmitted ?? 0).toLocaleString('ko-KR')}건
-                        </span>
-                        <span className="adm-sat-kpi-center-pct adm-sat-kpi-center-pct--actual">
-                          {Number(c.monthlyCertifiedCount ?? 0).toLocaleString('ko-KR')}건
-                        </span>
-                      </div>
-                    ))}
-                  </>
-                )}
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </section>
 
       {/* 연간 순위 — you_yn=Y 평가대상자 · 해당 연 TB_YOU_PRO_CASE status=selected 건수 */}
-      <section className="adm-section adm-section--ranking">
+      <section className="adm-section adm-section--ranking" aria-busy={rankingLoading}>
         <div className="adm-section-title">
           <span className="adm-title-bar" />
           <div>
@@ -483,7 +484,9 @@ export default function DashboardPage() {
           </div>
         </div>
         <div className="adm-rank-compact">
-          {rankingRows.length === 0 ? (
+          {rankingLoading ? (
+            <RankingCompactSkeleton blocks={RANK_BLOCKS} />
+          ) : rankingRows.length === 0 ? (
             <p className="adm-rank-compact__empty">해당 범위 구성원이 없거나 반영 실적이 없습니다.</p>
           ) : (
             <div className="adm-rank-compact__grid-wrap">
@@ -554,11 +557,13 @@ export default function DashboardPage() {
       </section>
 
       {/* 실별 성과 테이블 */}
-      <section className="adm-section">
+      <section className="adm-section" aria-busy={leafTeamsLoading}>
         <div className="adm-section-title">
           <span className="adm-title-bar" />
           <div>
-            <h2 className="adm-section-heading">연간 실별 성과</h2>
+            <h2 className="adm-section-heading">
+              {currentMonth}월 실별 성과
+            </h2>
           </div>
         </div>
         {(filterCenter !== null || filterGroup !== null || filterSkill !== null) && (
@@ -632,19 +637,19 @@ export default function DashboardPage() {
                 />
                 <SortTh
                   label="평가대상자"
-                  sortKey="annualEvalTargetAvg"
+                  sortKey="monthlyEvalTargetCount"
                   sortConfig={sortConfig}
                   onSort={handleSort}
                 />
                 <SortTh
                   label="인증인원"
-                  sortKey="certifiedMemberCount"
+                  sortKey="monthlyCertifiedMemberCount"
                   sortConfig={sortConfig}
                   onSort={handleSort}
                 />
                 <SortTh
                   label="인증률"
-                  sortKey="certificationRate"
+                  sortKey="monthlyCertificationRate"
                   sortConfig={sortConfig}
                   onSort={handleSort}
                 />
@@ -657,7 +662,9 @@ export default function DashboardPage() {
               </tr>
             </thead>
             <tbody>
-              {sortedTeams.length === 0 ? (
+              {leafTeamsLoading ? (
+                <SummaryTableSkeletonRows rows={8} cols={8} />
+              ) : sortedTeams.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="adm-table-empty">
                     {teamsEnriched.length === 0
@@ -719,16 +726,11 @@ export default function DashboardPage() {
                     <td>
                       <span className="adm-team-name">{team.name}</span>
                     </td>
-                    <td>{formatAnnualEvalTargetAvg(team.annualEvalTargetAvg)}</td>
+                    <td>{formatMemberCount(team.monthlyEvalTargetCount)}</td>
+                    <td>{formatMemberCount(team.monthlyCertifiedMemberCount)}</td>
                     <td>
-                      {Number(
-                        team.certifiedMemberCount ?? team.certifiedEvalTargetCount ?? 0
-                      ).toLocaleString('ko-KR')}
-                      명
-                    </td>
-                    <td>
-                      {team.certificationRate != null
-                        ? `${Number(team.certificationRate).toFixed(1)}%`
+                      {team.monthlyCertificationRate != null
+                        ? `${Number(team.monthlyCertificationRate).toFixed(1)}%`
                         : '—'}
                     </td>
                     <td>
@@ -757,13 +759,11 @@ export default function DashboardPage() {
                     <span className="adm-table-total-label">합계</span>
                     <span className="adm-table-total-sublabel">{sortedTeams.length}개 실</span>
                   </td>
-                  <td>{formatAnnualEvalTargetAvg(overallAnnualEvalTargetAvg)}</td>
+                  <td>{formatMemberCount(teamTableTotals.evalTargetSum)}</td>
+                  <td>{formatMemberCount(teamTableTotals.certifiedSum)}</td>
                   <td>
-                    {teamTableTotals.certifiedMemberSum.toLocaleString('ko-KR')}명
-                  </td>
-                  <td>
-                    {overallAnnualCertificationRate != null
-                      ? `${Number(overallAnnualCertificationRate).toFixed(1)}%`
+                    {teamTableOverallCertRate != null
+                      ? `${Number(teamTableOverallCertRate).toFixed(1)}%`
                       : '—'}
                   </td>
                   <td>—</td>

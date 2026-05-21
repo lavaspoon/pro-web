@@ -20,11 +20,12 @@ export default function AdminMemberDetailCard({ member, teamContext }) {
   const monthlyCertified = Number(
     member.monthlyCertifiedCount ?? member.monthlySelected ?? 0
   );
-  const csAchievement = member.csSatisfactionAchievementRate;
-  const csAchievementNum =
-    csAchievement != null && !Number.isNaN(Number(csAchievement))
-      ? Number(csAchievement)
+  const monthlySat =
+    member.monthlySatisfactionPct != null && !Number.isNaN(Number(member.monthlySatisfactionPct))
+      ? Number(member.monthlySatisfactionPct)
       : null;
+  const tierName = member.tierName?.trim() ? member.tierName.trim() : null;
+  const cumulativeRewardWon = Number(member.cumulativeRewardWon ?? 0);
 
   const displayName = member.name?.trim() || member.id || member.skid || '—';
   const skid = member.id ?? member.skid ?? '';
@@ -68,36 +69,47 @@ export default function AdminMemberDetailCard({ member, teamContext }) {
           </div>
         </div>
 
-        <div className="member-card-stats member-card-stats--metrics adm-member-metrics-grid adm-member-metrics-grid--cols-5">
-          <div className="mcs-item mcs-item--panel mcs-item--annual">
-            <span className="mcs-label">연간 접수 건수</span>
-            <span className="mcs-value">{totalSubmitted}건</span>
+        <div className="member-card-stats member-card-stats--metrics adm-member-metrics-grid adm-member-metrics-grid--cols-4">
+          <div className="mcs-item mcs-item--panel mcs-item--annual mcs-item--case-combo">
+            <span className="mcs-label">연간 접수 · 인증</span>
+            <div className="mcs-case-combo-body">
+              <span className="mcs-case-combo-line">
+                <span className="mcs-case-combo-k">접수</span>
+                <span className="mcs-case-combo-v">{totalSubmitted}건</span>
+              </span>
+              <span className="mcs-case-combo-line">
+                <span className="mcs-case-combo-k">인증</span>
+                <span className="mcs-case-combo-v">{annualCertified}건</span>
+              </span>
+            </div>
           </div>
-          <div className="mcs-item mcs-item--panel mcs-item--annual">
-            <span className="mcs-label">연간 인증 건수</span>
-            <span className="mcs-value">{annualCertified}건</span>
+          <div className="mcs-item mcs-item--panel mcs-item--monthly mcs-item--case-combo">
+            <span className="mcs-label">이달 접수 · 인증</span>
+            <div className="mcs-case-combo-body">
+              <span className="mcs-case-combo-line">
+                <span className="mcs-case-combo-k">접수</span>
+                <span className="mcs-case-combo-v">{monthlySubmitted}건</span>
+              </span>
+              <span className="mcs-case-combo-line">
+                <span className="mcs-case-combo-k">인증</span>
+                <span className="mcs-case-combo-v">{monthlyCertified}건</span>
+              </span>
+            </div>
           </div>
-          <div className="mcs-item mcs-item--panel mcs-item--monthly">
-            <span className="mcs-label">이달 접수 건수</span>
-            <span className="mcs-value">{monthlySubmitted}건</span>
-          </div>
-          <div className="mcs-item mcs-item--panel mcs-item--monthly">
-            <span className="mcs-label">이달 인증 건수</span>
-            <span className="mcs-value">{monthlyCertified}건</span>
-          </div>
-          <div className="mcs-item mcs-item--panel mcs-item--cs-achieve">
-            <span className="mcs-label">개인 만족도 달성률</span>
-            <span
-              className={`mcs-value ${
-                csAchievementNum != null
-                  ? csAchievementNum >= 100
-                    ? 'mcs-value--cs-ok'
-                    : 'mcs-value--cs-no'
-                  : ''
-              }`}
-            >
-              {csAchievementNum != null ? `${csAchievementNum.toFixed(1)}%` : '—'}
+          <div className="mcs-item mcs-item--panel mcs-item--cs-monthly">
+            <span className="mcs-label">당월 만족도</span>
+            <span className="mcs-value">
+              {monthlySat != null ? `${monthlySat.toFixed(1)}%` : '—'}
             </span>
+          </div>
+          <div className="mcs-item mcs-item--panel mcs-item--reward-tier">
+            <span className="mcs-label">등급 · Reward</span>
+            <div className="mcs-reward-tier-body">
+              <span className="mcs-reward-tier-grade">{tierName ?? '등급 없음'}</span>
+              <span className="mcs-reward-tier-won">
+                누적 {cumulativeRewardWon.toLocaleString('ko-KR')}원
+              </span>
+            </div>
           </div>
         </div>
 
