@@ -13,16 +13,22 @@ import {
   ArrowUpDown,
   RefreshCw,
   Upload,
+  Check,
+  Calendar,
 } from 'lucide-react';
 import {
+  assignCaseMonitor,
   fetchAdminLeafTeams,
   fetchAdminReviewQueue,
   fetchCaseForReview,
   uploadCaseHistoryMigrationExcel,
 } from '../../api/adminApi';
+import useAuthStore from '../../store/authStore';
 import CaseReviewModal from './CaseReviewModal';
+import PendingCaseAssignMonitorModal from './PendingCaseAssignMonitorModal';
+import PendingCaseDayPickerModal from './PendingCaseDayPickerModal';
 import CaseReviewStageBadge from '../../components/common/CaseReviewStageBadge';
-import { formatCaseCallDateMmDdHm, formatSubmittedDateMmDd } from '../../utils/caseDisplay';
+import { formatCaseListDateMmDdHm, formatCaseListScoreDisplay, resolveCaseListScoreBadgeTone } from '../../utils/caseDisplay';
 import {
   CASE_STAGE_FILTERS,
   caseMatchesStageFilter,
@@ -31,10 +37,11 @@ import {
 } from '../../utils/caseReviewStage';
 import { mergeSecondDepthOptions } from '../../utils/adminSecondDepth';
 import {
-  buildTeamHierarchyMeta,
   buildTeamHierarchyPath,
   compareTeamHierarchy,
+  formatCenterDisplayName,
 } from '../../utils/teamHierarchy';
+import { isYouProAdmin } from '../../utils/youProRole';
 import './DashboardPage.css';
 import './PendingCasesPage.css';
 import '../../pages/member/CaseListPage.css';
@@ -50,13 +57,45 @@ function SortGlyph({ active, direction }) {
   );
 }
 
+function PendingCaseCheckbox({ checked, onChange, ariaLabel, inputRef }) {
+  return (
+    <label className="pending-check">
+      <input
+        ref={inputRef}
+        type="checkbox"
+        className="pending-check__input"
+        checked={checked}
+        onChange={onChange}
+        aria-label={ariaLabel}
+      />
+      <span className="pending-check__box" aria-hidden="true">
+        <Check className="pending-check__icon" size={11} strokeWidth={3} />
+        <span className="pending-check__dash" />
+      </span>
+    </label>
+  );
+}
+
 function currentMonthKey() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 
+function currentDayKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function caseDayKey(c) {
+  const raw = c.submittedAt || '';
+  if (typeof raw === 'string' && raw.length >= 10) return raw.slice(0, 10);
+  return '';
+}
+
 function caseMonthKey(c) {
-  const raw = c.month || c.submittedAt || '';
+  const day = caseDayKey(c);
+  if (day) return day.slice(0, 7);
+  const raw = c.month || '';
   if (typeof raw === 'string' && raw.length >= 7) return raw.slice(0, 7);
   return '';
 }
@@ -71,7 +110,52 @@ function addMonths(ym, delta) {
 function formatMonthBarLabel(ym) {
   const [y, m] = ym.split('-').map(Number);
   if (!y || !m) return ym;
+  if (ym === currentMonthKey()) return `이번 달 · ${y}년 ${m}월`;
   return `${y}년 ${m}월`;
+}
+
+function formatDayBarLabel(dayKey) {
+  const [y, m, d] = dayKey.split('-').map(Number);
+  if (!y || !m || !d) return dayKey;
+  const dt = new Date(y, m - 1, d);
+  const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+  const w = weekdays[dt.getDay()];
+  if (dayKey === currentDayKey()) return `오늘 · ${m}월 ${d}일 (${w})`;
+  return `${m}월 ${d}일 (${w})`;
+}
+
+function formatDayPickerButtonLabel(dayKey) {
+  if (!dayKey) return '전체';
+  if (dayKey === currentDayKey()) return '오늘';
+  const m = Number(dayKey.slice(5, 7));
+  const d = Number(dayKey.slice(8, 10));
+  return `${m}월 ${d}일`;
+}
+
+function formatPeriodEmptyLabel(monthKey, dayFilterKey) {
+  if (dayFilterKey) return formatDayBarLabel(dayFilterKey);
+  return formatMonthBarLabel(monthKey);
+}
+
+const PHASE1_SCORE_FILTERS = [
+  { key: 'all', label: '전체' },
+  { key: '80', label: '80점 이상' },
+  { key: '90', label: '90점 이상' },
+];
+
+function caseTotalScore(c) {
+  const raw = c?.totalScore;
+  if (raw == null || !Number.isFinite(Number(raw))) return null;
+  return Number(raw);
+}
+
+function caseMatchesPhase1ScoreFilter(c, scoreFilter) {
+  if (scoreFilter === 'all') return true;
+  const score = caseTotalScore(c);
+  if (score == null) return false;
+  if (scoreFilter === '80') return score >= 80;
+  if (scoreFilter === '90') return score >= 90;
+  return true;
 }
 
 /** leaf 팀 목록에서 구성원 skid 집합 */
@@ -86,6 +170,8 @@ function collectSkidsFromLeafTeams(teams) {
 }
 
 export default function PendingCasesPage() {
+  const user = useAuthStore((s) => s.user);
+  const isAdmin = isYouProAdmin(user);
   const [reviewCase, setReviewCase] = useState(null);
   /** 다중 검토 큐 — { cases, index } */
   const [reviewQueue, setReviewQueue] = useState(null);
@@ -94,11 +180,19 @@ export default function PendingCasesPage() {
   const [loadingCaseId, setLoadingCaseId] = useState(null);
   /** 'all' | 2depth dept_id 문자열 (대시보드와 동일) */
   const [secondDepthKey, setSecondDepthKey] = useState('all');
-  /** 접수월 yyyy-MM */
+  /** 접수월 yyyy-MM (기본: 이번 달) */
   const [monthKey, setMonthKey] = useState(currentMonthKey);
-  const [tableSort, setTableSort] = useState({ key: 'submitted', direction: 'asc' });
+  /** null = 월 전체, yyyy-MM-dd = 해당 일자만 */
+  const [dayFilterKey, setDayFilterKey] = useState(null);
+  const [tableSort, setTableSort] = useState({ key: 'totalScore', direction: 'desc' });
+  const [assignModalOpen, setAssignModalOpen] = useState(false);
+  const [assignSubmitting, setAssignSubmitting] = useState(false);
+  const [assignError, setAssignError] = useState('');
+  const [dayPickerOpen, setDayPickerOpen] = useState(false);
   /** 전체 | 대기 | 1차완료 | 2차완료 */
   const [stageFilter, setStageFilter] = useState('waiting');
+  /** 1차 완료 탭 전용 — all | 80 | 90 */
+  const [phase1ScoreFilter, setPhase1ScoreFilter] = useState('all');
   const migrateFileRef = useRef(null);
   const selectAllCheckRef = useRef(null);
   const [migratePending, setMigratePending] = useState(false);
@@ -109,8 +203,8 @@ export default function PendingCasesPage() {
   const MIGRATION_TO_MONTH = 4;
 
   const { data: queue, isLoading: queueLoading, refetch, isFetching } = useQuery({
-    queryKey: ['admin-review-queue'],
-    queryFn: fetchAdminReviewQueue,
+    queryKey: ['admin-review-queue', user?.skid],
+    queryFn: () => fetchAdminReviewQueue(user?.skid),
   });
 
   const allCasesRaw = useMemo(() => queue?.allCases ?? queue?.pendingCases ?? [], [queue?.allCases, queue?.pendingCases]);
@@ -166,18 +260,50 @@ export default function PendingCasesPage() {
     [casesScopedByDept, monthKey],
   );
 
-  const casesForTable = useMemo(
-    () => casesInMonth.filter((c) => caseMatchesStageFilter(c, stageFilter)),
-    [casesInMonth, stageFilter],
+  const caseCountByDay = useMemo(() => {
+    const counts = new Map();
+    for (const c of casesInMonth) {
+      const dk = caseDayKey(c);
+      if (!dk) continue;
+      counts.set(dk, (counts.get(dk) ?? 0) + 1);
+    }
+    return counts;
+  }, [casesInMonth]);
+
+  const casesInView = useMemo(() => {
+    if (!dayFilterKey) return casesInMonth;
+    return casesInMonth.filter((c) => caseDayKey(c) === dayFilterKey);
+  }, [casesInMonth, dayFilterKey]);
+
+  const casesForTable = useMemo(() => {
+    let list = casesInView.filter((c) => caseMatchesStageFilter(c, stageFilter));
+    if (stageFilter === 'phase1') {
+      list = list.filter((c) => caseMatchesPhase1ScoreFilter(c, phase1ScoreFilter));
+    }
+    return list;
+  }, [casesInView, stageFilter, phase1ScoreFilter]);
+
+  const phase1CasesInView = useMemo(
+    () => casesInView.filter((c) => caseMatchesStageFilter(c, 'phase1')),
+    [casesInView],
   );
+
+  const phase1ScoreFilterCounts = useMemo(() => {
+    const counts = { all: phase1CasesInView.length, 80: 0, 90: 0 };
+    for (const c of phase1CasesInView) {
+      if (caseMatchesPhase1ScoreFilter(c, '80')) counts['80'] += 1;
+      if (caseMatchesPhase1ScoreFilter(c, '90')) counts['90'] += 1;
+    }
+    return counts;
+  }, [phase1CasesInView]);
 
   const stageFilterCounts = useMemo(() => {
     const counts = {};
     for (const { key } of CASE_STAGE_FILTERS) {
-      counts[key] = countCasesByStageFilter(casesInMonth, key);
+      counts[key] = countCasesByStageFilter(casesInView, key);
     }
     return counts;
-  }, [casesInMonth]);
+  }, [casesInView]);
 
   const skidToTeamHierarchy = useMemo(() => {
     const map = new Map();
@@ -191,9 +317,11 @@ export default function PendingCasesPage() {
           groupName: t.groupName,
           teamName: t.name,
         }),
-        hierarchyMeta: buildTeamHierarchyMeta({
+        hierarchyPathFull: buildTeamHierarchyPath({
           centerName: t.centerName,
           groupName: t.groupName,
+          teamName: t.name,
+          rawCenter: true,
         }),
       };
       for (const m of t.members ?? []) {
@@ -206,9 +334,11 @@ export default function PendingCasesPage() {
   const teamRows = useMemo(() => {
     const rows = teamsInScope.map((t) => {
       const skids = new Set((t.members ?? []).map((m) => m.id));
-      const monthTeamCases = casesInMonth.filter((c) => skids.has(c.skid));
-      const list = monthTeamCases.filter((c) => caseMatchesStageFilter(c, stageFilter));
-      const pendingCount = monthTeamCases.filter((c) => getCaseReviewStage(c) === 'waiting').length;
+      const periodTeamCases = casesInView.filter((c) => skids.has(c.skid));
+      const list = periodTeamCases
+        .filter((c) => caseMatchesStageFilter(c, stageFilter))
+        .filter((c) => stageFilter !== 'phase1' || caseMatchesPhase1ScoreFilter(c, phase1ScoreFilter));
+      const pendingCount = periodTeamCases.filter((c) => getCaseReviewStage(c) === 'waiting').length;
       const teamName = t.name ?? '';
       return {
         key: `leaf-${t.id}`,
@@ -220,10 +350,6 @@ export default function PendingCasesPage() {
           groupName: t.groupName,
           teamName,
         }),
-        hierarchyMeta: buildTeamHierarchyMeta({
-          centerName: t.centerName,
-          groupName: t.groupName,
-        }),
         deptId: t.id,
         pendingCount,
         judgedCount: Number(t.judgedCount ?? 0),
@@ -232,7 +358,24 @@ export default function PendingCasesPage() {
     });
     rows.sort(compareTeamHierarchy);
     return rows;
-  }, [teamsInScope, casesInMonth, stageFilter]);
+  }, [teamsInScope, casesInView, stageFilter, phase1ScoreFilter]);
+
+  useEffect(() => {
+    setDayFilterKey(null);
+  }, [monthKey]);
+
+  useEffect(() => {
+    if (!dayFilterKey) return;
+    if (!dayFilterKey.startsWith(`${monthKey}-`)) {
+      setDayFilterKey(null);
+    }
+  }, [monthKey, dayFilterKey]);
+
+  useEffect(() => {
+    if (stageFilter !== 'phase1') {
+      setPhase1ScoreFilter('all');
+    }
+  }, [stageFilter]);
 
   /** 범위·팀 목록이 바뀌면: 전체 보기(null) 유지, 또는 선택 팀이 없어지면 전체로 복귀 */
   useEffect(() => {
@@ -246,15 +389,15 @@ export default function PendingCasesPage() {
     });
   }, [teamRows]);
 
-  /** 팀·월이 바뀌면 정렬을 접수일 오름차순으로 초기화 */
+  /** 팀·기간이 바뀌면 정렬을 접수일 오름차순으로 초기화 */
   useEffect(() => {
     setTableSort({ key: 'submitted', direction: 'asc' });
-  }, [selectedTeamKey, monthKey, stageFilter]);
+  }, [selectedTeamKey, monthKey, dayFilterKey, stageFilter, phase1ScoreFilter]);
 
   /** 목록 스코프가 바뀌면 체크 해제 */
   useEffect(() => {
     setCheckedCaseIds(new Set());
-  }, [monthKey, stageFilter, secondDepthKey, selectedTeamKey]);
+  }, [monthKey, dayFilterKey, stageFilter, phase1ScoreFilter, secondDepthKey, selectedTeamKey]);
 
   const selectedTeam = useMemo(
     () => teamRows.find((r) => r.key === selectedTeamKey) ?? null,
@@ -298,6 +441,21 @@ export default function PendingCasesPage() {
       if (key === 'member') {
         return (a.memberName || '').localeCompare(b.memberName || '', 'ko') * mul;
       }
+      if (key === 'totalScore') {
+        const scoreValue = (x) => {
+          const raw = x?.totalScore;
+          if (raw == null || !Number.isFinite(Number(raw))) return null;
+          return Number(raw);
+        };
+        const sa = scoreValue(a);
+        const sb = scoreValue(b);
+        if (sa == null && sb == null) return (a.id ?? 0) - (b.id ?? 0);
+        if (sa == null) return 1;
+        if (sb == null) return -1;
+        const d = sa - sb;
+        if (d !== 0) return d * mul;
+        return (a.id ?? 0) - (b.id ?? 0);
+      }
       if (key === 'submitted') {
         const ta = a.submittedAt ? new Date(a.submittedAt).getTime() : 0;
         const tb = b.submittedAt ? new Date(b.submittedAt).getTime() : 0;
@@ -323,7 +481,7 @@ export default function PendingCasesPage() {
       if (prev.key === key) {
         return { key, direction: prev.direction === 'asc' ? 'desc' : 'asc' };
       }
-      return { key, direction: 'asc' };
+      return { key, direction: key === 'totalScore' ? 'desc' : 'asc' };
     });
   }, []);
 
@@ -423,6 +581,42 @@ export default function PendingCasesPage() {
     await openReview(queueCases[0], { cases: queueCases, index: 0 });
   }, [sortedCases, checkedCaseIds, openReview]);
 
+  const handleSelectDayFilter = useCallback((dayKey) => {
+    setDayFilterKey(dayKey);
+    setDayPickerOpen(false);
+  }, []);
+
+  const openAssignMonitorModal = useCallback(() => {
+    setAssignError('');
+    setAssignModalOpen(true);
+  }, []);
+
+  const closeAssignMonitorModal = useCallback(() => {
+    if (assignSubmitting) return;
+    setAssignModalOpen(false);
+    setAssignError('');
+  }, [assignSubmitting]);
+
+  const handleAssignMonitor = useCallback(
+    async (monitorSkid) => {
+      const caseIds = sortedCases.filter((c) => checkedCaseIds.has(c.id)).map((c) => c.id);
+      if (!user?.skid || !monitorSkid || caseIds.length === 0) return;
+      setAssignSubmitting(true);
+      setAssignError('');
+      try {
+        await assignCaseMonitor({ adminSkid: user.skid, monitorSkid, caseIds });
+        setAssignModalOpen(false);
+        setCheckedCaseIds(new Set());
+        refetch();
+      } catch (err) {
+        setAssignError(err.message || '담당자 지정에 실패했습니다.');
+      } finally {
+        setAssignSubmitting(false);
+      }
+    },
+    [sortedCases, checkedCaseIds, user?.skid, refetch],
+  );
+
   const navigateReviewQueue = useCallback(
     async (direction) => {
       if (!reviewQueue?.cases?.length) return;
@@ -438,15 +632,6 @@ export default function PendingCasesPage() {
     },
     [reviewQueue, loadReviewCase],
   );
-
-  const handleAfterFinalSave = useCallback(async () => {
-    if (!reviewQueue || reviewQueue.index >= reviewQueue.cases.length - 1) {
-      return false;
-    }
-    await navigateReviewQueue('next');
-    refetch();
-    return true;
-  }, [reviewQueue, navigateReviewQueue, refetch]);
 
   const closeReview = useCallback(() => {
     setReviewCase(null);
@@ -520,10 +705,10 @@ export default function PendingCasesPage() {
                       idx % 2 === 0 ? 'd5' : 'd7'
                     }`}
                     role="status"
-                    aria-label={`${c.name} 대기 ${c.count}건`}
+                    aria-label={`${formatCenterDisplayName(c.name) || c.name} 대기 ${c.count}건`}
                   >
                     <span className="pending-header-stat-label" title={c.name}>
-                        {c.name ? `${c.name.slice(0, 4)} 대기 건수` : ''}
+                      {c.name ? `${formatCenterDisplayName(c.name) || c.name} 대기 건수` : ''}
                     </span>
                     <div className="pending-header-stat-figure">
                       <span className="pending-header-stat-value">{c.count}</span>
@@ -574,7 +759,7 @@ export default function PendingCasesPage() {
             <div className="tree-root pending-tree__root">
               <div className="pending-scope-filter">
                 <label className="pending-scope-label" htmlFor="pending-scope-select">
-                  범위
+                  센터 선택
                 </label>
                 <div className="pending-scope-select-wrap">
                   <select
@@ -582,11 +767,11 @@ export default function PendingCasesPage() {
                     className="pending-scope-select"
                     value={secondDepthKey}
                     onChange={(e) => setSecondDepthKey(e.target.value)}
-                    aria-label="2depth 센터 범위"
+                    aria-label="센터 선택"
                   >
                     <option value="all">전체 센터</option>
                     {secondDepthOptions.map((o) => (
-                      <option key={o.id} value={String(o.id)}>
+                      <option key={o.id} value={String(o.id)} title={o.fullName ?? o.name}>
                         {o.name}
                       </option>
                     ))}
@@ -613,13 +798,16 @@ export default function PendingCasesPage() {
                       >
                         <span className="tree-leaf-main">
                           <span className="tree-leaf-text">
-                            {row.hierarchyMeta ? (
-                              <span className="tree-leaf-path" title={row.hierarchyPath}>
-                                {row.hierarchyMeta}
-                              </span>
-                            ) : null}
-                            <span className="tree-leaf-name" title={row.hierarchyPath}>
-                              {row.teamName}
+                            <span
+                              className="tree-leaf-label"
+                              title={buildTeamHierarchyPath({
+                                centerName: row.centerName,
+                                groupName: row.groupName,
+                                teamName: row.teamName,
+                                rawCenter: true,
+                              })}
+                            >
+                              {row.hierarchyPath}
                             </span>
                           </span>
                           <span className="tree-leaf-stats">
@@ -647,6 +835,16 @@ export default function PendingCasesPage() {
                       </h2>
                     </div>
                     <div className="pending-panel-head-right">
+                      {isAdmin && checkedCount >= 1 ? (
+                        <button
+                          type="button"
+                          className="btn btn-secondary btn-sm pending-assign-btn"
+                          onClick={openAssignMonitorModal}
+                          disabled={loadingCaseId != null}
+                        >
+                          담당자 지정 ({checkedCount}건)
+                        </button>
+                      ) : null}
                       {checkedCount >= 2 ? (
                         <button
                           type="button"
@@ -692,28 +890,63 @@ export default function PendingCasesPage() {
                         );
                       })}
                     </div>
-                    <div className="pending-table-toolbar-month" role="group" aria-label="접수 월 이동">
+                    <div className="pending-table-toolbar-period">
+                      <div className="pending-table-toolbar-month" role="group" aria-label="접수 월 이동">
+                        <button
+                          type="button"
+                          className="pending-month-nav-btn"
+                          disabled={!canPrevMonth}
+                          onClick={() => setMonthKey((k) => addMonths(k, -1))}
+                          aria-label="이전 달"
+                        >
+                          <ChevronLeft size={18} strokeWidth={2.25} aria-hidden />
+                        </button>
+                        <span className="pending-month-nav-label">{formatMonthBarLabel(monthKey)}</span>
+                        <button
+                          type="button"
+                          className="pending-month-nav-btn"
+                          disabled={!canNextMonth}
+                          onClick={() => setMonthKey((k) => addMonths(k, 1))}
+                          aria-label="다음 달"
+                        >
+                          <ChevronRight size={18} strokeWidth={2.25} aria-hidden />
+                        </button>
+                      </div>
                       <button
                         type="button"
-                        className="pending-month-nav-btn"
-                        disabled={!canPrevMonth}
-                        onClick={() => setMonthKey((k) => addMonths(k, -1))}
-                        aria-label="이전 달"
+                        className={`pending-day-picker-btn${dayFilterKey ? ' is-active' : ''}`}
+                        onClick={() => setDayPickerOpen(true)}
+                        aria-haspopup="dialog"
+                        aria-expanded={dayPickerOpen}
+                        title="일자 선택"
                       >
-                        <ChevronLeft size={18} strokeWidth={2.25} aria-hidden />
-                      </button>
-                      <span className="pending-month-nav-label">{formatMonthBarLabel(monthKey)}</span>
-                      <button
-                        type="button"
-                        className="pending-month-nav-btn"
-                        disabled={!canNextMonth}
-                        onClick={() => setMonthKey((k) => addMonths(k, 1))}
-                        aria-label="다음 달"
-                      >
-                        <ChevronRight size={18} strokeWidth={2.25} aria-hidden />
+                        <Calendar size={14} aria-hidden />
+                        <span>{formatDayPickerButtonLabel(dayFilterKey)}</span>
+                        <ChevronDown size={14} className="pending-day-picker-btn__chev" aria-hidden />
                       </button>
                     </div>
                   </div>
+                  {stageFilter === 'phase1' ? (
+                    <div className="pending-score-filters" role="tablist" aria-label="1차 완료 점수 필터">
+                      {PHASE1_SCORE_FILTERS.map(({ key, label }) => {
+                        const active = phase1ScoreFilter === key;
+                        const count = phase1ScoreFilterCounts[key] ?? 0;
+                        return (
+                          <button
+                            key={key}
+                            type="button"
+                            role="tab"
+                            aria-selected={active}
+                            className={`pending-score-filter${active ? ' is-active' : ''}`}
+                            onClick={() => setPhase1ScoreFilter(key)}
+                          >
+                            {label}
+                            <span className="pending-score-filter__count">{count}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : null}
 
                   {(isAllTeamsView ? casesForTable.length === 0 : selectedTeam.cases.length === 0) ? (
                     <div className="pending-panel-empty pending-panel-empty--in-table">
@@ -721,28 +954,25 @@ export default function PendingCasesPage() {
                         <Clock size={36} strokeWidth={1.75} />
                       </div>
                       <p className="pending-panel-empty-title">
-                        {casesInMonth.length === 0
-                          ? `${formatMonthBarLabel(monthKey)} 접수 건이 없습니다`
-                          : `${CASE_STAGE_FILTERS.find((f) => f.key === stageFilter)?.label ?? ''} 건이 없습니다`}
-                      </p>
-                      <p className="pending-panel-empty-hint">
-                        {casesInMonth.length === 0
-                          ? '위에서 다른 월로 이동하거나 새 접수를 기다려 주세요.'
-                          : '다른 단계 필터를 선택하거나 월을 변경해 보세요.'}
+                        {casesInView.length === 0
+                          ? `${formatPeriodEmptyLabel(monthKey, dayFilterKey)} 접수 건이 없습니다`
+                          : stageFilter === 'phase1' &&
+                              phase1ScoreFilter !== 'all' &&
+                              phase1CasesInView.length > 0
+                            ? `${PHASE1_SCORE_FILTERS.find((f) => f.key === phase1ScoreFilter)?.label ?? ''} 건이 없습니다`
+                            : `${CASE_STAGE_FILTERS.find((f) => f.key === stageFilter)?.label ?? ''} 건이 없습니다`}
                       </p>
                     </div>
                   ) : (
-                    <table className="pending-table pending-table--compact pending-table--with-team pending-table--center">
+                    <table className="pending-table pending-table--compact pending-table--with-team pending-table--center pending-table--cases">
                       <thead>
                         <tr>
                           <th scope="col" className="pending-th pending-th--check">
-                            <input
-                              ref={selectAllCheckRef}
-                              type="checkbox"
-                              className="pending-row-check"
+                            <PendingCaseCheckbox
+                              inputRef={selectAllCheckRef}
                               checked={allVisibleChecked}
                               onChange={toggleAllVisibleChecks}
-                              aria-label="현재 목록 전체 선택"
+                              ariaLabel="현재 목록 전체 선택"
                             />
                           </th>
                           <th
@@ -768,6 +998,30 @@ export default function PendingCasesPage() {
                           </th>
                           <th
                             scope="col"
+                            className="pending-th pending-th--score"
+                            aria-sort={
+                              tableSort.key === 'totalScore'
+                                ? tableSort.direction === 'asc'
+                                  ? 'ascending'
+                                  : 'descending'
+                                : 'none'
+                            }
+                          >
+                            <button
+                              type="button"
+                              className="pending-th-btn"
+                              onClick={() => toggleSort('totalScore')}
+                              aria-label="총점 기준 정렬"
+                            >
+                              <span>총점</span>
+                              <SortGlyph
+                                active={tableSort.key === 'totalScore'}
+                                direction={tableSort.direction}
+                              />
+                            </button>
+                          </th>
+                          <th
+                            scope="col"
                             className="pending-th pending-th--team"
                             aria-sort={
                               tableSort.key === 'team'
@@ -781,9 +1035,9 @@ export default function PendingCasesPage() {
                               type="button"
                               className="pending-th-btn"
                               onClick={() => toggleSort('team')}
-                              aria-label="팀 기준 정렬"
+                              aria-label="센터·그룹·실 기준 정렬"
                             >
-                              <span>팀</span>
+                              <span>센터·그룹·실</span>
                               <SortGlyph active={tableSort.key === 'team'} direction={tableSort.direction} />
                             </button>
                           </th>
@@ -810,6 +1064,27 @@ export default function PendingCasesPage() {
                           </th>
                           <th
                             scope="col"
+                            className="pending-th pending-th--callDate"
+                            aria-sort={
+                              tableSort.key === 'callDate'
+                                ? tableSort.direction === 'asc'
+                                  ? 'ascending'
+                                  : 'descending'
+                                : 'none'
+                            }
+                          >
+                            <button
+                              type="button"
+                              className="pending-th-btn"
+                              onClick={() => toggleSort('callDate')}
+                              aria-label="상담일자 기준 정렬"
+                            >
+                              <span>상담일자</span>
+                              <SortGlyph active={tableSort.key === 'callDate'} direction={tableSort.direction} />
+                            </button>
+                          </th>
+                          <th
+                            scope="col"
                             className="pending-th pending-th--date"
                             aria-sort={
                               tableSort.key === 'submitted'
@@ -829,26 +1104,8 @@ export default function PendingCasesPage() {
                               <SortGlyph active={tableSort.key === 'submitted'} direction={tableSort.direction} />
                             </button>
                           </th>
-                          <th
-                            scope="col"
-                            className="pending-th pending-th--callDate"
-                            aria-sort={
-                              tableSort.key === 'callDate'
-                                ? tableSort.direction === 'asc'
-                                  ? 'ascending'
-                                  : 'descending'
-                                : 'none'
-                            }
-                          >
-                            <button
-                              type="button"
-                              className="pending-th-btn"
-                              onClick={() => toggleSort('callDate')}
-                              aria-label="상담일자 기준 정렬"
-                            >
-                              <span>상담일자</span>
-                              <SortGlyph active={tableSort.key === 'callDate'} direction={tableSort.direction} />
-                            </button>
+                          <th scope="col" className="pending-th pending-th--monitor">
+                            <span className="pending-th-label">모니터링</span>
                           </th>
                         </tr>
                       </thead>
@@ -876,16 +1133,21 @@ export default function PendingCasesPage() {
                               className="pending-td-check"
                               onClick={(e) => e.stopPropagation()}
                             >
-                              <input
-                                type="checkbox"
-                                className="pending-row-check"
+                              <PendingCaseCheckbox
                                 checked={isChecked}
                                 onChange={(e) => toggleCaseCheck(c.id, e.target.checked)}
-                                aria-label={`${c.memberName ?? '구성원'} 사례 선택`}
+                                ariaLabel={`${c.memberName ?? '구성원'} 사례 선택`}
                               />
                             </td>
                             <td className="pending-td-status">
                               <CaseReviewStageBadge caseItem={c} size="sm" />
+                            </td>
+                            <td className="pending-td-score">
+                              <span
+                                className={`pending-td-score-val pending-td-score-val--${resolveCaseListScoreBadgeTone(c)}`}
+                              >
+                                {formatCaseListScoreDisplay(c)}
+                              </span>
                             </td>
                             <td className="pending-td-team">
                               {(() => {
@@ -895,7 +1157,10 @@ export default function PendingCasesPage() {
                                   (c.teamName && String(c.teamName).trim()) ||
                                   '미지정';
                                 return (
-                                  <span className="pending-td-team-wrap pending-td-team-wrap--one-line" title={path}>
+                                  <span
+                                    className="pending-td-team-wrap pending-td-team-wrap--one-line"
+                                    title={hier?.hierarchyPathFull || path}
+                                  >
                                     <span className="pending-td-team-text">{path}</span>
                                   </span>
                                 );
@@ -904,15 +1169,18 @@ export default function PendingCasesPage() {
                             <td className="pending-td-member">
                               <span className="pending-td-name">{c.memberName}</span>
                             </td>
-                            <td className="pending-td-date">
-                              <span className="pending-td-date-val">
-                                {formatSubmittedDateMmDd(c.submittedAt)}
-                              </span>
-                            </td>
                             <td className="pending-td-call">
                               <span className="pending-td-call-val">
-                                {formatCaseCallDateMmDdHm(c.callDate)}
+                                {formatCaseListDateMmDdHm(c.callDate)}
                               </span>
+                            </td>
+                            <td className="pending-td-date">
+                              <span className="pending-td-date-val">
+                                {formatCaseListDateMmDdHm(c.submittedAt)}
+                              </span>
+                            </td>
+                            <td className="pending-td-monitor">
+                              <span className="pending-td-monitor-val">{c.monitorName || '-'}</span>
                             </td>
                           </tr>
                           );
@@ -926,6 +1194,24 @@ export default function PendingCasesPage() {
           </main>
         </div>
       )}
+
+      <PendingCaseAssignMonitorModal
+        open={assignModalOpen}
+        caseCount={checkedCount}
+        onClose={closeAssignMonitorModal}
+        onConfirm={handleAssignMonitor}
+        submitting={assignSubmitting}
+        errorMessage={assignError}
+      />
+
+      <PendingCaseDayPickerModal
+        open={dayPickerOpen}
+        monthKey={monthKey}
+        selectedDayKey={dayFilterKey}
+        caseCountByDay={caseCountByDay}
+        onClose={() => setDayPickerOpen(false)}
+        onSelectDay={handleSelectDayFilter}
+      />
 
       {reviewCase && (
         <CaseReviewModal
@@ -943,7 +1229,6 @@ export default function PendingCasesPage() {
                 }
               : null
           }
-          onAfterFinalSave={reviewQueue ? handleAfterFinalSave : undefined}
           onRefreshCase={async () => {
             const full = await fetchCaseForReview(reviewCase.id);
             setReviewCase(full);

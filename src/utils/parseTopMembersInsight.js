@@ -1,5 +1,5 @@
 /**
- * 구성원 홈 — 상위 선정 사례 AI 인사이트 JSON 파싱
+ * 구성원 홈 — 상위 10위 최근 인증 사례 기반 접수 트렌드 AI JSON 파싱
  */
 
 function unwrapJsonFence(raw) {
@@ -22,6 +22,29 @@ export function formatReadableText(s) {
     .replace(/\s*([,.!?])\s*/g, '$1 ')
     .replace(/\s{2,}/g, ' ')
     .trim();
+}
+
+/** 상위자 접수 트렌드 — 고정 문장 형식 */
+export function formatTopSubmissionTrendSentence(raw) {
+  let text = formatReadableText(raw);
+  if (!text) return '';
+
+  if (/^최근 상위자들은/.test(text)) {
+    return text.endsWith('.') || text.endsWith('。') ? text : `${text}.`;
+  }
+
+  text = text.replace(/[.!?…]+$/, '').trim();
+
+  const legacy = /「(.+?)」처럼 (.+?)(?: 접수·응대)? 내용(?:이 많습니다)?$/.exec(text);
+  if (legacy) {
+    return `최근 상위자들은 ${legacy[2].trim()} 내용으로 접수하고 있습니다.`;
+  }
+
+  if (/내용으로 접수/.test(text)) {
+    return text.endsWith('습니다') ? `${text}.` : `${text}고 있습니다.`;
+  }
+
+  return `최근 상위자들은 ${text} 내용으로 접수하고 있습니다.`;
 }
 
 /**
@@ -129,17 +152,17 @@ function buildFallbackSelectionReason(item) {
   return '제공된 사례 내용이 인증 기준에 부합합니다.';
 }
 
-/** 최근 선정 1~3위 제목·내용 기반 트렌드 폴백 */
+/** 상위 10위 구성원 최근 인증 사례 기반 트렌드 폴백 */
 export function buildFallbackRecentTrend(items) {
-  const rows = (items ?? []).slice(0, 3);
+  const rows = (items ?? []).slice(0, 10);
   const titles = rows.map((it) => normalizeText(it?.title)).filter(Boolean);
 
   const summary = titles.length
-    ? `최근 인증 사례는 「${titles[0]}」처럼 상황·해결이 드러나는 제목·응대가 많습니다.`
-    : '최근 인증 사례는 고객 상황과 응대·해결 과정이 구체적인 글이 많습니다.';
+    ? `최근 상위자들은 「${titles[0]}」처럼 상황·해결이 드러나는 내용으로 접수하고 있습니다.`
+    : '최근 상위자들은 고객 상황과 해결 과정이 구체적인 내용으로 접수하고 있습니다.';
 
   return {
     summary,
-    bullets: ['제목·본문에 상황·응대·결과를 짧게 담기'],
+    bullets: [],
   };
 }

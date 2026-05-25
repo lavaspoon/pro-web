@@ -7,6 +7,7 @@ import { fetchMemberCsInsightPromptMents } from '../../api/memberApi';
 import MemberSubmitModal from '../member/MemberSubmitModal';
 import MemberCaseListModal from '../member/MemberCaseListModal';
 import MemberCaseDetailModal from '../member/MemberCaseDetailModal';
+import MemberCsMentDetailModal from '../member/MemberCsMentDetailModal';
 import './Layout.css';
 
 function normalizeMentList(raw) {
@@ -26,7 +27,7 @@ function pickRandomIndex(length, prev = -1) {
   return next;
 }
 
-function MemberTopbarMentBubble({ skid }) {
+function MemberTopbarMentBubble({ skid, onMentClick }) {
   const now = new Date();
   const year = now.getFullYear();
   const month = now.getMonth() + 1;
@@ -38,13 +39,16 @@ function MemberTopbarMentBubble({ skid }) {
     staleTime: 60_000,
   });
 
-  const mentPool = useMemo(() => {
+  const { mentPool, mentSource } = useMemo(() => {
     const recentGoodTop5 = normalizeMentList(data?.goodMents).slice(0, 5);
     if (recentGoodTop5.length > 0) {
-      return recentGoodTop5;
+      return { mentPool: recentGoodTop5, mentSource: 'good' };
     }
     // Good 멘트가 비어 있을 때만 Bad에서 최근 5개를 보조로 사용
-    return normalizeMentList(data?.badMents).slice(0, 5);
+    return {
+      mentPool: normalizeMentList(data?.badMents).slice(0, 5),
+      mentSource: 'bad',
+    };
   }, [data]);
   const [mentIdx, setMentIdx] = useState(0);
 
@@ -70,15 +74,31 @@ function MemberTopbarMentBubble({ skid }) {
     );
   }
 
+  const handleOpenDetail = () => {
+    onMentClick?.({
+      mentText,
+      mentSource,
+      windowStart: data?.mentWindowStartDate ?? null,
+      windowEnd: data?.latestConsultDate ?? null,
+      year,
+      month,
+    });
+  };
+
   return (
-    <div className="member-topbar-ment" role="status" aria-label="실시간 고객 만족 멘트">
+    <button
+      type="button"
+      className="member-topbar-ment member-topbar-ment--clickable"
+      onClick={handleOpenDetail}
+      aria-label={`실시간 고객 만족: ${mentText}. 클릭하면 상담 상세를 확인할 수 있습니다.`}
+    >
       <span className="member-topbar-ment-kicker">실시간 고객 만족</span>
-      <p className="member-topbar-ment-text">
+      <span className="member-topbar-ment-text">
         <span className="member-topbar-ment-q" aria-hidden>“</span>
         {mentText}
         <span className="member-topbar-ment-q" aria-hidden>”</span>
-      </p>
-    </div>
+      </span>
+    </button>
   );
 }
 
@@ -87,6 +107,7 @@ function MemberLayout({ children }) {
   const { pathname } = useLocation();
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
+  const [mentModal, setMentModal] = useState(null);
 
   const handleLogout = () => {
     logout();
@@ -123,7 +144,7 @@ function MemberLayout({ children }) {
               </div>
             </div>
             <div className="member-topbar-center">
-              <MemberTopbarMentBubble skid={user?.skid} />
+              <MemberTopbarMentBubble skid={user?.skid} onMentClick={setMentModal} />
             </div>
             <button type="button" className="admin-topbar-logout" onClick={handleLogout}>
               <LogOut size={16} strokeWidth={2} aria-hidden />
@@ -136,6 +157,16 @@ function MemberLayout({ children }) {
       <MemberSubmitModal />
       <MemberCaseListModal />
       <MemberCaseDetailModal />
+      <MemberCsMentDetailModal
+        open={!!mentModal}
+        onClose={() => setMentModal(null)}
+        mentText={mentModal?.mentText ?? ''}
+        mentSource={mentModal?.mentSource ?? 'good'}
+        windowStart={mentModal?.windowStart ?? null}
+        windowEnd={mentModal?.windowEnd ?? null}
+        year={mentModal?.year}
+        month={mentModal?.month}
+      />
     </div>
   );
 }

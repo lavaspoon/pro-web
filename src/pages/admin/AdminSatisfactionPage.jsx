@@ -24,6 +24,8 @@ import {
 } from '../../api/adminApi';
 import { mergeSecondDepthOptions } from '../../utils/adminSecondDepth';
 import CsSatisfactionModalDayStats from '../../components/cs/CsSatisfactionModalDayStats';
+import { formatCaseDateTimeMmDdKorean } from '../../utils/caseDisplay';
+import { isActiveUseYn } from '../../utils/csSatisfactionModalDayStats';
 import { KpiOverviewSkeleton, SummaryTableSkeletonRows } from './adminLoadingSkeletons';
 import './DashboardPage.css';
 import './TeamDetailPage.css';
@@ -502,6 +504,7 @@ export default function AdminSatisfactionPage() {
     const allRows = months.flatMap((m) => m.rows ?? []);
     const grouped = new Map();
     for (const row of allRows) {
+      if (!isActiveUseYn(row)) continue;
       const k = dateKeyFromDateTime(row?.consultDateTime);
       if (!k) continue;
       if (!grouped.has(k)) grouped.set(k, []);
@@ -539,6 +542,7 @@ export default function AdminSatisfactionPage() {
   const modalFilteredRows = useMemo(() => {
     const rowsInDate = modalSelectedBucket?.rows ?? [];
     return rowsInDate.filter((r) => {
+      if (!isActiveUseYn(r)) return false;
       if (!matchesYnFilter(r?.satisfiedYn, modalYnFilters.satisfiedYn)) return false;
       if (!matchesYnFilter(r?.fiveMajorCitiesYn, modalYnFilters.fiveMajorCitiesYn)) return false;
       if (!matchesYnFilter(r?.gen5060Yn, modalYnFilters.gen5060Yn)) return false;
@@ -1050,7 +1054,7 @@ export default function AdminSatisfactionPage() {
           <div className="adm-section-title">
             <span className="adm-title-bar" />
             <div>
-              <h3 className="adm-section-heading">구성원 상세 현황</h3>
+              <h3 className="adm-section-heading">당월 구성원 상세 현황</h3>
               <p className="adm-section-hint">{memberDetailPeriodHint}</p>
             </div>
           </div>
@@ -1179,7 +1183,6 @@ export default function AdminSatisfactionPage() {
                 <h3 className="adm-sat-row-modal-title">
                   {(memberMonthlyRowsQuery.data?.memberName || selectedMember?.mbName || selectedMemberSkid)} ({selectedMemberSkid})
                 </h3>
-                <p className="adm-sat-row-modal-sub">{year}년 평가 세부 내용</p>
               </div>
               <div className="adm-sat-row-modal-month-nav">
                 <button
@@ -1341,7 +1344,7 @@ export default function AdminSatisfactionPage() {
                         ) : (
                           modalPagedRows.map((row) => (
                             <tr key={row.id}>
-                              <td className="adm-sat-modal-cell-dt">{formatDateTime(row.consultDateTime)}</td>
+                              <td className="adm-sat-modal-cell-dt">{formatCaseDateTimeMmDdKorean(row.consultDateTime)}</td>
                               <td className="adm-sat-modal-cell-type">
                                 {[row.consultType1, row.consultType2, row.consultType3]
                                   .filter((v) => String(v ?? '').trim() !== '')

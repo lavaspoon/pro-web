@@ -238,9 +238,6 @@ export default function SubmitCaseForm({ className = '', onGoToCaseList, compact
                 </>
               )}
             </button>
-            {compact && (
-              <p className="submit-form-footnote">인증 한도: 월 3회 · 연 36회 · 통화 일시는 실제 상담 시각과 맞게 입력해 주세요.</p>
-            )}
           </div>
         </form>
 

@@ -9,6 +9,11 @@ function stripBase(url) {
   return String(url || '').replace(/\/$/, '');
 }
 
+/** 개발·디버깅용 — LM Studio system/user 프롬프트 확인 */
+function logCsAiPrompt(label, { system, user }) {
+  console.log(`[CS AI] ${label}`, { system, user });
+}
+
 async function lmChatCompletion({ system, user, maxTokens = 220, temperature = 0.42, signal }) {
   const base = stripBase(process.env.REACT_APP_LM_STUDIO_URL || DEFAULT_BASE);
   const url = `${base}/v1/chat/completions`;
@@ -76,12 +81,14 @@ export async function fetchCsDayOverDayInsight({
       : '큰 변동이 없으면 전일과 비슷했다는 요지만.';
 
   const system = [
-    '만족도 데이터 분석가. 제공 수치·멘트·유형만 근거로 사실만 말합니다.',
-    '코칭·대응 조언·피드백·권유·“해보세요” 표현 금지.',
+    '만족도 데이터를 해석해 상담사 화면에 보여줄 AI 인사이트 작성자입니다.',
+    '읽는 사람은 현장 상담사입니다. 탓·비난·냉정한 평가·위압적·딱딱한 표현 금지.',
+    '제공 수치·멘트·유형만 근거로 사실은 정확히 유지하되, 따뜻하고 존중하는 존댓말로 전달하세요. 하락·부진해도 기분 나쁘지 않게 부드럽게.',
+    '코칭·대응 조언·피드백·권유·“해보세요” 표현 금지. 원인 설명만.',
     'JSON만: {"reasons":["…","…"]}',
-    'reasons: 2~3개. 각 항목 한 문장. 만족도가 왜 올랐/내렸는지 원인만.',
-    '상승이면 Good 멘트, 하락이면 불만족 유형을 각각 문장에 그대로 포함(가능하면 첫 항목).',
-    '건수 변화(→)는 1개 항목에만. 날짜·%p 나열 금지. 문장 완결.',
+    'reasons: 3개. 각 항목 한 문장. 만족도가 왜 올랐/내렸는지 원인만.',
+    '상승이면 Good 멘트, 하락이면 불만족 유형을 각각 문장에 그대로 포함(가능하면 첫·둘째 항목).',
+    '건수 변화(→)는 1~2개 항목에만. 날짜·%p 나열 금지. 문장 완결.',
     causeHint,
   ].join(' ');
 
@@ -89,10 +96,12 @@ export async function fetchCsDayOverDayInsight({
     `만족도 ${dirLabel} · 약 ${Math.abs(deltaPp).toFixed(1)}%p`,
     formatSnapshotBlock('최근', latest),
     formatSnapshotBlock('이전', previous),
-    '위만 보고 reasons 2~3개 작성.',
+    '위만 보고 reasons 3개 작성. 상담사가 읽어도 기분 나쁘지 않게 따뜻한 톤으로.',
   ].join('\n');
 
-  return lmChatCompletion({ system, user, maxTokens: 280, temperature: 0.32, signal });
+  logCsAiPrompt('최근 AI 인사이트(일자 비교)', { system, user });
+
+  return lmChatCompletion({ system, user, maxTokens: 320, temperature: 0.32, signal });
 }
 
 /**
@@ -105,60 +114,99 @@ export async function fetchCsCoachScenario({
   signal,
 }) {
   const system = [
-    '콜센터 슈퍼바이저가 상담사에게 주는 코칭. 상담사 비난 금지. 쉬운 말.',
+    '콜센터 슈퍼바이저가 상담사에게 주는 코칭. 상담사 비난·탓 금지. 따뜻하고 존중하는 존댓말.',
     '불만족 **유형**에 맞춰 “이렇게 대응·응대하면 좋겠다”는 **피드백**을 작성하세요. 대화 예시·말풍선 형식 금지.',
     'JSON만: {"feedback":"…","points":["…"]}',
     'feedback: 유형 핵심 조언 1~2문장. 문장은 끝까지 완결되게(중간 생략·… 금지).',
-    'points: 0~2개. 각각 짧은 완결 문장. 없으면 빈 배열.',
+    'points: 0~1개. 짧은 완결 문장 1개. 없으면 빈 배열.',
     'Bad 멘트는 참고만, 원문 복사 금지.',
   ].join(' ');
 
   const user = [
     `불만족 유형: ${typeLabel || '기타'}`,
     badMent ? `참고 Bad 멘트: ${String(badMent).slice(0, 100)}` : 'Bad 멘트: 없음',
-    '이 유형에 대한 대응 피드백 JSON.',
+    '이 유형에 대한 대응 피드백 JSON. 상담사 기분이 상하지 않게 따뜻하게.',
   ].join('\n');
+
+  logCsAiPrompt('AI 코칭(불만족 유형)', { system, user });
 
   return lmChatCompletion({ system, user, maxTokens: 280, temperature: 0.42, signal });
 }
 
 /**
- * YOU 프로 상위 구성원(랭킹 1~3위) — 인증 포인트 + 접수 제안
+ * 최근 Good 멘트 — 잘하고 있는 점 요약
  */
-export async function fetchTopMembersSpotlightInsight({ items, signal }) {
-  const top3 = (items ?? []).slice(0, 3);
-  const blocks = top3.map((it, i) => {
-    const rank = it.rank > 0 ? it.rank : i + 1;
+export async function fetchCsGoodMentInsight({ items, dayLimit = 7, signal }) {
+  const lines = (items ?? []).slice(0, 8).map((it, i) => {
+    const date = it.date ? String(it.date) : '—';
+    const text = String(it.text ?? '').slice(0, 120);
+    return `${i + 1}. (${date}) ${text || '(없음)'}`;
+  });
+
+  const system = [
+    '콜센터 상담사 코칭. Good 멘트는 고객이 MMS 만족도 설문에 적은 칭찬 원문입니다.',
+    '제공된 Good 멘트들만 근거로, 상담사가 **무엇을 잘하고 있는지** 한 문장으로 요약하세요.',
+    '원문 복사·따옴표 인용·멘트 번호 나열 금지. 비난·위압적 표현·“해보세요” 금지.',
+    '상담사가 읽어도 기분 좋고 힘이 나는 따뜻한 존댓말로 작성하세요.',
+    'JSON만: {"strength":"…"}',
+    'strength: 1문장, 존댓말, 64자 내외, 공통 칭찬 패턴 중심.',
+  ].join(' ');
+
+  const user = [
+    `최근 ${dayLimit}일 Good 멘트 ${lines.length}건.`,
+    '',
+    ...lines,
+    '',
+    '위만 보고 strength 작성. 따뜻하고 격려하는 톤으로.',
+  ].join('\n');
+
+  logCsAiPrompt('Good 멘트 인사이트', { system, user });
+
+  return lmChatCompletion({ system, user, maxTokens: 160, temperature: 0.38, signal });
+}
+
+/**
+ * 상위 10위 구성원 — 최근 인증(selected) 사례 기반 접수 트렌드
+ */
+export async function fetchRecentSubmissionTrendInsight({ items, signal }) {
+  const trendItems = (items ?? []).slice(0, 10);
+  const blocks = trendItems.map((it, i) => {
+    const order = it.rank > 0 ? it.rank : i + 1;
     return [
-      `【${rank}위】`,
+      `【사례 ${order}】`,
       `- 제목: ${it.title || '(없음)'}`,
-      `- 응대 내용: ${String(it.description || '').slice(0, 280) || '(없음)'}`,
-      `- 관리자 평가 비고(참고): ${String(it.judgmentReason || '').slice(0, 180) || '(없음)'}`,
+      `- 응대 내용: ${String(it.description || '').slice(0, 220) || '(없음)'}`,
+      `- 관리자 평가 비고(참고): ${String(it.judgmentReason || '').slice(0, 140) || '(없음)'}`,
     ].join('\n');
   });
 
   const system = [
     'YOU PRO 우수 상담 사례 분석가. 제공 데이터만 근거로 사실·패턴을 설명합니다.',
     '실명·부서·개인 식별 금지.',
-    'JSON만: {"entries":[{"rank":1,"selectionReason":"…"}],"recentTrend":"…","trendBullets":["…","…"]}',
-    'entries: 1~3위 각 1개. selectionReason: 인증 포인트 1문장, 48자 내외.',
-    'recentTrend: 공통 패턴 1문장 요약. 사실만, 존댓말, 52자 내외.',
-    'trendBullets: 1개. 접수 작성 팁 1짧은 문장(24자 내외). 번호·따옴표 인용 금지.',
+    'JSON만: {"recentTrend":"…"}',
+    'recentTrend: 반드시 "최근 상위자들은 ○○○ 내용으로 접수하고 있습니다." 한 문장 전체. ○○○=공통 접수·응대 패턴. 사실만, 존댓말, 58자 내외.',
   ].join(' ');
 
   const user = [
-    '랭킹 1~3위 최근 인증 사례(1위=가장 최근). entries·recentTrend·trendBullets 작성.',
+    '인증 건수 상위 10위 구성원의 최근 인증(selected) 사례. judged_at 최신순. recentTrend 작성.',
     '',
     ...blocks,
   ].join('\n');
 
+  console.log('[상위자 최근 접수 트렌드] AI prompt', { system, user });
+
   return lmChatCompletion({
     system,
     user,
-    maxTokens: 380,
+    maxTokens: 420,
     temperature: 0.35,
     signal,
   });
+}
+
+/** @deprecated fetchRecentSubmissionTrendInsight 사용 */
+export async function fetchTopMembersSpotlightInsight({ items, signal }) {
+  return fetchRecentSubmissionTrendInsight({ items, signal });
 }
 
 export async function fetchCsSatisfactionInsight({

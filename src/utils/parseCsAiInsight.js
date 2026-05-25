@@ -80,10 +80,32 @@ export function parseCoachScenario(raw) {
       : [])
       .map((v) => normalizeText(v))
       .filter(Boolean)
-      .slice(0, 2);
+      .slice(0, 1);
 
     if (!feedback) return null;
     return { feedback, points };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * @param {string} raw
+ * @returns {{ strength: string } | null}
+ */
+export function parseGoodMentInsight(raw) {
+  if (!raw || typeof raw !== 'string') return null;
+  try {
+    const obj = JSON.parse(unwrapJsonFence(raw));
+    const strength = normalizeText(
+      obj.strength
+      ?? obj.summary
+      ?? obj.keepDoing
+      ?? obj.fromGood
+      ?? obj.insight,
+    );
+    if (!strength) return null;
+    return { strength: strength.length > 96 ? `${strength.slice(0, 96)}…` : strength };
   } catch {
     return null;
   }

@@ -6,14 +6,13 @@ import {
   ChevronRight,
   ChevronLeft,
   Filter,
-  Calendar,
-  CalendarClock,
-  Clock,
 } from 'lucide-react';
 import { fetchMyCases, fetchCaseDetail } from '../../api/memberApi';
 import StatusBadge from '../../components/common/StatusBadge';
 import AiInsight from '../../components/member/AiInsight';
-import { formatCaseCallDateTime } from '../../utils/caseDisplay';
+import CaseDetailMetaRow from '../../components/case/CaseDetailMetaRow';
+import MemberCaseEvaluationView from '../../components/member/MemberCaseEvaluationView';
+import { formatCaseDateTimeMmDdKorean, formatCaseDateTimeYyMmKorean } from '../../utils/caseDisplay';
 import { caseDescriptionExcerpt } from '../../utils/caseEvaluation';
 import '../../pages/member/CaseListPage.css';
 import '../../components/member/MemberCaseListModal.css';
@@ -28,17 +27,6 @@ const STATUS_MAP = {
   비선정: 'rejected',
 };
 
-function formatDate(dateStr) {
-  if (!dateStr) return '-';
-  const d = new Date(dateStr);
-  return `${d.getFullYear()}. ${d.getMonth() + 1}. ${d.getDate()}`;
-}
-
-function formatDateTime(dateStr) {
-  if (!dateStr) return '-';
-  const d = new Date(dateStr);
-  return `${d.getFullYear()}. ${d.getMonth() + 1}. ${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-}
 
 function currentMonthKey() {
   const d = new Date();
@@ -62,6 +50,14 @@ function formatMonthBarLabel(ym) {
   const [y, m] = ym.split('-').map(Number);
   if (!y || !m) return ym;
   return `${y}년 ${m}월`;
+}
+
+function formatCaseListScoreDisplay(caseItem) {
+  const raw = caseItem?.totalScore;
+  if (raw != null && Number.isFinite(Number(raw))) {
+    return `${Number(raw)}점`;
+  }
+  return '-';
 }
 
 function CaseDetailView({ caseId, onBack, onClose }) {
@@ -103,49 +99,24 @@ function CaseDetailView({ caseId, onBack, onClose }) {
         )}
         {!isLoading && !isError && caseData && (
           <>
-            <div className="detail-hero member-case-detail-hero">
-              <div className="member-case-detail-title-row">
-                <StatusBadge status={caseData.status} size="sm" />
-              </div>
-              <p className="detail-desc">{caseData.description}</p>
-              <div className="detail-meta-row">
-                <span className="meta-item">
-                  <Calendar size={13} />
-                  접수 {formatDateTime(caseData.submittedAt)}
-                </span>
-                <span className="meta-item">
-                  <CalendarClock size={13} />
-                  통화 일시 {formatCaseCallDateTime(caseData.callDate)}
-                </span>
-                {showDuration && (
-                  <span className="meta-item">
-                    <Clock size={13} />
-                    녹취 길이 {caseData.callDuration}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {caseData.status === 'pending' && (
-              <div className="pending-notice">
-                <Clock size={16} />
-                <div>
-                  <strong>대기중</strong>
-                  <p>담당자가 녹취콜을 청취하고 있습니다. 결과가 나오면 알려드립니다.</p>
-                </div>
-              </div>
-            )}
-
+            <CaseDetailMetaRow
+              status={caseData.status}
+              submittedAt={caseData.submittedAt}
+              callDate={caseData.callDate}
+            />
+            {showDuration ? (
+              <p className="member-case-detail-duration">녹취 길이 {caseData.callDuration}</p>
+            ) : null}
+            <MemberCaseEvaluationView caseData={caseData} />
             {caseData.status !== 'pending' && (
-              <div className="member-case-ai-wrap">
+              <div className="admin-member-case-ai-wrap">
                 <AiInsight
                   judgmentReason={caseData.judgmentReason}
                   caseStatus={caseData.status}
-                  judgedAtLabel={caseData.judgedAt ? formatDateTime(caseData.judgedAt) : null}
+                  judgedAtLabel={caseData.judgedAt ? formatCaseDateTimeYyMmKorean(caseData.judgedAt) : null}
                 />
               </div>
             )}
-
           </>
         )}
       </div>
@@ -245,11 +216,10 @@ export default function AdminMemberCasesModal({ open, member, onClose }) {
             <div className="member-case-list-head">
               <div className="member-case-list-head-main">
                 <h2 id="admin-member-case-list-title" className="member-case-list-title">
-                  {member.name}님 사례 목록
+                  {member.name}님 접수 현황
                 </h2>
                 <p className="member-case-list-lede">
                   {member.teamName && `${member.teamName}`}
-                  {member.position ? `${member.teamName ? ' · ' : ''}${member.position}` : ''}
                 </p>
               </div>
               <button
@@ -284,11 +254,7 @@ export default function AdminMemberCasesModal({ open, member, onClose }) {
                 <ChevronRight size={20} strokeWidth={2.25} />
               </button>
             </div>
-
-            <div className="member-case-list-meta">
-              해당 월 접수 <strong>{casesInMonth.length}</strong>건 · 전체 누적 <strong>{cases.length}</strong>건
-            </div>
-
+            
             {isLoading ? (
               <div className="member-case-list-body member-case-list-body--loading">
                 <div className="member-case-list-loading">
@@ -337,10 +303,12 @@ export default function AdminMemberCasesModal({ open, member, onClose }) {
                       <table className="member-case-table">
                         <thead>
                           <tr>
-                            <th className="mct-col-no">#</th>
+                            <th className="mct-col-no">순번</th>
                             <th className="mct-col-status">상태</th>
+                            <th className="mct-col-score">총점</th>
                             <th className="mct-col-title">접수 내용</th>
-                            <th className="mct-col-date">접수일</th>
+                            <th className="mct-col-call-date">상담일자</th>
+                            <th className="mct-col-date">접수일자</th>
                             <th className="mct-col-action" aria-hidden />
                           </tr>
                         </thead>
@@ -358,8 +326,18 @@ export default function AdminMemberCasesModal({ open, member, onClose }) {
                               <td className="mct-status">
                                 <StatusBadge status={c.status} size="sm" />
                               </td>
+                              <td
+                                className={`mct-score${
+                                  c.totalScore == null || Number.isNaN(Number(c.totalScore))
+                                    ? ' mct-score--empty'
+                                    : ''
+                                }`}
+                              >
+                                {formatCaseListScoreDisplay(c)}
+                              </td>
                               <td className="mct-title">{caseDescriptionExcerpt(c.description)}</td>
-                              <td className="mct-date">{formatDate(c.submittedAt)}</td>
+                              <td className="mct-call-date">{formatCaseDateTimeMmDdKorean(c.callDate)}</td>
+                              <td className="mct-date">{formatCaseDateTimeMmDdKorean(c.submittedAt)}</td>
                               <td className="mct-action" aria-hidden>
                                 <ChevronRight size={14} strokeWidth={2} />
                               </td>

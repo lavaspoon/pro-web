@@ -2,6 +2,10 @@ import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { LayoutList } from 'lucide-react';
 import AdminMemberCasesModal from './AdminMemberCasesModal';
+import {
+  resolveTargetMet,
+  satisfactionAchievementFromTarget,
+} from '../../utils/csSatisfactionModalDayStats';
 import './TeamDetailPage.css';
 
 /**
@@ -24,6 +28,18 @@ export default function AdminMemberDetailCard({ member, teamContext }) {
     member.monthlySatisfactionPct != null && !Number.isNaN(Number(member.monthlySatisfactionPct))
       ? Number(member.monthlySatisfactionPct)
       : null;
+  const monthlyTargetPercent =
+    member.monthlyTargetPercent != null && !Number.isNaN(Number(member.monthlyTargetPercent))
+      ? Number(member.monthlyTargetPercent)
+      : null;
+  const monthlyTargetMet =
+    typeof member.monthlyTargetMet === 'boolean'
+      ? member.monthlyTargetMet
+      : resolveTargetMet({
+        actualPct: monthlySat,
+        targetPct: monthlyTargetPercent,
+        achievementRate: satisfactionAchievementFromTarget(monthlySat, monthlyTargetPercent),
+      });
   const tierName = member.tierName?.trim() ? member.tierName.trim() : null;
   const cumulativeRewardWon = Number(member.cumulativeRewardWon ?? 0);
 
@@ -34,6 +50,22 @@ export default function AdminMemberDetailCard({ member, teamContext }) {
   const skill = teamContext?.skill ?? member.skill;
 
   const satDisplay = monthlySat != null ? `${monthlySat.toFixed(1)}%` : '—';
+  const satBadgeTone =
+    monthlySat == null
+      ? 'muted'
+      : monthlyTargetMet === true
+        ? 'ok'
+        : monthlyTargetMet === false
+          ? 'no'
+          : 'muted';
+  const satStatusLabel =
+    monthlySat == null
+      ? '데이터 없음'
+      : monthlyTargetMet === true
+        ? '목표 달성'
+        : monthlyTargetMet === false
+          ? '목표 미달'
+          : '목표 없음';
   const rewardWonDisplay = `${cumulativeRewardWon.toLocaleString('ko-KR')}원`;
 
   return (
@@ -75,25 +107,27 @@ export default function AdminMemberDetailCard({ member, teamContext }) {
         <div
           className="adm-member-metrics-grid"
           role="group"
-          aria-label={`${displayName} 실적: 연간 접수 ${totalSubmitted}건 인증 ${annualCertified}건, 이달 접수 ${monthlySubmitted}건 인증 ${monthlyCertified}건, 당월 만족도 ${satDisplay}, ${tierName ?? '등급 없음'} 누적 ${rewardWonDisplay}`}
+          aria-label={`${displayName} 실적: 연간 접수 ${totalSubmitted}건 인증 ${annualCertified}건, 당월 접수 ${monthlySubmitted}건 인증 ${monthlyCertified}건, 당월 만족도 ${satDisplay} ${satStatusLabel}, ${tierName ?? '등급 없음'} 누적 ${rewardWonDisplay}`}
         >
           <span className="adm-mmg-h adm-mmg-h--corner" aria-hidden />
-          <span className="adm-mmg-h adm-mmg-h--sub">접수</span>
-          <span className="adm-mmg-h adm-mmg-h--cert">인증</span>
+          <span className="adm-mmg-h adm-mmg-h--annual">연간</span>
+          <span className="adm-mmg-h adm-mmg-h--monthly">당월</span>
           <span className="adm-mmg-h adm-mmg-h--sat">당월 만족도</span>
           <span className="adm-mmg-h adm-mmg-h--reward">Reward</span>
 
-          <span className="adm-mmg-period adm-mmg-period--annual">연간</span>
+          <span className="adm-mmg-metric adm-mmg-metric--sub">접수</span>
           <span className="adm-mmg-v adm-mmg-v--sub adm-mmg-v--annual">{totalSubmitted}건</span>
-          <span className="adm-mmg-v adm-mmg-v--cert adm-mmg-v--annual">{annualCertified}건</span>
-          <span className="adm-mmg-stack adm-mmg-stack--sat">{satDisplay}</span>
+          <span className="adm-mmg-v adm-mmg-v--sub adm-mmg-v--monthly">{monthlySubmitted}건</span>
+          <span className={`adm-mmg-sat-badge adm-mmg-sat-badge--${satBadgeTone}`}>
+            {satDisplay}
+          </span>
           <span className="adm-mmg-stack adm-mmg-stack--reward">
             <span className="adm-mmg-reward-tier">{tierName ?? '등급 없음'}</span>
-            <span className="adm-mmg-reward-won">누적 {rewardWonDisplay}</span>
+            <span className="adm-mmg-reward-won">{rewardWonDisplay}</span>
           </span>
 
-          <span className="adm-mmg-period adm-mmg-period--monthly">이달</span>
-          <span className="adm-mmg-v adm-mmg-v--sub adm-mmg-v--monthly">{monthlySubmitted}건</span>
+          <span className="adm-mmg-metric adm-mmg-metric--cert">인증</span>
+          <span className="adm-mmg-v adm-mmg-v--cert adm-mmg-v--annual">{annualCertified}건</span>
           <span className="adm-mmg-v adm-mmg-v--cert adm-mmg-v--monthly">{monthlyCertified}건</span>
         </div>
 

@@ -140,6 +140,33 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.9),
     0 2px 8px rgba(16, 185, 129, 0.1);
   padding: 5px 14px;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+}
+
+.member-topbar-ment--clickable {
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
+}
+
+.member-topbar-ment--clickable:hover {
+  border-color: rgba(16, 185, 129, 0.45);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    0 4px 14px rgba(16, 185, 129, 0.16);
+}
+
+.member-topbar-ment--clickable:focus-visible {
+  outline: 2px solid rgba(16, 185, 129, 0.55);
+  outline-offset: 2px;
+}
+
+.member-topbar-ment--clickable:active {
+  transform: translateY(1px);
 }
 
 .member-topbar-ment-kicker {
@@ -180,6 +207,33 @@
 .member-topbar-ment-quote {
   font-size: 13px;
   color: #94a3b8;
+}
+
+.member-cs-ment-modal-quote {
+  margin: 0 0 16px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(16, 185, 129, 0.22);
+  background: rgba(236, 253, 245, 0.55);
+}
+
+.member-cs-ment-modal-quote-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #047857;
+}
+
+.member-cs-ment-modal-quote p {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.55;
+  color: #065f46;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 /* 구성원 상단 — 세그먼트형 카테고리 */

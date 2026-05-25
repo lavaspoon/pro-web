@@ -68,10 +68,10 @@ function ScoreCell({ label, scoreKey, maxScore, raw, readonly, onScoreChange, in
         .join(' ')}
       role="listitem"
     >
-      <label className="mce-score-cell-label" htmlFor={readonly ? undefined : inputId} title={label}>
+      <label className="mce-score-cell-label" htmlFor={readonly ? undefined : inputId} title={`${label}(${maxScore})`}>
         <span className="mce-score-cell-label-text">{label}</span>
         <span className="mce-score-cell-max" aria-hidden>
-          /{maxScore}
+          ({maxScore})
         </span>
       </label>
       <div className="mce-score-cell-control">{control}</div>
@@ -115,13 +115,12 @@ export default function CaseScorePanel({
   onScoreChange,
   sectionTitle = '평가 결과',
   className = '',
-  scoreColumns = 2,
+  scoreColumns = 3,
   scoreLayout = 'stacked',
   compact = false,
 }) {
   const inlineLayout = scoreLayout === 'inline';
-  /** 인라인: 13항목 기준 5열(3행) */
-  const gridColumns = inlineLayout ? 5 : scoreColumns;
+  const gridColumns = scoreColumns;
   const totalDisplay = useMemo(() => {
     if (totalScore == null || !Number.isFinite(Number(totalScore))) {
       return readonly ? null : 0;

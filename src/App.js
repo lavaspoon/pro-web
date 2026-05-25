@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import useAuthStore from './store/authStore';
+import { canAccessPendingCases } from './utils/youProRole';
 import Layout from './components/common/Layout';
 import LoginPage from './pages/LoginPage';
 import HomePage from './pages/member/HomePage';
@@ -34,6 +35,18 @@ function ProtectedRoute({ children, requiredRole }) {
   return children;
 }
 
+function PendingCasesRoute({ children }) {
+  const { isAuthenticated, user } = useAuthStore();
+  if (!isAuthenticated) return <Navigate to="/" replace />;
+  if (user?.role !== 'admin') {
+    return <Navigate to="/member" replace />;
+  }
+  if (!canAccessPendingCases(user)) {
+    return <Navigate to="/admin" replace />;
+  }
+  return children;
+}
+
 function MemberLayout() {
   return (
     <Layout>
@@ -54,7 +67,14 @@ function AdminLayout() {
       <Routes>
         <Route path="/" element={<DashboardPage />} />
         <Route path="/team/:teamId" element={<TeamDetailPage />} />
-        <Route path="/pending" element={<PendingCasesPage />} />
+        <Route
+          path="/pending"
+          element={
+            <PendingCasesRoute>
+              <PendingCasesPage />
+            </PendingCasesRoute>
+          }
+        />
         <Route path="/satisfaction" element={<AdminSatisfactionPage />} />
         <Route path="/satisfaction/setup" element={<AdminSatisfactionSetupPage />} />
         <Route path="/satisfaction/upload" element={<Navigate to="/admin/satisfaction?setup=1" replace />} />

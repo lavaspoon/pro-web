@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   CheckCircle2,
@@ -8,17 +8,17 @@ import {
   Inbox,
   ChevronLeft,
   ChevronRight,
-  ChevronDown,
   X,
-  HelpCircle,
   ArrowRight,
 } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
 import { fetchMemberSatisfaction, fetchCsSatisfactionTeamDaySummary } from '../../api/memberApi';
 import { fetchCsSatisfactionMemberMonthlyRows } from '../../api/adminApi';
 import CsSatisfactionModalDayStats from '../../components/cs/CsSatisfactionModalDayStats';
-import { fetchCsCoachScenario, fetchCsDayOverDayInsight } from '../../api/lmStudioClient';
-import { parseCoachScenario, parseDayOverDayInsight } from '../../utils/parseCsAiInsight';
+import { fetchCsCoachScenario, fetchCsDayOverDayInsight, fetchCsGoodMentInsight } from '../../api/lmStudioClient';
+import { parseCoachScenario, parseDayOverDayInsight, parseGoodMentInsight } from '../../utils/parseCsAiInsight';
+import { formatCaseDateTimeMmDdKorean } from '../../utils/caseDisplay';
+import { isActiveUseYn } from '../../utils/csSatisfactionModalDayStats';
 import Skeleton, { SkeletonLines } from '../../components/common/Skeleton';
 import '../admin/DashboardPage.css';
 import '../admin/AdminSatisfactionPage.css';
@@ -77,11 +77,6 @@ function numKo(v) {
   return Number(v).toLocaleString('ko-KR');
 }
 
-function formatDateTime(dt) {
-  if (!dt) return '—';
-  return String(dt).replace('T', ' ');
-}
-
 function dateKeyFromDateTime(dt) {
   if (!dt) return '';
   return String(dt).slice(0, 10);
@@ -110,6 +105,22 @@ function nextYnFilter(v) {
 function matchesYnFilter(value, filterValue) {
   if (filterValue === 'ALL') return true;
   return String(value ?? '').trim().toUpperCase() === filterValue;
+}
+
+function matchesDissatTypeFilter(rawType, filterType) {
+  if (filterType == null) return true;
+  return toNum(rawType) === filterType;
+}
+
+function rowMonthFromDateTime(dt) {
+  if (!dt) return null;
+  const m = Number(String(dt).slice(5, 7));
+  return Number.isFinite(m) ? m : null;
+}
+
+function matchesMonthFilter(dt, filterMonth) {
+  if (filterMonth == null) return true;
+  return rowMonthFromDateTime(dt) === Number(filterMonth);
 }
 
 function filterToneClass(v) {
@@ -162,7 +173,7 @@ function getMonthIntakeStats(memberRowsData, month, satData) {
   const bucket = (memberRowsData?.months ?? []).find(
     (m) => Number(m.month) === Number(month),
   );
-  const rows = bucket?.rows ?? [];
+  const rows = (bucket?.rows ?? []).filter(isActiveUseYn);
   if (rows.length > 0) {
     const satisfiedCount = rows.filter(
       (r) => String(r.satisfiedYn ?? '').trim().toUpperCase() === 'Y',
@@ -187,7 +198,7 @@ function getMonthFocusMetrics(memberRowsData, month, satData) {
   const bucket = (memberRowsData?.months ?? []).find(
     (m) => Number(m.month) === Number(month),
   );
-  const rows = bucket?.rows ?? [];
+  const rows = (bucket?.rows ?? []).filter(isActiveUseYn);
   const yn = (r, field) => String(r?.[field] ?? '').trim().toUpperCase();
 
   if (rows.length > 0) {
@@ -237,12 +248,16 @@ function computeFocusMetricMet(pct, target) {
   return Number(pct) >= t;
 }
 
-function computeShortageVsTarget(d) {
+function computeShortageVsTarget(d, intakeStats) {
   const target = toNum(d.monthlyTargetPct ?? d.target);
   if (target == null || target <= 0) return { status: 'noTarget' };
 
-  const received = toNum(d.receivedCount ?? d.totalSamples, 0) ?? 0;
-  const satisfied = toNum(d.satisfiedCount, 0) ?? 0;
+  const received = intakeStats?.totalReceived
+    ?? toNum(d.receivedCount ?? d.totalSamples, 0)
+    ?? 0;
+  const satisfied = intakeStats?.satisfiedCount
+    ?? toNum(d.satisfiedCount, 0)
+    ?? 0;
 
   if (received <= 0) return { status: 'noData' };
 
@@ -254,8 +269,7 @@ function computeShortageVsTarget(d) {
 }
 
 function isEvaluatedRow(row) {
-  const s = String(row?.satisfiedYn ?? '').trim().toUpperCase();
-  return s === 'Y' || s === 'N';
+  return isActiveUseYn(row);
 }
 
 function flattenMemberRows(memberRowsData) {
@@ -420,6 +434,97 @@ function findDriverForReason(text, drivers) {
   return drivers.find((d) => d?.text && text.includes(d.text)) ?? null;
 }
 
+const INSIGHT_REASON_LIMIT = 3;
+const COACH_FEEDBACK_POINTS_LIMIT = 1;
+
+/** AI·폴백 원인 문장 — 줄바꿈·불릿 접두사를 li 항목으로 분리 */
+function flattenInsightReasons(reasons) {
+  const out = [];
+  const seen = new Set();
+
+  (reasons ?? []).forEach((line) => {
+    String(line ?? '')
+      .split(/\n+/)
+      .flatMap((chunk) => chunk.split(/(?:(?:^|\s)[•·▪◦‣-]\s+)/))
+      .map((part) => part.replace(/^[\s•·▪◦‣\-*\d.)]+/, '').trim())
+      .filter(Boolean)
+      .forEach((part) => {
+        if (seen.has(part)) return;
+        seen.add(part);
+        out.push(part);
+      });
+  });
+
+  return out.slice(0, INSIGHT_REASON_LIMIT);
+}
+
+/** AI·폴백 원인 문장 병합 — AI 우선, 부족하면 폴백으로 보강 */
+function mergeInsightReasons(aiReasons, fallbackReasons, limit = INSIGHT_REASON_LIMIT) {
+  const seen = new Set();
+  const out = [];
+
+  const add = (line) => {
+    const text = String(line ?? '').trim();
+    if (!text || seen.has(text)) return;
+    seen.add(text);
+    out.push(text);
+  };
+
+  (aiReasons ?? []).forEach(add);
+  (fallbackReasons ?? []).forEach(add);
+  return out.slice(0, limit);
+}
+
+/** 만족도 AI 인사이트 — li 목록 */
+function InsightReasonList({
+  reasons,
+  drivers,
+  pending,
+  emptyMessage,
+  listClassName = '',
+}) {
+  const items = flattenInsightReasons(reasons);
+
+  if (pending) {
+    return (
+      <ul
+        className={`csx-toss-bullets csx-toss-bullets--skeleton${listClassName ? ` ${listClassName}` : ''}`}
+        aria-busy="true"
+        aria-label="AI 분석 중"
+      >
+        {[100, 94, 82].map((w) => (
+          <li key={w} className="csx-toss-skel-bullet">
+            <span className="csx-toss-skel-dot" aria-hidden />
+            <Skeleton variant="text" width={`${w}%`} height={12} radius={4} />
+          </li>
+        ))}
+      </ul>
+    );
+  }
+
+  if (!items.length) {
+    if (!emptyMessage) return null;
+    return (
+      <ul className={`csx-toss-bullets csx-toss-bullets--muted${listClassName ? ` ${listClassName}` : ''}`}>
+        <li className="csx-toss-bullet csx-toss-bullet--reason">{emptyMessage}</li>
+      </ul>
+    );
+  }
+
+  return (
+    <ul className={`csx-toss-bullets${listClassName ? ` ${listClassName}` : ''}`}>
+      {items.map((line, i) => (
+        <li key={`${i}-${line.slice(0, 24)}`} className="csx-toss-bullet csx-toss-bullet--reason">
+          <InsightReasonText
+            reason={line}
+            driver={findDriverForReason(line, drivers)}
+          />
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 function buildReasonFallback(latest, previous, direction) {
   const drivers = pickInsightDrivers(latest, previous, direction);
   const primaryDriver = drivers[0] ?? null;
@@ -451,6 +556,11 @@ function buildReasonFallback(latest, previous, direction) {
         `Bad 멘트가 ${previous.badMents.length}→${latest.badMents.length}건으로 감소했습니다.`,
       );
     }
+    if (latest.evaluatedCount !== previous.evaluatedCount) {
+      reasons.push(
+        `평가 건수는 ${previous.evaluatedCount}→${latest.evaluatedCount}건이었습니다.`,
+      );
+    }
   } else if (direction === 'down') {
     if (primaryDriver?.kind === 'unsat') {
       const count = latest.unsatTypeCounts.get(primaryDriver.text) ?? 0;
@@ -478,6 +588,21 @@ function buildReasonFallback(latest, previous, direction) {
         `Bad 멘트가 ${previous.badMents.length}→${latest.badMents.length}건으로 늘었습니다.`,
       );
     }
+    if (latest.satisfiedCount < previous.satisfiedCount) {
+      reasons.push(
+        `만족(Y) 응답이 ${previous.satisfiedCount}→${latest.satisfiedCount}건으로 줄었습니다.`,
+      );
+    }
+    if (latest.goodMents.length < previous.goodMents.length) {
+      reasons.push(
+        `Good 멘트가 ${previous.goodMents.length}→${latest.goodMents.length}건으로 감소했습니다.`,
+      );
+    }
+    if (latest.evaluatedCount !== previous.evaluatedCount) {
+      reasons.push(
+        `평가 건수는 ${previous.evaluatedCount}→${latest.evaluatedCount}건이었습니다.`,
+      );
+    }
   } else {
     reasons.push('전일과 만족도 수준이 비슷해 뚜렷한 상·하락 요인이 없었습니다.');
     if (latest.evaluatedCount !== previous.evaluatedCount) {
@@ -487,7 +612,7 @@ function buildReasonFallback(latest, previous, direction) {
     }
   }
 
-  const unique = [...new Set(reasons.filter(Boolean))].slice(0, 3);
+  const unique = [...new Set(reasons.filter(Boolean))].slice(0, INSIGHT_REASON_LIMIT);
   if (!unique.length) {
     unique.push(
       direction === 'up'
@@ -532,34 +657,85 @@ function buildLatestTwoDayComparison(memberRowsData, unsatLabelMap) {
   };
 }
 
-/** 최근 N일 불만족 row에서 코칭 케이스 추출 */
-function collectUnsatSignals(memberRowsData, unsatLabelMap, dayLimit = 14) {
+const COACH_WINDOW_DAYS = 7;
+
+/** 최근 N일 Good 멘트 — 상단 격려 섹션용 (중복 제거) */
+function collectGoodMentHighlights(memberRowsData, dayLimit = COACH_WINDOW_DAYS) {
   const buckets = groupRowsByConsultDate(flattenMemberRows(memberRowsData));
-  const signals = [];
+  const items = [];
   const seen = new Set();
 
   buckets.slice(0, dayLimit).forEach(({ date, rows }) => {
     rows.forEach((row, idx) => {
-      if (String(row?.satisfiedYn ?? '').trim().toUpperCase() !== 'N') return;
-      const typeLabel = unsatTypeLabel(unsatLabelMap, row.dissatisfactionType) || '기타 불만';
-      const badMent = String(row.badMent ?? '').trim();
-      const dedupeKey = `${typeLabel}::${badMent || idx}`;
-      if (seen.has(dedupeKey)) return;
-      seen.add(dedupeKey);
-      signals.push({
-        id: `sig-${date}-${row.id ?? idx}`,
+      const text = String(row.goodMent ?? '').trim();
+      if (!text || seen.has(text)) return;
+      seen.add(text);
+      items.push({
+        id: `good-${date}-${row.id ?? idx}`,
         date,
-        typeLabel,
-        badMent,
+        text,
       });
     });
   });
 
-  return signals.sort((a, b) => {
-    if (a.badMent && !b.badMent) return -1;
-    if (!a.badMent && b.badMent) return 1;
-    return String(b.date).localeCompare(String(a.date), 'ko');
+  return items;
+}
+
+/** AI 실패 시 Good 멘트 강점 요약 폴백 */
+function buildGoodMentStrengthFallback(items) {
+  if (!items?.length) return '';
+  const corpus = items.map((it) => it.text).join(' ');
+  const themes = [];
+  if (/친절|상냥|친근|따뜻|미소|밝/.test(corpus)) themes.push('친절한 응대');
+  if (/빠르|신속|즉|바로|급/.test(corpus)) themes.push('신속한 처리');
+  if (/설명|안내|자세|이해|알기/.test(corpus)) themes.push('쉬운 설명·안내');
+  if (/해결|처리|조치|도움|만족/.test(corpus)) themes.push('문제 해결');
+  if (/전문|정확|꼼꼼|믿/.test(corpus)) themes.push('전문적 상담');
+
+  const label = themes.length
+    ? themes.slice(0, 2).join('·')
+    : '긍정 피드백';
+  return `최근 Good 멘트에서 ${label}가 고객에게 특히 호평받고 있어요.`;
+}
+
+/** 최근 N일 불만족 유형(1~5) — 탭·AI 코칭용 */
+function buildCoachTypeTabs(memberRowsData, unsatLabelMap, dayLimit = COACH_WINDOW_DAYS) {
+  const buckets = groupRowsByConsultDate(flattenMemberRows(memberRowsData));
+  const typeMap = new Map();
+
+  buckets.slice(0, dayLimit).forEach(({ date, rows }) => {
+    rows.forEach((row) => {
+      if (!isActiveUseYn(row)) return;
+      if (String(row?.satisfiedYn ?? '').trim().toUpperCase() !== 'N') return;
+      const code = toNum(row.dissatisfactionType);
+      if (code == null || code < 1 || code > 5) return;
+
+      const typeLabel = unsatTypeLabel(unsatLabelMap, code) || `유형 ${code}`;
+      const badMent = String(row.badMent ?? '').trim();
+
+      if (!typeMap.has(code)) {
+        typeMap.set(code, {
+          id: `type-${code}`,
+          dissatisfactionType: code,
+          typeLabel,
+          count: 0,
+          badMent: '',
+          date: '',
+        });
+      }
+
+      const entry = typeMap.get(code);
+      entry.count += 1;
+      if (!entry.badMent && badMent) {
+        entry.badMent = badMent;
+        entry.date = date;
+      }
+    });
   });
+
+  return [...typeMap.values()]
+    .filter((t) => t.count > 0)
+    .sort((a, b) => b.count - a.count || a.dissatisfactionType - b.dissatisfactionType);
 }
 
 /** AI 실패 시 유형별 대응 피드백 폴백 */
@@ -568,7 +744,7 @@ function buildCoachScenarioFallback(typeLabel) {
   if (/태도|응대|친절|말투|불친/.test(label)) {
     return {
       feedback: '먼저 감정을 확인하고, 짧게 사과한 뒤 조치·시간을 숫자로 안내하세요.',
-      points: ['말투는 차분·존댓말 유지', '끝맺음은 확인 질문으로'],
+      points: ['말투는 차분·존댓말 유지'],
     };
   }
   if (/지연|늦|대기|시간/.test(label)) {
@@ -595,11 +771,26 @@ function buildCoachScenarioFallback(typeLabel) {
   };
 }
 
-function buildCoachScenarioFromFallback(signal) {
-  return buildCoachScenarioFallback(signal.typeLabel);
+function renderHeroShortageValue(shortage, pending) {
+  if (pending) return '…';
+  if (shortage?.status === 'short') {
+    return (
+      <>
+        <strong className="csx-hero-progress-stat-short">{numKo(shortage.count)}</strong>
+        <span className="csx-hero-progress-stat-unit">건</span>
+      </>
+    );
+  }
+  if (shortage?.status === 'met') {
+    return <strong className="csx-hero-progress-stat-met">달성</strong>;
+  }
+  if (shortage?.status === 'noTarget') {
+    return <strong className="csx-hero-progress-stat-muted">목표 없음</strong>;
+  }
+  return <strong className="csx-hero-progress-stat-muted">—</strong>;
 }
 
-/** 히어로 — 원형 게이지 + 접수·만족 건수 */
+/** 히어로 — 원형 게이지 + 접수·만족·목표 필요 건수 */
 function GaugeProgressSkeleton() {
   return (
     <div className="csx-hero-progress csx-hero-progress--skeleton" aria-hidden>
@@ -607,6 +798,7 @@ function GaugeProgressSkeleton() {
         <Skeleton variant="circle" width={148} height={148} className="csx-hero-skel-gauge" />
         <div className="csx-hero-progress-side csx-hero-progress-side--skeleton">
           <div className="csx-hero-progress-stats csx-hero-progress-stats--skeleton">
+            <Skeleton height={54} radius={10} />
             <Skeleton height={54} radius={10} />
             <Skeleton height={54} radius={10} />
           </div>
@@ -617,34 +809,80 @@ function GaugeProgressSkeleton() {
   );
 }
 
+function resolvePanelRingStatus(met, shortageStatus) {
+  if (met === true) return 'met';
+  if (met === false) return 'no';
+  if (shortageStatus === 'noTarget' || shortageStatus === 'noData') return 'muted';
+  return 'neutral';
+}
+
+/** Apple 톤 공통 패널 세션 */
+function PanelSessionShell({
+  title,
+  meta,
+  children,
+  skeleton = false,
+  className = '',
+  ringLoading = false,
+  ringStatus = 'neutral',
+}) {
+  const ringClass = ringLoading ? ' csx-panel-session--ring' : '';
+  const statusClass = !ringLoading
+    ? ` csx-panel-session--status csx-panel-session--status-${ringStatus}`
+    : '';
+
+  return (
+    <div
+      className={`csx-panel-session${ringClass}${statusClass}${skeleton ? ' csx-panel-session--skeleton' : ''}${className ? ` ${className}` : ''}`}
+    >
+      <header className="csx-panel-session-head">
+        {skeleton ? (
+          <>
+            <Skeleton width={108} height={14} radius={4} aria-hidden />
+            <Skeleton width={48} height={12} radius={4} aria-hidden />
+          </>
+        ) : (
+          <>
+            <p className="csx-panel-session-title">{title}</p>
+            {meta ? <span className="csx-panel-session-meta">{meta}</span> : null}
+          </>
+        )}
+      </header>
+      <div className="csx-panel-session-body">{children}</div>
+    </div>
+  );
+}
+
 /** 최근 만족도 AI 인사이트 — 토스형 스켈레톤 */
 function AiTrendInsightSkeleton() {
   return (
-    <div
-      className="csx-toss-insight csx-toss-insight--skeleton"
+    <section
+      className="csx-panel-session-block"
       aria-busy="true"
       aria-label="AI 인사이트 불러오는 중"
     >
-      <p className="csx-ai-insight-trend-kicker">최근 만족도 AI 인사이트</p>
-      <header className="csx-toss-hero csx-toss-hero--skeleton">
-        <Skeleton width={188} height={26} radius={6} className="csx-toss-skel-headline" />
-        <Skeleton variant="text" width="88%" height={14} radius={4} />
-      </header>
-      <section className="csx-toss-why csx-toss-why--skeleton" aria-hidden>
-        <Skeleton width={108} height={17} radius={4} className="csx-toss-skel-why-title" />
-        <ul className="csx-toss-bullets csx-toss-bullets--skeleton">
-          {[100, 94, 82].map((w) => (
-            <li key={w} className="csx-toss-skel-bullet">
-              <span className="csx-toss-skel-dot" aria-hidden />
-              <Skeleton variant="text" width={`${w}%`} height={12} radius={4} />
-            </li>
-          ))}
-        </ul>
-      </section>
-      <footer className="csx-toss-foot csx-toss-foot--skeleton">
-        <Skeleton variant="text" width={88} height={11} radius={4} />
-      </footer>
-    </div>
+      <p className="csx-panel-session-kicker">최근 AI 인사이트</p>
+      <div className="csx-toss-insight csx-toss-insight--skeleton">
+        <header className="csx-toss-hero csx-toss-hero--skeleton">
+          <Skeleton width={188} height={26} radius={6} className="csx-toss-skel-headline" />
+          <Skeleton variant="text" width="88%" height={14} radius={4} />
+        </header>
+        <section className="csx-toss-why csx-toss-why--skeleton" aria-hidden>
+          <Skeleton width={108} height={17} radius={4} className="csx-toss-skel-why-title" />
+          <ul className="csx-toss-bullets csx-toss-bullets--skeleton">
+            {[100, 94, 82].map((w) => (
+              <li key={w} className="csx-toss-skel-bullet">
+                <span className="csx-toss-skel-dot" aria-hidden />
+                <Skeleton variant="text" width={`${w}%`} height={12} radius={4} />
+              </li>
+            ))}
+          </ul>
+        </section>
+        <footer className="csx-toss-foot csx-toss-foot--skeleton">
+          <Skeleton variant="text" width={88} height={11} radius={4} />
+        </footer>
+      </div>
+    </section>
   );
 }
 
@@ -669,10 +907,6 @@ function CoachFeedbackSkeleton() {
             <span className="csx-coach-skel-point-dot" aria-hidden />
             <Skeleton variant="text" width="90%" height={11} radius={4} />
           </li>
-          <li className="csx-coach-skel-point">
-            <span className="csx-coach-skel-point-dot" aria-hidden />
-            <Skeleton variant="text" width="74%" height={11} radius={4} />
-          </li>
         </ul>
       </div>
       <p className="csx-coach-feedback-foot csx-coach-skel-foot" aria-hidden>
@@ -682,36 +916,110 @@ function CoachFeedbackSkeleton() {
   );
 }
 
+/** 코칭 세션 — Good 멘트 + AI 코칭 공통 껍데기 */
+function CoachSessionShell({ children, skeleton = false }) {
+  return (
+    <PanelSessionShell
+      title="AI 인사이트"
+      meta={`최근 ${COACH_WINDOW_DAYS}일`}
+      skeleton={skeleton}
+    >
+      {children}
+    </PanelSessionShell>
+  );
+}
+
 /** 대응 코칭 패널 전체 스켈레톤 */
 function CoachPanelSkeleton() {
   return (
     <div className="csx-coach csx-coach--skeleton" aria-busy="true" aria-label="대응 코칭 불러오는 중">
-      <header className="csx-coach-head csx-coach-head--skeleton">
-        <Skeleton width={76} height={16} radius={4} />
-        <Skeleton variant="text" width={128} height={12} radius={4} />
-      </header>
-      <ul className="csx-coach-cases csx-coach-cases--skeleton" aria-hidden>
-        {[0, 1].map((i) => (
-          <li key={i}>
-            <div className={`csx-coach-case csx-coach-case--skeleton${i === 0 ? ' is-active' : ''}`}>
-              <Skeleton width={54} height={18} radius={999} />
-              <Skeleton variant="text" width={i === 0 ? '96%' : '88%'} height={13} radius={4} />
-              <Skeleton variant="text" width={108} height={11} radius={4} />
-            </div>
-          </li>
-        ))}
-      </ul>
-      <div className="csx-coach-scenario csx-coach-scenario--skeleton">
-        <CoachFeedbackSkeleton />
-      </div>
+      <CoachSessionShell skeleton>
+        <div className="csx-coach-good-panel csx-coach-good-panel--skeleton" aria-hidden>
+          <Skeleton width={72} height={13} radius={4} />
+          <Skeleton variant="text" width="100%" height={13} radius={4} />
+          <div className="csx-coach-good-badge csx-coach-good-badge--skeleton">
+            <Skeleton width={58} height={20} radius={999} />
+            <Skeleton variant="text" width="92%" height={13} radius={4} />
+          </div>
+        </div>
+        <div className="csx-panel-session-divider" aria-hidden />
+        <div className="csx-coach-ai-panel csx-coach-ai-panel--skeleton" aria-hidden>
+          <Skeleton width={56} height={13} radius={4} />
+          <div className="csx-coach-type-tabs csx-coach-type-tabs--skeleton">
+            <Skeleton width={58} height={26} radius={999} />
+            <Skeleton width={64} height={26} radius={999} />
+          </div>
+          <CoachFeedbackSkeleton />
+        </div>
+      </CoachSessionShell>
     </div>
   );
 }
 
-/** 유형별 대응 피드백 */
-function CoachTypeFeedback({ typeLabel, scenario, badMent, usedFallback }) {
-  const mentNote = badMent ? truncateMent(badMent, 48) : null;
+/** Good 멘트 — 잘하는 점 요약 + 대표 멘트 1건 */
+function CoachGoodMentSection({ items, pending: dataPending }) {
+  const exampleMent = items[0] ?? null;
 
+  const goodAiQuery = useQuery({
+    queryKey: [
+      'cs-good-ment-insight',
+      COACH_WINDOW_DAYS,
+      items.map((it) => `${it.date}:${it.text.slice(0, 80)}`),
+    ],
+    queryFn: async ({ signal }) => {
+      const raw = await fetchCsGoodMentInsight({
+        items,
+        dayLimit: COACH_WINDOW_DAYS,
+        signal,
+      });
+      const parsed = parseGoodMentInsight(raw);
+      if (!parsed) throw new Error('AI 응답을 해석하지 못했습니다.');
+      return parsed;
+    },
+    enabled: items.length > 0 && !dataPending,
+    staleTime: 10 * 60 * 1000,
+    retry: 1,
+  });
+
+  const strengthPending = items.length > 0 && (goodAiQuery.isPending || goodAiQuery.isFetching);
+  const strength = strengthPending
+    ? null
+    : goodAiQuery.data?.strength
+    ?? (items.length ? buildGoodMentStrengthFallback(items) : null);
+  const usedFallback = items.length > 0 && goodAiQuery.isError && !goodAiQuery.data;
+
+  if (!items.length) {
+    return (
+      <p className="csx-coach-good-empty-inline" role="status">
+        최근 {COACH_WINDOW_DAYS}일 Good 멘트가 아직 없어요.
+      </p>
+    );
+  }
+
+  return (
+    <section className="csx-coach-good-panel" aria-label={`최근 ${COACH_WINDOW_DAYS}일 Good 멘트`}>
+      <p className="csx-coach-good-kicker">Good 멘트</p>
+      {strengthPending ? (
+        <Skeleton variant="text" width="100%" height={14} radius={4} className="csx-coach-good-strength-skel" />
+      ) : (
+        <p className="csx-coach-good-strength">{strength}</p>
+      )}
+      {exampleMent ? (
+        <div className="csx-coach-good-badge">
+          <span className="csx-coach-good-badge-label">긍정 코멘트</span>
+          <p className="csx-coach-good-badge-text">{`“${truncateMent(exampleMent.text, 56)}”`}</p>
+          <span className="csx-coach-good-badge-date">{formatKoDate(exampleMent.date)}</span>
+        </div>
+      ) : null}
+      <p className="csx-coach-good-foot">
+        {usedFallback ? '기본 분석' : ''}
+      </p>
+    </section>
+  );
+}
+
+/** 유형별 대응 피드백 */
+function CoachTypeFeedback({ typeLabel, scenario, usedFallback }) {
   return (
     <div className="csx-coach-feedback">
       <div className="csx-coach-feedback-card">
@@ -720,99 +1028,140 @@ function CoachTypeFeedback({ typeLabel, scenario, badMent, usedFallback }) {
         <p className="csx-coach-feedback-main">{scenario.feedback}</p>
         {scenario.points.length > 0 ? (
           <ul className="csx-coach-feedback-points">
-            {scenario.points.map((pt) => (
+            {scenario.points.slice(0, COACH_FEEDBACK_POINTS_LIMIT).map((pt) => (
               <li key={pt}>{pt}</li>
             ))}
           </ul>
         ) : null}
       </div>
       <p className="csx-coach-feedback-foot">
-        {usedFallback ? '기본 피드백' : 'YOU PRO AI'}
+        {usedFallback ? '기본 피드백' : ''}
       </p>
     </div>
   );
 }
 
-function buildResponseCase(signal) {
-  const quote = signal.badMent ? truncateMent(signal.badMent, 64) : null;
-  const title = quote
-    ? `“${truncateMent(quote, 22)}”`
-    : `${signal.typeLabel} 관련 불만족`;
-
-  return {
-    ...signal,
-    title,
-  };
+function handleCoachTypeTabsWheel(e) {
+  const el = e.currentTarget;
+  if (el.scrollWidth <= el.clientWidth) return;
+  el.scrollLeft += e.deltaY;
+  e.preventDefault();
 }
 
-function buildResponseCases(memberRowsData, unsatLabelMap, monthlyCategories, latestSnapshot) {
-  let signals = collectUnsatSignals(memberRowsData, unsatLabelMap, 14);
+/** AI 코칭 — 불만유형 가로 스크롤 + 좌우 이동 버튼 */
+function CoachTypeTabsScroller({ typeTabs, selectedId, onSelect }) {
+  const scrollerRef = useRef(null);
+  const [scrollEdge, setScrollEdge] = useState({ left: false, right: false });
 
-  if (signals.length === 0 && latestSnapshot) {
-    const typeEntries = [...(latestSnapshot.unsatTypeCounts?.entries?.() ?? [])];
-    typeEntries
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 2)
-      .forEach(([typeLabel], i) => {
-        signals.push({
-          id: `latest-type-${i}`,
-          date: latestSnapshot.date,
-          typeLabel,
-          badMent: latestSnapshot.badMents[i] ?? '',
-        });
-      });
-    latestSnapshot.badMents.slice(0, 1).forEach((ment, i) => {
-      if (!String(ment).trim()) return;
-      signals.push({
-        id: `latest-ment-${i}`,
-        date: latestSnapshot.date,
-        typeLabel: typeEntries[0]?.[0] ?? '기타 불만',
-        badMent: ment,
-      });
+  const updateScrollEdge = useCallback(() => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    const maxScroll = el.scrollWidth - el.clientWidth;
+    if (maxScroll <= 4) {
+      setScrollEdge({ left: false, right: false });
+      return;
+    }
+    setScrollEdge({
+      left: el.scrollLeft > 4,
+      right: el.scrollLeft < maxScroll - 4,
     });
-  }
+  }, []);
 
-  if (signals.length === 0 && Array.isArray(monthlyCategories)) {
-    monthlyCategories
-      .filter((c) => toNum(c?.count, 0) > 0)
-      .slice(0, 2)
-      .forEach((c, i) => {
-        signals.push({
-          id: `monthly-type-${i}`,
-          date: '',
-          typeLabel: String(c?.label ?? `유형 ${i + 1}`).trim(),
-          badMent: '',
-        });
-      });
-  }
+  useEffect(() => {
+    updateScrollEdge();
+    const el = scrollerRef.current;
+    if (!el) return undefined;
 
-  const unique = [];
-  const seen = new Set();
-  signals.forEach((s) => {
-    const key = `${s.typeLabel}::${s.badMent}`;
-    if (seen.has(key)) return;
-    seen.add(key);
-    unique.push(s);
-  });
+    const rafId = requestAnimationFrame(updateScrollEdge);
+    const observer = typeof ResizeObserver !== 'undefined'
+      ? new ResizeObserver(updateScrollEdge)
+      : null;
+    observer?.observe(el);
+    window.addEventListener('resize', updateScrollEdge);
 
-  return unique.slice(0, 2).map(buildResponseCase);
+    return () => {
+      cancelAnimationFrame(rafId);
+      observer?.disconnect();
+      window.removeEventListener('resize', updateScrollEdge);
+    };
+  }, [typeTabs, updateScrollEdge]);
+
+  const scrollTabs = (direction) => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    const step = Math.max(120, Math.round(el.clientWidth * 0.72));
+    el.scrollBy({ left: step * direction, behavior: 'smooth' });
+    window.setTimeout(updateScrollEdge, 320);
+  };
+
+  const { left: canScrollLeft, right: canScrollRight } = scrollEdge;
+
+  return (
+    <div className="csx-coach-type-scroll csx-coach-type-scroll--block">
+      {canScrollLeft ? (
+        <button
+          type="button"
+          className="csx-coach-type-scroll-btn"
+          aria-label="이전 불만족 유형"
+          onClick={() => scrollTabs(-1)}
+        >
+          <ChevronLeft size={14} strokeWidth={2.4} aria-hidden />
+        </button>
+      ) : null}
+      <div
+        ref={scrollerRef}
+        className="csx-coach-type-tabs"
+        role="tablist"
+        aria-label={`최근 ${COACH_WINDOW_DAYS}일 불만족 유형`}
+        onScroll={updateScrollEdge}
+        onWheel={handleCoachTypeTabsWheel}
+      >
+        {typeTabs.map((tab) => {
+          const active = tab.id === selectedId;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              id={`csx-coach-tab-${tab.id}`}
+              className={`csx-coach-type-chip${active ? ' is-active' : ''}`}
+              aria-selected={active}
+              onClick={() => onSelect(tab.id)}
+            >
+              <span className="csx-coach-type-chip-label">{tab.typeLabel}</span>
+            </button>
+          );
+        })}
+      </div>
+      {canScrollRight ? (
+        <button
+          type="button"
+          className="csx-coach-type-scroll-btn"
+          aria-label="다음 불만족 유형"
+          onClick={() => scrollTabs(1)}
+        >
+          <ChevronRight size={14} strokeWidth={2.4} aria-hidden />
+        </button>
+      ) : null}
+    </div>
+  );
 }
 
-/** 대응 코칭 — LM Studio AI 시나리오 */
-function ResponseCoachPanel({ cases, pending: dataPending }) {
+/** 대응 코칭 — Good 멘트(상단) + 불만유형 탭·AI 가이드(하단) */
+function ResponseCoachPanel({ goodMentPool, typeTabs, pending: dataPending }) {
   const [selectedId, setSelectedId] = useState(null);
 
   useEffect(() => {
-    if (!cases.length) {
+    if (!typeTabs.length) {
       setSelectedId(null);
       return;
     }
-    if (!cases.some((c) => c.id === selectedId)) {
-      setSelectedId(cases[0].id);
+    if (!typeTabs.some((t) => t.id === selectedId)) {
+      setSelectedId(typeTabs[0].id);
     }
-  }, [cases, selectedId]);
+  }, [typeTabs, selectedId]);
 
-  const selected = cases.find((c) => c.id === selectedId) ?? null;
+  const selected = typeTabs.find((t) => t.id === selectedId) ?? null;
 
   const coachAiQuery = useQuery({
     queryKey: ['cs-coach-ai', selected?.id, selected?.typeLabel, selected?.badMent, selected?.date],
@@ -836,119 +1185,49 @@ function ResponseCoachPanel({ cases, pending: dataPending }) {
   const scenario = scenarioPending
     ? null
     : coachAiQuery.data
-      ?? (coachAiQuery.isError && selected ? buildCoachScenarioFromFallback(selected) : null);
+    ?? (coachAiQuery.isError && selected ? buildCoachScenarioFallback(selected.typeLabel) : null);
   const scenarioUsedFallback = !!selected && coachAiQuery.isError && !coachAiQuery.data;
 
   if (dataPending) {
     return <CoachPanelSkeleton />;
   }
 
-  if (cases.length === 0) {
-    return (
-      <div className="csx-coach csx-coach--empty">
-        <p className="csx-coach-empty-title">최근 불만족 코칭 데이터가 없어요</p>
-        <p className="csx-coach-empty-sub">Bad 멘트나 불만족 유형이 수집되면 대응 시나리오를 제안해 드립니다.</p>
-      </div>
-    );
-  }
-
-  const scenarioPanelId = 'csx-coach-scenario-panel';
-  const multiCase = cases.length > 1;
+  const hasTabs = typeTabs.length > 0;
 
   return (
-    <div className="csx-coach" role="region" aria-label="불만족 대응 코칭">
-      <header className="csx-coach-head">
-        <h4 className="csx-coach-title">대응 코칭</h4>
-        <p className="csx-coach-sub">
-          {multiCase
-            ? '위 항목을 누르면 아래 대응 가이드가 해당 유형으로 바뀝니다.'
-            : '선택한 불만족 유형의 대응 가이드를 확인하세요.'}
-        </p>
-      </header>
+    <div className="csx-coach" role="region" aria-label="대응 코칭">
+      <CoachSessionShell>
+        <CoachGoodMentSection items={goodMentPool} pending={dataPending} />
 
-      <div className="csx-coach-body">
-        {multiCase ? (
-          <p className="csx-coach-pick-label" id="csx-coach-pick-label">
-            불만족 유형 선택
-            <span className="csx-coach-pick-count">{cases.length}</span>
-          </p>
-        ) : null}
+        <div className="csx-panel-session-divider" aria-hidden />
 
-        <ul className="csx-coach-cases" aria-labelledby={multiCase ? 'csx-coach-pick-label' : undefined}>
-          {cases.map((c) => {
-            const active = c.id === selectedId;
-            return (
-              <li key={c.id}>
-                <button
-                  type="button"
-                  className={`csx-coach-case${active ? ' is-active' : ''}`}
-                  onClick={() => setSelectedId(c.id)}
-                  aria-pressed={active}
-                  aria-controls={scenarioPanelId}
-                  aria-expanded={active}
-                >
-                  <span className="csx-coach-case-tag">{c.typeLabel}</span>
-                  <span className="csx-coach-case-title">{c.title}</span>
-                  <span className="csx-coach-case-foot">
-                    {active ? (
-                      <>
-                        <span className="csx-coach-case-selected-pill">선택됨</span>
-                        <span className="csx-coach-case-cta csx-coach-case-cta--active">
-                          아래 가이드 확인
-                          <ChevronDown size={14} strokeWidth={2.5} aria-hidden />
-                        </span>
-                      </>
-                    ) : (
-                      <span className="csx-coach-case-cta">
-                        눌러 대응 보기
-                        <ArrowRight size={14} strokeWidth={2.4} aria-hidden />
-                      </span>
-                    )}
-                  </span>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-
-        {selected ? (
-          <div className="csx-coach-scenario-stack">
-            {multiCase ? (
-              <div className="csx-coach-scenario-connector" aria-hidden>
-                <span className="csx-coach-scenario-connector-line" />
-                <ChevronDown size={16} strokeWidth={2.5} />
-              </div>
+        {hasTabs ? (
+          <section className="csx-coach-ai-panel" aria-label="AI 코칭">
+            <p className="csx-coach-ai-kicker">불만족 유형</p>
+            <CoachTypeTabsScroller
+              typeTabs={typeTabs}
+              selectedId={selectedId}
+              onSelect={setSelectedId}
+            />
+            {selected && scenarioPending ? (
+              <CoachFeedbackSkeleton />
+            ) : selected && scenario ? (
+              <CoachTypeFeedback
+                typeLabel={selected.typeLabel}
+                scenario={scenario}
+                usedFallback={scenarioUsedFallback}
+              />
             ) : null}
-            <div
-              key={selectedId}
-              id={scenarioPanelId}
-              className="csx-coach-scenario"
-              role="region"
-              aria-label={`${selected.typeLabel} 대응 시나리오`}
-              aria-live="polite"
-              aria-busy={scenarioPending}
-            >
-              <header className="csx-coach-scenario-head">
-                <span className="csx-coach-scenario-badge">
-                  <span className="csx-coach-scenario-head-kicker">선택 항목</span>
-                  {selected.typeLabel}
-                </span>
-                <span className="csx-coach-scenario-head-hint">대응 가이드</span>
-              </header>
-              {scenarioPending ? (
-                <CoachFeedbackSkeleton />
-              ) : scenario ? (
-                <CoachTypeFeedback
-                  typeLabel={selected.typeLabel}
-                  scenario={scenario}
-                  badMent={selected.badMent}
-                  usedFallback={scenarioUsedFallback}
-                />
-              ) : null}
-            </div>
+          </section>
+        ) : (
+          <div className="csx-coach--empty-inline" role="status">
+            <p className="csx-coach-empty-title">최근 {COACH_WINDOW_DAYS}일 불만족 유형이 없어요</p>
+            <p className="csx-coach-empty-sub">
+              불만족 유형이 수집되면 대응 가이드를 제안해 드립니다.
+            </p>
           </div>
-        ) : null}
-      </div>
+        )}
+      </CoachSessionShell>
     </div>
   );
 }
@@ -1027,9 +1306,11 @@ function HeroSkeleton() {
             >
               <div className="csx-ai-insight-split">
                 <div className="csx-ai-insight-col csx-ai-insight-col--left">
-                  <GaugeProgressSkeleton />
-                  <div className="csx-ai-insight-inner-divider" aria-hidden />
-                  <AiTrendInsightSkeleton />
+                  <PanelSessionShell title="만족도 · AI 인사이트" meta="…" skeleton ringLoading ringStatus="neutral">
+                    <GaugeProgressSkeleton />
+                    <div className="csx-panel-session-divider" aria-hidden />
+                    <AiTrendInsightSkeleton />
+                  </PanelSessionShell>
                 </div>
                 <div className="csx-ai-insight-divider" aria-hidden />
                 <div className="csx-ai-insight-col csx-ai-insight-col--coach">
@@ -1045,21 +1326,21 @@ function HeroSkeleton() {
         <span className="csx-corner-bl" aria-hidden />
         <Skeleton variant="text" width={140} height={18} />
         <Skeleton variant="text" width="95%" height={12} style={{ marginTop: 6 }} />
-        <div className="csx-rate-deck-group-wrap csx-rate-deck-group-wrap--row csx-rate-deck-group-wrap--skeleton">
-          <ul className="csx-month-kpi-strip csx-month-kpi-strip--skeleton" aria-hidden>
-            {[0, 1, 2].map((i) => (
-              <li key={i} className="csx-month-kpi-item">
-                <Skeleton height={40} radius={10} />
-              </li>
-            ))}
-          </ul>
-          <ul className="csx-rate-deck csx-rate-deck--focus csx-rate-deck--skeleton" aria-hidden>
-            {[0, 1, 2].map((i) => (
-              <li key={i} className="csx-rate-deck-item">
-                <Skeleton height={64} radius={12} />
-              </li>
-            ))}
-          </ul>
+        <div className="csx-rates-dual-layout csx-rates-dual-layout--compact csx-rates-dual-layout--skeleton">
+          <div className="csx-rates-dual-col csx-rates-dual-col--focus">
+            <Skeleton width={64} height={11} radius={4} style={{ marginBottom: 5 }} />
+            <ul className="csx-rate-deck csx-rate-deck--focus-row csx-rate-deck--skeleton" aria-hidden>
+              {[0, 1, 2].map((i) => (
+                <li key={i} className="csx-rate-deck-item">
+                  <Skeleton height="100%" radius={9} style={{ minHeight: 96 }} />
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="csx-rates-dual-divider" aria-hidden />
+          <div className="csx-rates-dual-col csx-rates-dual-col--untype">
+            <Skeleton height={132} radius={10} />
+          </div>
         </div>
         <Skeleton height={42} radius={12} style={{ marginTop: 4 }} />
       </section>
@@ -1198,9 +1479,12 @@ function DayOverDayInsightPanel({
 }) {
   if (comparison.status === 'empty') {
     return (
-      <p className="csx-toss-empty" role="status">
-        비교할 일별 만족도 데이터가 아직 없습니다.
-      </p>
+      <div className="csx-toss-insight csx-toss-insight--compact" role="status">
+        <InsightReasonList
+          reasons={[]}
+          emptyMessage="비교할 일별 만족도 데이터가 아직 없습니다."
+        />
+      </div>
     );
   }
 
@@ -1216,18 +1500,23 @@ function DayOverDayInsightPanel({
             최근 일자 {formatKoDate(latest.date)} · 평가 {numKo(latest.evaluatedCount)}건
           </p>
         </header>
-        <p className="csx-toss-empty csx-toss-empty--inline">
-          이전 일자와 비교하려면 최소 2일의 평가 데이터가 필요합니다.
-        </p>
+        <InsightReasonList
+          reasons={[]}
+          emptyMessage="이전 일자와 비교하려면 최소 2일의 평가 데이터가 필요합니다."
+          listClassName="csx-toss-bullets--inline"
+        />
       </div>
     );
   }
 
   if (comparison.status === 'insufficient') {
     return (
-      <p className="csx-toss-empty" role="status">
-        최근 두 일자의 만족도를 계산할 수 있는 평가 건이 부족합니다.
-      </p>
+      <div className="csx-toss-insight csx-toss-insight--compact" role="status">
+        <InsightReasonList
+          reasons={[]}
+          emptyMessage="최근 두 일자의 만족도를 계산할 수 있는 평가 건이 부족합니다."
+        />
+      </div>
     );
   }
 
@@ -1244,10 +1533,10 @@ function DayOverDayInsightPanel({
   const highlightDrivers = fallbackDrivers.length
     ? fallbackDrivers
     : pickInsightDrivers(latest, previous, direction);
-  const displayReasons = (aiInsight?.reasons?.length
-    ? aiInsight.reasons
-    : fallbackInsight?.reasons)
-    ?? [];
+  const displayReasons = mergeInsightReasons(
+    aiInsight?.reasons,
+    fallbackInsight?.reasons,
+  );
 
   return (
     <div className="csx-toss-insight" role="region" aria-label="일자별 만족도 비교 인사이트">
@@ -1259,9 +1548,11 @@ function DayOverDayInsightPanel({
           </span>
         </h3>
         <p className="csx-toss-meta">
-          {formatKoDate(previous.date)} {fmt(previous.pct)}%
-          {' → '}
-          <strong className="csx-toss-meta-strong">
+          <span className="csx-toss-meta-prev">
+            {formatKoDate(previous.date)} {fmt(previous.pct)}%
+          </span>
+          <ArrowRight size={12} strokeWidth={2.4} className="csx-toss-meta-arrow" aria-hidden />
+          <strong className="csx-toss-meta-strong csx-toss-meta-current">
             {formatKoDate(latest.date)} {fmt(latest.pct)}%
           </strong>
         </p>
@@ -1270,38 +1561,20 @@ function DayOverDayInsightPanel({
       <section className="csx-toss-why" aria-labelledby="csx-toss-why-title">
         <h4 id="csx-toss-why-title" className="csx-toss-why-title">
           {whyTitle}
-          <HelpCircle size={14} strokeWidth={2.2} className="csx-toss-why-ico" aria-hidden />
         </h4>
-        {aiBulletsPending ? (
-          <ul className="csx-toss-bullets csx-toss-bullets--skeleton" aria-busy="true" aria-label="AI 분석 중">
-            {[100, 94, 82].map((w) => (
-              <li key={w} className="csx-toss-skel-bullet">
-                <span className="csx-toss-skel-dot" aria-hidden />
-                <Skeleton variant="text" width={`${w}%`} height={12} radius={4} />
-              </li>
-            ))}
-          </ul>
-        ) : displayReasons.length > 0 ? (
-          <ul className="csx-toss-bullets">
-            {displayReasons.map((line, i) => (
-              <li key={`${i}-${line.slice(0, 20)}`} className="csx-toss-bullet csx-toss-bullet--reason">
-                <InsightReasonText
-                  reason={line}
-                  driver={findDriverForReason(line, highlightDrivers)}
-                />
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="csx-toss-empty csx-toss-empty--inline">원인을 분석할 데이터가 부족합니다.</p>
-        )}
+        <InsightReasonList
+          reasons={displayReasons}
+          drivers={highlightDrivers}
+          pending={aiBulletsPending}
+          emptyMessage="원인을 분석할 데이터가 부족합니다."
+        />
         {aiUsedFallback ? (
           <p className="csx-toss-ai-fallback" role="status">AI 연결 실패 — 기본 분석을 표시합니다.</p>
         ) : null}
       </section>
 
       <footer className="csx-toss-foot">
-        <span className="csx-toss-ai-badge">YOU PRO AI 분석</span>
+        <p className="csx-toss-ai-source">YOU PRO AI 분석</p>
       </footer>
     </div>
   );
@@ -1391,7 +1664,7 @@ function SatisfactionProgressSection({
         </div>
 
         <div className="csx-hero-progress-side">
-          <dl className="csx-hero-progress-stats" aria-label="당월 접수·만족 건수">
+          <dl className="csx-hero-progress-stats" aria-label="당월 접수·만족·목표 필요 건수">
             <div className="csx-hero-progress-stat csx-hero-progress-stat--recv">
               <dt>접수건수</dt>
               <dd>
@@ -1416,6 +1689,10 @@ function SatisfactionProgressSection({
                 )}
               </dd>
             </div>
+            <div className="csx-hero-progress-stat csx-hero-progress-stat--shortage">
+              <dt>목표 달성 필요 건수</dt>
+              <dd>{renderHeroShortageValue(shortage, statsPending)}</dd>
+            </div>
           </dl>
           <SkillAchievementBadge met={met} skill={skill} shortage={shortage} />
         </div>
@@ -1429,7 +1706,6 @@ function CsAiInsight({
   memberRowsData,
   memberRowsPending,
   unsatTypeLabelMap,
-  monthlyCategories,
   fallbackContent,
   shortageStatus,
   actualPct,
@@ -1451,22 +1727,14 @@ function CsAiInsight({
     [memberRowsData, unsatTypeLabelMap],
   );
 
-  const latestSnapshot = comparison.status === 'compare'
-    ? comparison.latest
-    : comparison.status === 'single'
-      ? comparison.latest
-      : comparison.status === 'insufficient'
-        ? comparison.latest
-        : null;
+  const coachGoodMentPool = useMemo(
+    () => collectGoodMentHighlights(memberRowsData, COACH_WINDOW_DAYS),
+    [memberRowsData],
+  );
 
-  const responseCases = useMemo(
-    () => buildResponseCases(
-      memberRowsData,
-      unsatTypeLabelMap,
-      monthlyCategories,
-      latestSnapshot,
-    ),
-    [memberRowsData, unsatTypeLabelMap, monthlyCategories, latestSnapshot],
+  const coachTypeTabs = useMemo(
+    () => buildCoachTypeTabs(memberRowsData, unsatTypeLabelMap, COACH_WINDOW_DAYS),
+    [memberRowsData, unsatTypeLabelMap],
   );
 
   const mod = shortageStatus === 'met' ? 'met'
@@ -1504,6 +1772,8 @@ function CsAiInsight({
   const aiInsight = dayAiQuery.data ?? null;
   const aiBulletsPending = canFetchDayAi && (dayAiQuery.isPending || dayAiQuery.isFetching);
   const aiUsedFallback = canFetchDayAi && dayAiQuery.isError && !dayAiQuery.data;
+  const panelRingLoading = memberRowsPending || aiBulletsPending;
+  const panelRingStatus = resolvePanelRingStatus(met, shortageStatus);
 
   return (
     <aside
@@ -1512,48 +1782,55 @@ function CsAiInsight({
     >
       <div className={`csx-ai-insight-split${memberRowsPending ? ' csx-ai-insight-split--loading' : ''}`}>
         <div className="csx-ai-insight-col csx-ai-insight-col--left">
-          <SatisfactionProgressSection
-            actualPct={actualPct}
-            target={target}
-            met={met}
-            animatedActualPct={animatedActualPct}
-            month={month}
-            intakeStats={intakeStats}
-            statsPending={memberRowsPending}
-            skill={skill}
-            shortage={shortage}
-          />
-          <div className="csx-ai-insight-inner-divider" aria-hidden />
-          {memberRowsPending ? (
-            <AiTrendInsightSkeleton />
-          ) : (
-            <div className="csx-ai-insight-trend-wrap">
-              <p className="csx-ai-insight-trend-kicker">최근 만족도 AI 인사이트</p>
-              {comparison.status === 'compare' || comparison.status === 'single' ? (
-                <DayOverDayInsightPanel
-                  comparison={comparison}
-                  aiInsight={aiInsight}
-                  aiBulletsPending={aiBulletsPending}
-                  aiUsedFallback={aiUsedFallback}
-                />
-              ) : (
-                <>
+          <PanelSessionShell
+            title="만족도 현황"
+            meta={`${month}월`}
+            ringLoading={panelRingLoading}
+            ringStatus={panelRingStatus}
+          >
+            <SatisfactionProgressSection
+              actualPct={actualPct}
+              target={target}
+              met={met}
+              animatedActualPct={animatedActualPct}
+              month={month}
+              intakeStats={intakeStats}
+              statsPending={false}
+              skill={skill}
+              shortage={shortage}
+            />
+            <div className="csx-panel-session-divider" aria-hidden />
+            {memberRowsPending ? (
+              <AiTrendInsightSkeleton />
+            ) : (
+              <section className="csx-panel-session-block" aria-label="최근 AI 인사이트">
+                {comparison.status === 'compare' || comparison.status === 'single' ? (
                   <DayOverDayInsightPanel
                     comparison={comparison}
                     aiInsight={aiInsight}
                     aiBulletsPending={aiBulletsPending}
                     aiUsedFallback={aiUsedFallback}
                   />
-                  <div className="csx-ai-insight-prose csx-ai-insight-fallback-wrap">{fallbackContent}</div>
-                </>
-              )}
-            </div>
-          )}
+                ) : (
+                  <>
+                    <DayOverDayInsightPanel
+                      comparison={comparison}
+                      aiInsight={aiInsight}
+                      aiBulletsPending={aiBulletsPending}
+                      aiUsedFallback={aiUsedFallback}
+                    />
+                    <div className="csx-ai-insight-fallback-wrap">{fallbackContent}</div>
+                  </>
+                )}
+              </section>
+            )}
+          </PanelSessionShell>
         </div>
         <div className="csx-ai-insight-divider" aria-hidden />
         <div className="csx-ai-insight-col csx-ai-insight-col--coach">
           <ResponseCoachPanel
-            cases={memberRowsPending ? [] : responseCases}
+            goodMentPool={memberRowsPending ? [] : coachGoodMentPool}
+            typeTabs={memberRowsPending ? [] : coachTypeTabs}
             pending={memberRowsPending}
           />
         </div>
@@ -1568,7 +1845,18 @@ const DEFAULT_MODAL_FILTERS = {
   fiveMajorCitiesYn: 'ALL',
   gen5060Yn: 'ALL',
   problemResolvedYn: 'ALL',
+  dissatisfactionType: null,
+  month: null,
 };
+
+function buildUnsatTypeModalFilter(dissatisfactionType, month) {
+  return {
+    ...DEFAULT_MODAL_FILTERS,
+    satisfiedYn: 'N',
+    dissatisfactionType,
+    month,
+  };
+}
 
 const RATE_CARD_FILTERS = {
   sat: { ...DEFAULT_MODAL_FILTERS, satisfiedYn: 'Y' },
@@ -1579,7 +1867,7 @@ const RATE_CARD_FILTERS = {
 };
 
 /* ════════════════════════════════════════════════════════════
-   만족도 현황 — 당월 KPI 3종 + 중점추진과제 3종(%)
+   만족도 현황 — 중점추진과제 3종(%)
    ════════════════════════════════════════════════════════════ */
 function SatisfactionRateDeck({
   data,
@@ -1587,70 +1875,17 @@ function SatisfactionRateDeck({
   onOpenFiltered,
   memberRowsData,
   month,
-  shortage,
-  target,
-  intakeStats,
 }) {
   const d = data ?? {};
   const hasBase = received > 0;
-  const targetPct = toNum(target);
+  const targetPct = toNum(d.monthlyTargetPct ?? d.target);
 
   const focusMetrics = useMemo(
     () => getMonthFocusMetrics(memberRowsData, month, data),
     [memberRowsData, month, data],
   );
 
-  const evalCount = intakeStats?.totalReceived ?? received;
-  const satCount = intakeStats?.satisfiedCount ?? toNum(d.satisfiedCount, 0) ?? 0;
-
   const numClass = (mod) => (mod && mod !== 'none' ? `csx-stat-num csx-stat-num--${mod}` : 'csx-stat-num');
-
-  const monthKpiCards = [
-    {
-      key: 'eval',
-      label: '총 평가건수',
-      value: hasBase ? (
-        <>
-          <strong className={numClass(null)}>{numKo(evalCount)}</strong>
-          <span className="csx-month-kpi-unit">건</span>
-        </>
-      ) : <strong className="csx-stat-num">—</strong>,
-      filter: DEFAULT_MODAL_FILTERS,
-    },
-    {
-      key: 'sat-count',
-      label: '만족도 건수',
-      value: hasBase ? (
-        <>
-          <strong className={numClass(null)}>{numKo(satCount)}</strong>
-          <span className="csx-month-kpi-unit">건</span>
-        </>
-      ) : <strong className="csx-stat-num">—</strong>,
-      filter: RATE_CARD_FILTERS.sat,
-    },
-    {
-      key: 'shortage',
-      label: '목표 달성 필요 건수',
-      value: (() => {
-        if (shortage?.status === 'short') {
-          return (
-            <>
-              <strong className={numClass(null)}>{numKo(shortage.count)}</strong>
-              <span className="csx-month-kpi-unit">건</span>
-            </>
-          );
-        }
-        if (shortage?.status === 'met') {
-          return <strong className={numClass('met')}>달성</strong>;
-        }
-        if (shortage?.status === 'noTarget') {
-          return <strong className="csx-stat-num csx-stat-num--muted">목표 없음</strong>;
-        }
-        return <strong className="csx-stat-num">—</strong>;
-      })(),
-      filter: DEFAULT_MODAL_FILTERS,
-    },
-  ];
 
   const focusItems = [
     {
@@ -1663,8 +1898,8 @@ function SatisfactionRateDeck({
       filter: RATE_CARD_FILTERS.five,
       denom: focusMetrics.fiveEligible,
       numer: focusMetrics.fiveNum,
-      denomLabel: '전체 접수',
-      numerLabel: '해당 건수',
+      denomLabel: '해당건수',
+      numerLabel: '만족건수',
     },
     {
       key: 'gen',
@@ -1676,8 +1911,8 @@ function SatisfactionRateDeck({
       filter: RATE_CARD_FILTERS.gen,
       denom: focusMetrics.genEligible,
       numer: focusMetrics.genNum,
-      denomLabel: '전체 접수',
-      numerLabel: '해당 건수',
+      denomLabel: '해당건수',
+      numerLabel: '만족건수',
     },
     {
       key: 'solve',
@@ -1689,8 +1924,8 @@ function SatisfactionRateDeck({
       filter: RATE_CARD_FILTERS.solve,
       denom: focusMetrics.problemDenom,
       numer: focusMetrics.problemNum,
-      denomLabel: '전체 접수',
-      numerLabel: '해당 건수',
+      denomLabel: '해당건수',
+      numerLabel: '만족건수',
     },
   ];
 
@@ -1711,10 +1946,10 @@ function SatisfactionRateDeck({
       return (
         <>
           {it.denomLabel}{' '}
-          <strong className={numClass(null)}>{numKo(it.denom)}</strong>건
+          <strong className={numClass(null)}>{numKo(it.denom)}</strong>
           <span className="csx-rate-card-formula-sep" aria-hidden>·</span>
           {it.numerLabel}{' '}
-          <strong className={numClass(null)}>{numKo(it.numer)}</strong>건
+          <strong className={numClass(null)}>{numKo(it.numer)}</strong>
         </>
       );
     })();
@@ -1727,7 +1962,7 @@ function SatisfactionRateDeck({
           onClick={() => onOpenFiltered(it.filter)}
         >
           <span className="csx-rate-card-icon" aria-hidden>
-            <Icon size={20} strokeWidth={2.15} />
+            <Icon size={16} strokeWidth={2.2} />
           </span>
           <span className="csx-rate-card-main">
             <span className="csx-rate-card-top">
@@ -1736,7 +1971,6 @@ function SatisfactionRateDeck({
                 {display}
               </span>
             </span>
-            <span className="csx-rate-card-sub">{it.sub}</span>
             {hasBase && raw != null && !Number.isNaN(raw) ? (
               <span className="csx-rate-meter" aria-hidden>
                 <span className="csx-rate-meter-fill" style={{ width: `${width}%` }} />
@@ -1752,25 +1986,9 @@ function SatisfactionRateDeck({
   };
 
   return (
-    <div className="csx-rate-deck-group-wrap csx-rate-deck-group-wrap--row">
-      <ul className="csx-month-kpi-strip" aria-label="당월 평가·목표">
-        {monthKpiCards.map((card) => (
-          <li key={card.key} className="csx-month-kpi-item">
-            <button
-              type="button"
-              className="csx-month-kpi-stat"
-              onClick={() => onOpenFiltered(card.filter)}
-            >
-              <span className="csx-month-kpi-label">{card.label}</span>
-              <span className="csx-month-kpi-value">{card.value}</span>
-            </button>
-          </li>
-        ))}
-      </ul>
-      <ul className="csx-rate-deck csx-rate-deck--focus" aria-label="중점추진과제">
-        {focusItems.map(renderFocusCard)}
-      </ul>
-    </div>
+    <ul className="csx-rate-deck csx-rate-deck--focus csx-rate-deck--focus-row" aria-label="중점추진과제">
+      {focusItems.map(renderFocusCard)}
+    </ul>
   );
 }
 
@@ -1798,35 +2016,70 @@ function unsatTypeLabel(map, rawType) {
 }
 
 /* ════════════════════════════════════════════════════════════
-   불만족 유형 — 5개 항목 누적 건수
+   불만족 유형 — 3행 2열 그리드
    ════════════════════════════════════════════════════════════ */
-function UnsatisfiedTypeDeck({ data }) {
+function chunkUnsatTypeRows(items, cols = 2) {
+  const rows = [];
+  for (let i = 0; i < items.length; i += cols) {
+    rows.push(items.slice(i, i + cols));
+  }
+  return rows;
+}
+
+function UnsatisfiedTypeDeck({ data, month, onOpenFiltered }) {
   const d = data ?? {};
   const raw = Array.isArray(d.unsatisfiedCategories) ? d.unsatisfiedCategories : [];
 
   const items = raw.slice(0, 5).map((c, i) => ({
     label: String(c?.label ?? `유형 ${i + 1}`).trim() || `유형 ${i + 1}`,
     count: toNum(c?.count, 0) ?? 0,
+    dissatisfactionType: toNum(c?.dissatisfactionType),
   }));
 
-  if (items.length === 0) return null;
+  const rows = chunkUnsatTypeRows(items, 2);
 
   return (
-    <section className="csx-untype" aria-label="당월 불만족 유형별 건수">
+    <section
+      className={`csx-untype csx-untype--panel${items.length === 0 ? ' csx-untype--empty' : ''}`}
+      aria-label="당월 불만족 유형별 건수"
+    >
       <header className="csx-untype-head">
         <h3 className="csx-untype-title">불만족 유형</h3>
         <span className="csx-untype-total">당월 기준</span>
       </header>
-      <ul className="csx-untype-list">
-        {items.map((it) => (
-          <li key={it.label} className="csx-untype-item">
-            <span className="csx-untype-item-label" title={it.label}>{it.label}</span>
-            <span className="csx-untype-item-count">
-              {numKo(it.count)}<span className="csx-untype-item-unit">건</span>
-            </span>
-          </li>
-        ))}
-      </ul>
+      {items.length === 0 ? (
+        <p className="csx-untype-empty">당월 불만족 유형 집계가 없습니다.</p>
+      ) : (
+        <div className="csx-untype-rows">
+          {rows.map((rowItems, rowIdx) => (
+            <ul
+              key={`untype-row-${rowIdx}`}
+              className="csx-untype-row csx-untype-row--2"
+              aria-label={`불만족 유형 ${rowIdx + 1}행`}
+            >
+              {rowItems.map((it) => (
+                <li key={it.dissatisfactionType ?? it.label}>
+                  <button
+                    type="button"
+                    className="csx-untype-item"
+                    onClick={() => {
+                      if (it.dissatisfactionType == null || !onOpenFiltered) return;
+                      onOpenFiltered(buildUnsatTypeModalFilter(it.dissatisfactionType, month));
+                    }}
+                    disabled={it.dissatisfactionType == null || !onOpenFiltered}
+                    aria-label={`${it.label} ${numKo(it.count)}건 상세 보기`}
+                  >
+                    <span className="csx-untype-item-label" title={it.label}>{it.label}</span>
+                    <span className="csx-untype-item-count">
+                      {numKo(it.count)}<span className="csx-untype-item-unit">건</span>
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ))}
+        </div>
+      )}
     </section>
   );
 }
@@ -1843,13 +2096,6 @@ function ReceptionFocusSection({
 }) {
   const d = data ?? {};
   const received = toNum(d.receivedCount ?? d.totalSamples, 0) ?? 0;
-  const target = toNum(d.monthlyTargetPct ?? d.target);
-  const met = computeMet(d);
-  const shortage = computeShortageVsTarget(d);
-  const intakeStats = useMemo(
-    () => getMonthIntakeStats(memberRowsData, month, d),
-    [memberRowsData, month, d],
-  );
 
   return (
     <section
@@ -1859,23 +2105,27 @@ function ReceptionFocusSection({
       <span className="csx-corner-tr" aria-hidden />
       <span className="csx-corner-bl" aria-hidden />
       <header className="csx-session-head-main csx-session-head-main--rates">
-        <h2 id="csx-session-reception-focus-title" className="csx-session-title-main">
-          당월 만족도 현황
+        <h2 id="csx-session-reception-focus-title" className="csx-hero-chip csx-hero-chip--skill">
+          {month}월 만족도 상세 현황
         </h2>
       </header>
 
-      <SatisfactionRateDeck
-        data={d}
-        received={received}
-        onOpenFiltered={onOpenFiltered}
-        memberRowsData={memberRowsData}
-        month={month}
-        shortage={shortage}
-        target={target}
-        intakeStats={intakeStats}
-      />
-
-      <UnsatisfiedTypeDeck data={d} />
+      <div className="csx-rates-dual-layout csx-rates-dual-layout--compact">
+        <div className="csx-rates-dual-col csx-rates-dual-col--focus">
+          <p className="csx-rates-col-kicker">중점추진과제</p>
+          <SatisfactionRateDeck
+            data={d}
+            received={received}
+            onOpenFiltered={onOpenFiltered}
+            memberRowsData={memberRowsData}
+            month={month}
+          />
+        </div>
+        <div className="csx-rates-dual-divider" aria-hidden />
+        <div className="csx-rates-dual-col csx-rates-dual-col--untype">
+          <UnsatisfiedTypeDeck data={d} month={month} onOpenFiltered={onOpenFiltered} />
+        </div>
+      </div>
 
       <button type="button" className="csx-rates-all-btn" onClick={onShowAll}>
         전체 접수 보기
@@ -1893,7 +2143,6 @@ function HeroPanel({
   memberRowsData,
   memberRowsPending,
   unsatTypeLabelMap,
-  monthlyCategories,
   skill,
 }) {
   const d = data ?? {};
@@ -1903,21 +2152,43 @@ function HeroPanel({
 
   const animatedActualPct = useCountUpFloat(actualPct ?? 0, 1300);
 
-  const shortage = computeShortageVsTarget(d);
+  const intakeStats = useMemo(
+    () => getMonthIntakeStats(memberRowsData, month, d),
+    [memberRowsData, month, d],
+  );
+  const shortage = computeShortageVsTarget(d, intakeStats);
 
   const fallbackInsight = (() => {
     switch (shortage.status) {
       case 'met':
-        return <>목표 <strong>달성</strong>. 긍정 피드백을 이어가 보세요.</>;
+        return (
+          <ul className="csx-toss-bullets csx-ai-insight-fallback-list">
+            <li className="csx-toss-bullet csx-toss-bullet--reason">
+              목표 <strong>달성</strong>. 긍정 피드백을 이어가 보세요.
+            </li>
+          </ul>
+        );
       case 'short':
         return (
-          <>만족 <strong className="csx-hero-kpi-ai-strong">{shortage.count}건</strong> 더 필요합니다.</>
+          <ul className="csx-toss-bullets csx-ai-insight-fallback-list">
+            <li className="csx-toss-bullet csx-toss-bullet--reason">
+              만족 <strong className="csx-hero-kpi-ai-strong">{shortage.count}건</strong> 더 필요합니다.
+            </li>
+          </ul>
         );
       case 'noData':
-        return <>이번 달 접수가 없습니다.</>;
+        return (
+          <ul className="csx-toss-bullets csx-ai-insight-fallback-list">
+            <li className="csx-toss-bullet csx-toss-bullet--reason">이번 달 접수가 없습니다.</li>
+          </ul>
+        );
       case 'noTarget':
       default:
-        return <>당월 목표%가 없습니다.</>;
+        return (
+          <ul className="csx-toss-bullets csx-ai-insight-fallback-list">
+            <li className="csx-toss-bullet csx-toss-bullet--reason">당월 목표%가 없습니다.</li>
+          </ul>
+        );
     }
   })();
 
@@ -1927,7 +2198,7 @@ function HeroPanel({
       <span className="csx-corner-bl" aria-hidden />
       <div className="csx-hero-topbar csx-hero-topbar--solo">
         <span className="csx-hero-chip csx-hero-chip--skill">
-          {month}월 만족도
+          {month}월 만족도 현황 · AI 인사이트
         </span>
       </div>
 
@@ -1936,7 +2207,6 @@ function HeroPanel({
           memberRowsData={memberRowsData}
           memberRowsPending={memberRowsPending}
           unsatTypeLabelMap={unsatTypeLabelMap}
-          monthlyCategories={monthlyCategories}
           fallbackContent={fallbackInsight}
           shortageStatus={shortage.status}
           actualPct={actualPct}
@@ -1990,11 +2260,12 @@ export default function CsSatisfactionPage() {
   });
 
   /* ── 모달 파생 데이터 ── */
-  const modalDateBuckets = useMemo(() => {
+  const allModalDateBuckets = useMemo(() => {
     const months = memberRowsQuery.data?.months ?? [];
     const allRows = months.flatMap((m) => m.rows ?? []);
     const grouped = new Map();
     for (const row of allRows) {
+      if (!isActiveUseYn(row)) continue;
       const k = dateKeyFromDateTime(row?.consultDateTime);
       if (!k) continue;
       if (!grouped.has(k)) grouped.set(k, []);
@@ -2004,6 +2275,23 @@ export default function CsSatisfactionPage() {
       .sort((a, b) => String(b[0]).localeCompare(String(a[0]), 'ko'))
       .map(([date, rowsInDate]) => ({ date, rows: rowsInDate, count: rowsInDate.length }));
   }, [memberRowsQuery.data]);
+
+  const modalDateBuckets = useMemo(() => {
+    if (modalYnFilters.month == null) return allModalDateBuckets;
+    return allModalDateBuckets.filter(
+      (b) => rowMonthFromDateTime(b.date) === Number(modalYnFilters.month),
+    );
+  }, [allModalDateBuckets, modalYnFilters.month]);
+
+  const modalFilterHint = useMemo(() => {
+    const parts = [];
+    if (modalYnFilters.month != null) parts.push(`${modalYnFilters.month}월`);
+    if (modalYnFilters.dissatisfactionType != null) {
+      const label = unsatTypeLabel(unsatTypeLabelMap, modalYnFilters.dissatisfactionType);
+      if (label) parts.push(label);
+    }
+    return parts.length ? parts.join(' · ') : null;
+  }, [modalYnFilters, unsatTypeLabelMap]);
 
   const modalDateIndex = useMemo(
     () => modalDateBuckets.findIndex((b) => String(b.date) === String(modalDate)),
@@ -2021,10 +2309,13 @@ export default function CsSatisfactionPage() {
   const modalFilteredRows = useMemo(() => {
     const rowsInDate = modalSelectedBucket?.rows ?? [];
     return rowsInDate.filter((r) => {
+      if (!isActiveUseYn(r)) return false;
       if (!matchesYnFilter(r?.satisfiedYn, modalYnFilters.satisfiedYn)) return false;
       if (!matchesYnFilter(r?.fiveMajorCitiesYn, modalYnFilters.fiveMajorCitiesYn)) return false;
       if (!matchesYnFilter(r?.gen5060Yn, modalYnFilters.gen5060Yn)) return false;
       if (!matchesYnFilter(r?.problemResolvedYn, modalYnFilters.problemResolvedYn)) return false;
+      if (!matchesDissatTypeFilter(r?.dissatisfactionType, modalYnFilters.dissatisfactionType)) return false;
+      if (!matchesMonthFilter(r?.consultDateTime, modalYnFilters.month)) return false;
       return true;
     });
   }, [modalSelectedBucket, modalYnFilters]);
@@ -2094,9 +2385,8 @@ export default function CsSatisfactionPage() {
               data={satData}
               month={month}
               memberRowsData={memberRowsQuery.data}
-              memberRowsPending={memberRowsQuery.isPending || memberRowsQuery.isFetching}
+              memberRowsPending={memberRowsQuery.isPending}
               unsatTypeLabelMap={unsatTypeLabelMap}
-              monthlyCategories={satData?.unsatisfiedCategories ?? []}
               skill={headerSkill}
             />
           </section>
@@ -2135,7 +2425,9 @@ export default function CsSatisfactionPage() {
                 <h3 className="adm-sat-row-modal-title">
                   {user?.name ?? user?.skid} 접수 상세
                 </h3>
-                <p className="adm-sat-row-modal-sub">{year}년 접수 상세</p>
+                <p className="adm-sat-row-modal-sub">
+                  {modalFilterHint ? ` · ${modalFilterHint}` : ''}
+                </p>
               </div>
               <div className="adm-sat-row-modal-month-nav">
                 <button
@@ -2249,7 +2541,7 @@ export default function CsSatisfactionPage() {
                         ) : (
                           modalPagedRows.map((row) => (
                             <tr key={row.id}>
-                              <td className="adm-sat-modal-cell-dt">{formatDateTime(row.consultDateTime)}</td>
+                              <td className="adm-sat-modal-cell-dt">{formatCaseDateTimeMmDdKorean(row.consultDateTime)}</td>
                               <td className="adm-sat-modal-cell-type">
                                 {[row.consultType1, row.consultType2, row.consultType3]
                                   .filter((v) => String(v ?? '').trim() !== '')
@@ -2263,11 +2555,11 @@ export default function CsSatisfactionPage() {
                               <td className="adm-sat-modal-cell-untype">
                                 {String(row.satisfiedYn ?? '').trim().toUpperCase() === 'N'
                                   ? (() => {
-                                      const label = unsatTypeLabel(unsatTypeLabelMap, row.dissatisfactionType);
-                                      return label
-                                        ? <span className="adm-sat-untype-chip">{label}</span>
-                                        : '—';
-                                    })()
+                                    const label = unsatTypeLabel(unsatTypeLabelMap, row.dissatisfactionType);
+                                    return label
+                                      ? <span className="adm-sat-untype-chip">{label}</span>
+                                      : '—';
+                                  })()
                                   : '—'}
                               </td>
                             </tr>

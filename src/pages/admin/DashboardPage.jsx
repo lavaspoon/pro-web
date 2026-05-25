@@ -16,6 +16,9 @@ import {
   fetchTeamDetail,
 } from '../../api/adminApi';
 import { mergeSecondDepthOptions } from '../../utils/adminSecondDepth';
+import { formatCenterDisplayName } from '../../utils/teamHierarchy';
+import useAuthStore from '../../store/authStore';
+import { canAccessPendingCases } from '../../utils/youProRole';
 import AdminMemberDetailCard from './AdminMemberDetailCard';
 import AdminTargetMembersUploadModal from './AdminTargetMembersUploadModal';
 import {
@@ -59,19 +62,16 @@ function normFilterKey(v) {
   return String(v ?? '').trim();
 }
 
-/** 만족도 상단 KPI와 동일 — 센터명 앞 2글자 표시(종합은 그대로) */
+/** 만족도 상단 KPI와 동일 — 센터명 축약 표시(종합은 그대로) */
 function shortCenterLabel(name) {
-  const s = String(name ?? '').trim();
-  if (!s) return '—';
-  if (s === '종합') return '종합';
-  return [...s].slice(0, 2).join('');
+  const s = formatCenterDisplayName(name);
+  return s || '—';
 }
 
-/** 연간 평가대상자 평균(tb_you_incentive_month_stat 월별 평균) */
+/** 연간 평가대상자 평균(tb_you_incentive_month_stat 월별 평균) — 소수 첫째자리 반올림 */
 function formatAnnualEvalTargetAvg(v) {
   if (v == null || Number.isNaN(Number(v))) return '—';
-  const n = Number(v);
-  return Number.isInteger(n) ? `${n.toLocaleString('ko-KR')}명` : `${n.toFixed(1)}명`;
+  return `${Math.round(Number(v)).toLocaleString('ko-KR')}명`;
 }
 
 /** 평가대상자·인증인원 등 명수 표시 */
@@ -126,6 +126,8 @@ function SortTh({ label, sortKey, sortConfig, onSort }) {
 }
 
 export default function DashboardPage() {
+  const user = useAuthStore((s) => s.user);
+  const showPendingCasesLink = canAccessPendingCases(user);
   const [targetUploadModalOpen, setTargetUploadModalOpen] = useState(false);
   const [selectedTeamId, setSelectedTeamId] = useState(null);
   /** null = 미적용, 문자열(빈 문자열 포함) = 해당 값과 일치하는 행만 */
@@ -337,18 +339,20 @@ export default function DashboardPage() {
             >
               평가 대상자
             </button>
-            <Link
-              to="/admin/pending"
-              className="adm-header-link adm-pending-btn--cute"
-              aria-label="검토 대기 화면으로 이동"
-            >
-              <span className="adm-pending-shine" aria-hidden />
-              <span className="adm-pending-btn__inner">
-                <Clock size={18} strokeWidth={2.25} aria-hidden />
-                <span className="adm-pending-btn__label">접수 현황</span>
-              </span>
-              <ChevronRight className="adm-pending-btn__chev" size={18} strokeWidth={2.25} aria-hidden />
-            </Link>
+            {showPendingCasesLink && (
+              <Link
+                to="/admin/pending"
+                className="adm-header-link adm-pending-btn--cute"
+                aria-label="검토 대기 화면으로 이동"
+              >
+                <span className="adm-pending-shine" aria-hidden />
+                <span className="adm-pending-btn__inner">
+                  <Clock size={18} strokeWidth={2.25} aria-hidden />
+                  <span className="adm-pending-btn__label">접수 현황</span>
+                </span>
+                <ChevronRight className="adm-pending-btn__chev" size={18} strokeWidth={2.25} aria-hidden />
+              </Link>
+            )}
           </div>
         </div>
       </header>
@@ -381,7 +385,7 @@ export default function DashboardPage() {
                 <div className="adm-sat-kpi-center-list" aria-label="센터별 연간 인증률">
                   <div className="adm-sat-kpi-center-head" aria-hidden>
                     <span>센터</span>
-                    <span>평가대상자 평균</span>
+                    <span>평가대상자</span>
                     <span>인증인원</span>
                     <span>인증률</span>
                   </div>
@@ -779,7 +783,7 @@ export default function DashboardPage() {
         <div className="adm-section-title">
           <span className="adm-title-bar" />
           <div>
-            <h2 className="adm-section-heading">구성원 상세 현황</h2>
+            <h2 className="adm-section-heading">연간 구성원 상세 현황</h2>
             {selectedTeamId != null && selectedTeam && (
               <p className="adm-section-hint">
                 {teamDetailLoading && `${selectedTeam.name} · 구성원·사례를 불러오는 중…`}
@@ -799,7 +803,6 @@ export default function DashboardPage() {
           <div className="adm-select-prompt">
             <Users className="adm-select-prompt-ico" size={40} strokeWidth={1.25} />
             <h3>팀을 선택해 주세요</h3>
-            <p>위 표에서 leaf 팀 행을 클릭하면 해당 팀 구성원·사례를 아래에서 바로 확인할 수 있습니다.</p>
           </div>
         ) : teamDetailLoading ? (
           <div className="adm-team-detail-loading">

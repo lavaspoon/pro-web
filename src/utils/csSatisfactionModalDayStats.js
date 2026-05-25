@@ -20,8 +20,8 @@ export function resolveTargetMet({ actualPct, targetPct, achievementRate }) {
   return Number(actualPct) >= t;
 }
 
-function isActiveUseYn(row) {
-  return String(row?.useYn ?? 'Y').trim().toUpperCase() === 'Y';
+export function isActiveUseYn(row) {
+  return String(row?.useYn ?? '').trim().toUpperCase() === 'Y';
 }
 
 function isSatisfiedYn(row) {

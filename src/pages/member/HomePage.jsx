@@ -3,15 +3,16 @@ import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useMemberModalStore } from '../../store/memberModalStore';
 import {
-  Plus, ChevronRight, Medal, Zap, Trophy, Check, X, BadgeCheck, HelpCircle,
+  Plus, ChevronRight, Medal, Zap, Trophy, Check, X, BadgeCheck, Sparkles,
 } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
 import { fetchMemberHome, fetchMyCases } from '../../api/memberApi';
-import { fetchTopMembersSpotlightInsight } from '../../api/lmStudioClient';
+import { fetchRecentSubmissionTrendInsight } from '../../api/lmStudioClient';
 import Skeleton from '../../components/common/Skeleton';
+import { analyzeMyWeakScoreInsight, analyzeTopScoreTrendInsight } from '../../utils/caseEvaluation';
 import {
   buildFallbackRecentTrend,
-  mapTopMembersInsightByRank,
+  formatTopSubmissionTrendSentence,
   parseTopMembersInsight,
 } from '../../utils/parseTopMembersInsight';
 import StatusBadge from '../../components/common/StatusBadge';
@@ -131,48 +132,95 @@ function getReflectState(row) {
 
 const HOME_SLOGAN = '오늘의 사례가 내일의 인증이 됩니다';
 const BOARD_REFETCH_MS = 30000;
-const TREND_MAX_BULLETS = 1;
 
-function RecentSubmissionTrend({ trend, pending, compact = false }) {
-  if (pending) {
+function RecentSubmissionTrend({ trendSummary, scoreInsight, weakInsight, aiPending }) {
+  const hasTrendSummary = Boolean(trendSummary);
+  const hasScoreLine = Boolean(scoreInsight?.label);
+  const hasWeakLine = Boolean(weakInsight?.label);
+  const trendLoading = aiPending && !hasTrendSummary;
+
+  if (trendLoading && !hasScoreLine && !hasWeakLine) {
     return (
-      <div className={`hp-top-trend hp-top-trend--loading${compact ? ' hp-top-trend--compact' : ''}`} aria-busy="true">
-        <Skeleton variant="text" width="58%" height={10} />
-        <Skeleton variant="text" width="100%" height={11} />
+      <div className="hp-top-trend hp-top-trend--loading" aria-busy="true">
+        <Skeleton variant="text" width="100%" height={14} />
+        <Skeleton variant="text" width="82%" height={12} />
       </div>
     );
   }
 
-  const { summary, bullets } = trend ?? {};
-  const displayBullets = (bullets ?? []).slice(0, TREND_MAX_BULLETS);
+  if (!hasTrendSummary && !hasScoreLine && !hasWeakLine && !aiPending) {
+    return (
+      <div className="hp-top-trend">
+        <p className="hp-top-trend-empty">트렌드 데이터를 불러오지 못했습니다.</p>
+      </div>
+    );
+  }
 
   return (
-    <div className={`hp-top-trend${compact ? ' hp-top-trend--compact' : ''}`}>
-      <p className="hp-top-trend-label">최근 접수 트렌드</p>
-      {summary ? (
-        <p className="hp-top-trend-summary">{summary}</p>
+    <div className={`hp-top-trend${aiPending ? ' hp-top-trend--loading' : ''}`}>
+      {trendLoading ? (
+        <div className="hp-top-trend-loading">
+          <Skeleton variant="text" width="100%" height={14} />
+          <Skeleton variant="text" width="78%" height={12} />
+        </div>
+      ) : hasTrendSummary ? (
+        <p className="hp-top-trend-summary">{trendSummary}</p>
       ) : null}
-      {displayBullets.length ? (
-        <ul className="hp-top-trend-bullets csx-toss-bullets">
-          {displayBullets.map((line) => (
-            <li key={line.slice(0, 24)} className="csx-toss-bullet hp-top-trend-bullet">
-              {line}
-            </li>
-          ))}
-        </ul>
+
+      {(hasScoreLine || hasWeakLine) ? (
+        <div className="hp-top-trend-notes">
+          {hasScoreLine ? (
+            <p className="hp-top-trend-score-note">
+              상위자들은{' '}
+              <mark className="hp-top-trend-score-hl">{scoreInsight.label}</mark>
+              {' '}점수에서 가장 높은 점수를 취득했습니다.
+              {scoreInsight.avgScore != null && scoreInsight.maxScore != null ? (
+                <span className="hp-top-trend-score-meta">
+                  {' '}
+                  (평균 {scoreInsight.avgScore}/{scoreInsight.maxScore}점)
+                </span>
+              ) : null}
+            </p>
+          ) : null}
+          {hasWeakLine ? (
+            <p className="hp-top-trend-weak-note">
+              나는{' '}
+              <mark className="hp-top-trend-weak-hl">{weakInsight.label}</mark>
+              {' '}항목에서{' '}
+              {weakInsight.comparedToTop ? '상위자 대비 ' : ''}
+              취약합니다.
+              {weakInsight.avgScore != null && weakInsight.maxScore != null ? (
+                <span className="hp-top-trend-score-meta">
+                  {' '}
+                  (내 평균 {weakInsight.avgScore}/{weakInsight.maxScore}점)
+                </span>
+              ) : null}
+            </p>
+          ) : null}
+        </div>
       ) : null}
     </div>
   );
 }
 
-function useTopMembersInsight(items) {
-  const top3 = useMemo(() => (items ?? []).slice(0, 3), [items]);
-  const canFetchAi = top3.length > 0;
+const TREND_INSIGHT_LIMIT = 10;
+
+function useRecentSubmissionTrendInsight(cases) {
+  const trendCases = useMemo(
+    () => (cases ?? []).slice(0, TREND_INSIGHT_LIMIT),
+    [cases],
+  );
+  const canFetchAi = trendCases.length > 0;
+
+  const scoreInsight = useMemo(
+    () => analyzeTopScoreTrendInsight(trendCases),
+    [trendCases],
+  );
 
   const aiQuery = useQuery({
     queryKey: [
-      'home-top-members-ai',
-      top3.map((it) => [
+      'home-recent-submission-trend',
+      trendCases.map((it) => [
         it.rank,
         it.title,
         it.description?.slice(0, 80),
@@ -180,7 +228,7 @@ function useTopMembersInsight(items) {
       ]),
     ],
     queryFn: async ({ signal }) => {
-      const raw = await fetchTopMembersSpotlightInsight({ items: top3, signal });
+      const raw = await fetchRecentSubmissionTrendInsight({ items: trendCases, signal });
       const parsed = parseTopMembersInsight(raw);
       if (!parsed) throw new Error('AI 응답을 해석하지 못했습니다.');
       return parsed;
@@ -190,55 +238,69 @@ function useTopMembersInsight(items) {
     retry: 1,
   });
 
-  const insight = useMemo(
-    () => mapTopMembersInsightByRank(top3, aiQuery.data),
-    [top3, aiQuery.data],
-  );
+  const trendSummary = useMemo(() => {
+    const summary = aiQuery.data?.recentTrend?.summary;
+    if (summary) return formatTopSubmissionTrendSentence(summary);
+    return buildFallbackRecentTrend(trendCases).summary;
+  }, [aiQuery.data, trendCases]);
 
   const aiPending = canFetchAi && (aiQuery.isPending || aiQuery.isFetching);
-  const aiUsedFallback = canFetchAi && aiQuery.isError && !aiQuery.data;
-  const recentTrend = insight.recentTrend?.summary
-    ? insight.recentTrend
-    : buildFallbackRecentTrend(top3);
 
   return {
-    top3,
-    ranked: insight.ranked,
-    recentTrend,
+    trendCases,
+    trendSummary,
+    scoreInsight,
     aiPending,
-    aiUsedFallback,
   };
 }
 
-/** 나의 접수 — 최근 접수 아래 접수 제안 */
-function SubmissionSuggestionPanel({ cases }) {
-  const { top3, recentTrend, aiPending, aiUsedFallback } = useTopMembersInsight(cases);
+/** 나의 접수 — 최근 접수 아래 트렌드 */
+function SubmissionSuggestionPanel({ insightCases, myCases }) {
+  const {
+    trendCases,
+    trendSummary,
+    scoreInsight,
+    aiPending,
+  } = useRecentSubmissionTrendInsight(insightCases);
 
-  if (!top3.length) return null;
+  const weakInsight = useMemo(
+    () => analyzeMyWeakScoreInsight(myCases, trendCases),
+    [myCases, trendCases],
+  );
+
+  if (!trendCases.length && !weakInsight) return null;
 
   return (
     <section
       className="csx-ai-insight-trend-wrap hp-top-suggest-trend hp-mine-suggest"
-      aria-label="최근 인증 사례 접수 제안"
+      aria-label="상위자 최근 접수 트렌드"
     >
-      <p className="csx-ai-insight-trend-kicker">접수 제안</p>
+      <p className="csx-ai-insight-trend-kicker">
+        <span className="csx-ai-insight-trend-kicker__ai" aria-hidden>
+          <Sparkles size={12} strokeWidth={2.25} />
+        </span>
+        상위자 최근 접수 트렌드
+      </p>
       <div className="csx-toss-insight">
-        <section
-          className="hp-top-suggest-why csx-toss-why"
-          aria-labelledby="hp-mine-suggest-why-title"
-        >
-          <h4 id="hp-mine-suggest-why-title" className="hp-top-suggest-why-title">
-            <span className="hp-top-suggest-why-main">이렇게 접수해 보세요</span>
-            <HelpCircle size={14} strokeWidth={2.2} className="csx-toss-why-ico" aria-hidden />
-          </h4>
-          <RecentSubmissionTrend trend={recentTrend} pending={aiPending} compact />
-        </section>
+        <RecentSubmissionTrend
+          trendSummary={trendSummary}
+          scoreInsight={scoreInsight}
+          weakInsight={weakInsight}
+          aiPending={aiPending}
+        />
         <footer className="csx-toss-foot">
-          <span className="csx-toss-ai-badge">YOU PRO AI 분석</span>
+          <p className="csx-toss-ai-source">YOU PRO AI 분석</p>
         </footer>
       </div>
     </section>
   );
+}
+
+function getTopRankRowClass(rank) {
+  if (rank === 1) return 'hp-top-rank-row--first';
+  if (rank === 2) return 'hp-top-rank-row--second';
+  if (rank === 3) return 'hp-top-rank-row--third';
+  return '';
 }
 
 /** YOU 프로 상위 구성원 — 1~10위 전체 표시 */
@@ -251,7 +313,7 @@ function TopMembersSpotlightPanel({ items }) {
     <div className="hp-top-panel" role="region" aria-label="YOU 프로 상위 구성원">
       <div className="hp-top-rank-zone">
         <div className="hp-top-rank-head">
-          <p className="csx-ai-insight-trend-kicker hp-top-rank-kicker">인증 건수 상위</p>
+          <p className="csx-ai-insight-trend-kicker hp-top-rank-kicker">YOU 프로 마스터</p>
           <span className="hp-top-rank-range">1~10위</span>
         </div>
         <div className="hp-top-rank-table-wrap">
@@ -270,10 +332,14 @@ function TopMembersSpotlightPanel({ items }) {
               {ranked.map((row) => (
                 <tr
                   key={row.rank}
-                  className={`hp-top-rank-row${row.rank === 1 ? ' hp-top-rank-row--first' : ''}`}
+                  className={`hp-top-rank-row ${getTopRankRowClass(row.rank)}`.trim()}
                 >
                   <td className="hp-top-rank-cell hp-top-rank-cell--rank">
-                    <span className="hp-top-rank-num">{row.rank}</span>
+                    <span
+                      className={`hp-top-rank-num${row.rank <= 3 ? ` hp-top-rank-num--top hp-top-rank-num--r${row.rank}` : ''}`}
+                    >
+                      {row.rank}
+                    </span>
                     <span className="hp-top-rank-suffix">위</span>
                   </td>
                   <td className="hp-top-rank-cell hp-top-rank-cell--center" title={row.centerName || ''}>
@@ -385,7 +451,7 @@ function ReflectTimeline({ rows, cumulative, totalReflectedWon, onPickMonth }) {
     <section className="hp-rfx" role="group" aria-label="연간 적립 현황 요약">
       <div className="hp-tier-summary">
         <div className="hp-tier-summary-item">
-          <span className="hp-tier-summary-label">현재 누적 금액</span>
+          <span className="hp-tier-summary-label">현재 금액</span>
           <span className="hp-tier-summary-val hp-tier-summary-val--money">
             {formatWon(totalReflectedWon)}
           </span>
@@ -394,7 +460,7 @@ function ReflectTimeline({ rows, cumulative, totalReflectedWon, onPickMonth }) {
           <ChevronRight size={16} strokeWidth={2.5} />
         </span>
         <div className="hp-tier-summary-item hp-tier-summary-item--cert">
-          <span className="hp-tier-summary-label">올해 인증 누적</span>
+          <span className="hp-tier-summary-label">올해 인증 건</span>
           <span className="hp-tier-summary-val">
             <strong>{cumulative}</strong>
             <span className="hp-tier-summary-unit">건</span>
@@ -585,9 +651,6 @@ export default function HomePage() {
         <div className="hp-month-split">
           {(certificationBoard?.items?.length ?? 0) > 0 && (
             <aside className="hp-month-split-col hp-month-split-col--board" aria-label="YOU 프로 상위 구성원 현황">
-              <div className="hp-month-split-col-head hp-month-split-col-head--sub">
-                <span className="hp-month-split-col-title hp-month-split-col-title--sub">YOU프로 마스터</span>
-              </div>
               <TopMembersSpotlightPanel items={certificationBoard.items} />
             </aside>
           )}
@@ -596,7 +659,7 @@ export default function HomePage() {
             <div className="hp-month-split-col-head hp-month-split-col-head--main">
               <h2 className="hp-month-split-col-title hp-month-split-col-title--main">
                 <span className="hp-month-split-col-month">{currentMonthNum}월</span>
-                <span className="hp-month-split-col-title-text">나의 접수</span>
+                <span className="hp-month-split-col-title-text">나의 접수 현황</span>
               </h2>
               {currentMonthCsTargetMet === true && (
                 <span className="hp-month-cs hp-month-cs--met hp-month-cs--seal hp-month-cs--seal-sm">
@@ -606,7 +669,7 @@ export default function HomePage() {
               )}
               {currentMonthCsTargetMet === false && csHasTarget && (
                 <span className="hp-month-cs hp-month-cs--achievement hp-month-cs--seal hp-month-cs--seal-sm">
-                  이달 만족도 달성률 {formatMonthlyAchievementRate(monthlyAchievementRate)}
+                  당월 만족도 달성률 {formatMonthlyAchievementRate(monthlyAchievementRate)}
                 </span>
               )}
             </div>
@@ -684,7 +747,10 @@ export default function HomePage() {
               </div>
             </div>
 
-            <SubmissionSuggestionPanel cases={certificationBoard?.insightCases} />
+            <SubmissionSuggestionPanel
+              insightCases={certificationBoard?.insightCases}
+              myCases={cases}
+            />
           </div>
         </div>
       </section>

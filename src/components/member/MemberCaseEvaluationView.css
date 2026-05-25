@@ -33,16 +33,6 @@
   padding: 14px 16px;
 }
 
-.mce-panel-text {
-  margin: 0;
-  font-size: 17px;
-  line-height: 1.55;
-  letter-spacing: -0.022em;
-  color: #1d1d1f;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
 .mce-pending {
   display: flex;
   align-items: center;

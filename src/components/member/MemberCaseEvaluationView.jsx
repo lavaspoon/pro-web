@@ -6,6 +6,7 @@ import {
   scoresFromCaseData,
 } from '../../utils/caseEvaluation';
 import './MemberCaseEvaluationView.css';
+import '../case/CaseScorePanel.css';
 
 function hasPublishedEvaluation(caseData) {
   if (!caseData || caseData.status === 'pending') return false;
@@ -50,6 +51,7 @@ export default function MemberCaseEvaluationView({ caseData }) {
           totalScore={totalDisplay}
           status={caseData.status}
           readonly
+          scoreColumns={3}
         />
       )}
     </div>

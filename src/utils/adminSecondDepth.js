@@ -2,6 +2,8 @@
  * 관리자 화면 2depth 센터 — API(filterMeta.secondDepthDepts)가 있으면 그 순서·ID·부서명을 그대로 사용.
  * API가 비어 있을 때만 폴백(로컬 개발용).
  */
+import { formatCenterDisplayName } from './teamHierarchy';
+
 export const DEFAULT_SECOND_DEPTH_DEPT_IDS = [5, 8];
 
 /**
@@ -14,9 +16,10 @@ export function mergeSecondDepthOptions(apiOptions) {
     return list.map((o) => {
       const id = Number(o.id);
       const raw = o.name != null ? String(o.name).trim() : '';
-      const name = raw !== '' ? raw : `${id}번 부서`;
-      return { id, name };
+      const fullName = raw !== '' ? raw : `${id}번 부서`;
+      const name = formatCenterDisplayName(fullName) || fullName;
+      return { id, name, fullName };
     });
   }
-  return DEFAULT_SECOND_DEPTH_DEPT_IDS.map((id) => ({ id, name: `${id}번 부서` }));
+  return DEFAULT_SECOND_DEPTH_DEPT_IDS.map((id) => ({ id, name: `${id}번 부서`, fullName: `${id}번 부서` }));
 }

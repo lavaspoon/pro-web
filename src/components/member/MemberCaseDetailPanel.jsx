@@ -2,25 +2,11 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { X, ChevronLeft } from 'lucide-react';
 import { fetchCaseDetail } from '../../api/memberApi';
-import StatusBadge from '../common/StatusBadge';
-import { formatCaseCallDateTime } from '../../utils/caseDisplay';
+import CaseDetailMetaRow from '../case/CaseDetailMetaRow';
 import { useMemberModalStore } from '../../store/memberModalStore';
 import MemberCaseEvaluationView from './MemberCaseEvaluationView';
 import './MemberSubmitModal.css';
 import './MemberCaseDetailModal.css';
-
-function formatDateTime(dateStr) {
-  if (!dateStr) return '—';
-  const d = new Date(dateStr);
-  return `${d.getFullYear()}. ${d.getMonth() + 1}. ${d.getDate()}. ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-}
-
-function formatJudgedAt(dateStr) {
-  if (!dateStr) return null;
-  const d = new Date(dateStr);
-  if (Number.isNaN(d.getTime())) return null;
-  return formatDateTime(dateStr);
-}
 
 /**
  * 사례 상세 본문 — 목록 모달 안(embedded) 또는 단독 모달에서 공통 사용.
@@ -36,8 +22,6 @@ export default function MemberCaseDetailPanel({ embedded = false }) {
   });
 
   if (!caseDetailId) return null;
-
-  const judgedAtLabel = caseData ? formatJudgedAt(caseData.judgedAt) : null;
 
   return (
     <>
@@ -71,29 +55,11 @@ export default function MemberCaseDetailPanel({ embedded = false }) {
         )}
         {!isLoading && !isError && caseData && (
           <>
-            <div className="member-case-detail-meta-row" aria-label="접수·통화·판정">
-              <StatusBadge status={caseData.status} size="sm" />
-              <span className="member-case-detail-meta-chip">
-                <span className="member-case-detail-meta-kicker">접수</span>
-                <span className="member-case-detail-meta-val">
-                  {formatDateTime(caseData.submittedAt)}
-                </span>
-              </span>
-              <span className="member-case-detail-meta-sep" aria-hidden>·</span>
-              <span className="member-case-detail-meta-chip">
-                <span className="member-case-detail-meta-kicker">통화</span>
-                <span className="member-case-detail-meta-val">
-                  {formatCaseCallDateTime(caseData.callDate)}
-                </span>
-              </span>
-              <span className="member-case-detail-meta-sep" aria-hidden>·</span>
-              <span className="member-case-detail-meta-chip">
-                <span className="member-case-detail-meta-kicker">판정</span>
-                <span className="member-case-detail-meta-val">
-                  {judgedAtLabel ?? (caseData.status === 'pending' ? '대기' : '—')}
-                </span>
-              </span>
-            </div>
+            <CaseDetailMetaRow
+              status={caseData.status}
+              submittedAt={caseData.submittedAt}
+              callDate={caseData.callDate}
+            />
             <MemberCaseEvaluationView caseData={caseData} />
           </>
         )}

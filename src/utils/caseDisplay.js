@@ -14,6 +14,33 @@ export function formatSubmittedDateMmDd(value) {
   return `${mo}-${day}`;
 }
 
+/** 목록용 mm월dd일 HH:mm (24시간) — 접수·상담 일시 공통 */
+export function formatCaseListDateMmDdHm(value) {
+  const d = parseToLocalDate(value);
+  if (!d) return '—';
+  const mo = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const h = String(d.getHours()).padStart(2, '0');
+  const min = String(d.getMinutes()).padStart(2, '0');
+  return `${mo}월${day}일 ${h}:${min}`;
+}
+
+/** 목록용 총점 — 있으면 n점, 없으면 '-' */
+export function formatCaseListScoreDisplay(caseItem) {
+  const raw = caseItem?.totalScore;
+  if (raw != null && Number.isFinite(Number(raw))) {
+    return `${Number(raw)}점`;
+  }
+  return '-';
+}
+
+/** 목록용 총점 뱃지 톤 — empty | default | pass(80점 이상) */
+export function resolveCaseListScoreBadgeTone(caseItem) {
+  const raw = caseItem?.totalScore;
+  if (raw == null || !Number.isFinite(Number(raw))) return 'empty';
+  return Number(raw) >= 80 ? 'pass' : 'default';
+}
+
 /** 상담일시 — 목록용 mm-dd HH:mm (24시간) */
 export function formatCaseCallDateMmDdHm(value) {
   const d = parseToLocalDate(value);
@@ -44,6 +71,30 @@ function formatKoreanTime12(d) {
     period,
     timeLabel: `${period} ${hours12}:${min}`,
   };
+}
+
+/** yy.mm.dd 오전/오후 h:mm */
+export function formatCaseDateTimeYyMmKorean(value) {
+  const d = parseToLocalDate(value);
+  if (!d) return '—';
+  const yy = String(d.getFullYear()).slice(-2);
+  const mo = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const { timeLabel } = formatKoreanTime12(d);
+  return `${yy}.${mo}.${day} ${timeLabel}`;
+}
+
+/** 목록용 mm월 dd일 오전/오후 hh:mm */
+export function formatCaseDateTimeMmDdKorean(value) {
+  const d = parseToLocalDate(value);
+  if (!d) return '—';
+  const mo = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const hours24 = d.getHours();
+  const period = hours24 < 12 ? '오전' : '오후';
+  const hours12 = String(hours24 % 12 || 12).padStart(2, '0');
+  const min = String(d.getMinutes()).padStart(2, '0');
+  return `${mo}월 ${day}일 ${period} ${hours12}:${min}`;
 }
 
 /**

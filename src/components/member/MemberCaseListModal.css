@@ -531,3 +531,127 @@
     padding-right: 16px;
   }
 }
+
+/* 관리자 구성원 사례 목록 — 모달 제목 */
+.admin-member-cases-root .member-case-list-title {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.35;
+  color: var(--text-primary, #1d1d1f);
+}
+
+.admin-member-cases-root .member-case-list-lede {
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-tertiary, #86868b);
+}
+
+.admin-member-cases-root .member-case-list-head {
+  padding: 14px 18px 12px;
+}
+
+.admin-member-cases-root .member-case-detail-panel.member-case-detail-panel--embedded {
+  display: flex;
+  flex-direction: column;
+  background: #f5f5f7;
+  height: min(92vh, 820px);
+  max-height: min(92vh, 820px);
+  min-height: min(72vh, 560px);
+  overflow: hidden;
+}
+
+.admin-member-cases-root .admin-member-case-ai-wrap {
+  margin-top: 2px;
+}
+
+/* 관리자 구성원 사례 목록 — 점수 열 · 접수 내용 폭 */
+.admin-member-cases-root .mct-col-no,
+.admin-member-cases-root .member-case-table th.mct-col-no {
+  width: 36px;
+}
+
+.admin-member-cases-root .mct-col-status,
+.admin-member-cases-root .member-case-table th.mct-col-status {
+  width: 48px;
+}
+
+.admin-member-cases-root .mct-col-score,
+.admin-member-cases-root .member-case-table th.mct-col-score {
+  width: 44px;
+  text-align: center;
+}
+
+.admin-member-cases-root .mct-no,
+.admin-member-cases-root .mct-status,
+.admin-member-cases-root .mct-score,
+.admin-member-cases-root .member-case-table th.mct-col-no,
+.admin-member-cases-root .member-case-table th.mct-col-status,
+.admin-member-cases-root .member-case-table th.mct-col-score {
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+.admin-member-cases-root .mct-status .status-badge {
+  font-size: 11px;
+  padding: 2px 5px;
+  gap: 0;
+}
+
+.admin-member-cases-root .mct-status .status-badge svg {
+  display: none;
+}
+
+.admin-member-cases-root .mct-score {
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: #1d4f8c;
+  white-space: nowrap;
+}
+
+.admin-member-cases-root .mct-score--empty {
+  font-weight: 500;
+  color: #c7c7cc;
+}
+
+.admin-member-cases-root .mct-col-title,
+.admin-member-cases-root .member-case-table th.mct-col-title {
+  width: auto;
+  max-width: 200px;
+  text-align: center;
+}
+
+.admin-member-cases-root .mct-title {
+  max-width: 100%;
+}
+
+.admin-member-cases-root .mct-col-date,
+.admin-member-cases-root .mct-col-call-date,
+.admin-member-cases-root .member-case-table th.mct-col-date,
+.admin-member-cases-root .member-case-table th.mct-col-call-date {
+  width: 118px;
+  text-align: center;
+}
+
+.admin-member-cases-root .mct-date,
+.admin-member-cases-root .mct-call-date {
+  font-size: 12px;
+  font-weight: 500;
+  color: #1d1d1f;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  text-align: center;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+@media (max-width: 480px) {
+  .admin-member-cases-root .mct-col-call-date,
+  .admin-member-cases-root .mct-call-date {
+    display: none;
+  }
+}

@@ -1,4 +1,5 @@
 import axiosInstance from './axiosInstance';
+import { isAdminRouteRole } from '../utils/youProRole';
 
 /**
  * SKID로 로그인
@@ -13,6 +14,7 @@ export const loginWithSkid = async (skid) => {
     id: data.skid,                                        // 기존 user.id 호환
     name: data.userName,                                  // 화면 표시명
     position: data.mbPositionName || '상담사',            // 직급명
-    role: data.role === '관리자' ? 'admin' : 'member',   // 라우팅용 역할
+    youProRole: data.role,                                // TB_YOUPRO_ROLE.role 원본
+    role: isAdminRouteRole(data.role) ? 'admin' : 'member', // 라우팅용 역할
   };
 };

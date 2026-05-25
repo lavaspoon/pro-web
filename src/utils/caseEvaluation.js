@@ -90,3 +90,109 @@ export function caseDescriptionExcerpt(text, maxLen = 48) {
   if (t.length <= maxLen) return t;
   return `${t.slice(0, maxLen)}…`;
 }
+
+/**
+ * 사례 목록 — 항목별 평균 취득률 계산
+ */
+function computeScoreItemRankings(cases) {
+  return CASE_SCORE_ITEMS.map(({ key, label, maxScore }) => {
+    let sum = 0;
+    let count = 0;
+    for (const row of cases ?? []) {
+      const n = parseScoreValue(row?.[key], maxScore);
+      if (n != null) {
+        sum += n;
+        count += 1;
+      }
+    }
+    if (count === 0) return null;
+    const avg = sum / count;
+    return {
+      key,
+      label,
+      maxScore,
+      avg,
+      rate: avg / maxScore,
+      count,
+    };
+  }).filter(Boolean);
+}
+
+function filterCasesWithScores(cases) {
+  return (cases ?? []).filter((row) => (
+    CASE_SCORE_ITEMS.some(({ key, maxScore }) => parseScoreValue(row?.[key], maxScore) != null)
+  ));
+}
+
+/**
+ * TOP10 인증 사례 — 평균 취득률이 가장 높은 평가 항목 분석
+ * @returns {{ label: string, summary: string, avgScore: number, maxScore: number } | null}
+ */
+export function analyzeTopScoreTrendInsight(cases) {
+  const items = (cases ?? []).slice(0, 10);
+  if (!items.length) return null;
+
+  const ranked = computeScoreItemRankings(items);
+  if (!ranked.length) return null;
+
+  ranked.sort((a, b) => {
+    if (b.rate !== a.rate) return b.rate - a.rate;
+    if (b.avg !== a.avg) return b.avg - a.avg;
+    return a.label.localeCompare(b.label, 'ko');
+  });
+
+  const top = ranked[0];
+  return {
+    label: top.label,
+    summary: `상위자들은 ${top.label} 점수에서 가장 높은 점수를 취득했습니다.`,
+    avgScore: Math.round(top.avg * 10) / 10,
+    maxScore: top.maxScore,
+  };
+}
+
+/**
+ * 내 사례 — 상위자 대비·또는 자체 평균 기준 취약 항목
+ */
+export function analyzeMyWeakScoreInsight(myCases, topCases) {
+  const scoredMine = filterCasesWithScores(myCases);
+  if (!scoredMine.length) return null;
+
+  const myRanked = computeScoreItemRankings(scoredMine);
+  if (!myRanked.length) return null;
+
+  const topRanked = (topCases ?? []).length
+    ? computeScoreItemRankings((topCases ?? []).slice(0, 10))
+    : [];
+
+  let candidates = myRanked.map((my) => {
+    const top = topRanked.find((item) => item.key === my.key);
+    const gap = top ? top.rate - my.rate : null;
+    return { ...my, gap };
+  });
+
+  if (topRanked.length) {
+    const withGap = candidates.filter((item) => item.gap != null && item.gap > 0);
+    if (withGap.length) {
+      withGap.sort((a, b) => {
+        if (b.gap !== a.gap) return b.gap - a.gap;
+        return a.rate - b.rate;
+      });
+      candidates = withGap;
+    } else {
+      candidates.sort((a, b) => a.rate - b.rate);
+    }
+  } else {
+    candidates.sort((a, b) => a.rate - b.rate);
+  }
+
+  const weak = candidates[0];
+  if (!weak) return null;
+
+  return {
+    label: weak.label,
+    avgScore: Math.round(weak.avg * 10) / 10,
+    maxScore: weak.maxScore,
+    sampleCount: scoredMine.length,
+    comparedToTop: topRanked.length > 0 && weak.gap != null && weak.gap > 0,
+  };
+}

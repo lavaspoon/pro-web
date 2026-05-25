@@ -522,14 +522,16 @@
   grid-row: 1;
 }
 
-.adm-mmg-h--sub {
+.adm-mmg-h--annual {
   grid-column: 2;
   grid-row: 1;
+  color: #3b6ea8;
 }
 
-.adm-mmg-h--cert {
+.adm-mmg-h--monthly {
   grid-column: 3;
   grid-row: 1;
+  color: #2d6a4f;
 }
 
 .adm-mmg-h--sat {
@@ -542,29 +544,28 @@
   grid-row: 1;
 }
 
-.adm-mmg-period {
+.adm-mmg-metric {
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 600;
+  color: var(--text-tertiary, #94a3b8);
   text-align: left;
   white-space: nowrap;
   line-height: 1.2;
 }
 
-.adm-mmg-period--annual {
+.adm-mmg-metric--sub {
   grid-column: 1;
   grid-row: 2;
-  color: #3b6ea8;
 }
 
-.adm-mmg-period--monthly {
+.adm-mmg-metric--cert {
   grid-column: 1;
   grid-row: 3;
-  color: #2d6a4f;
 }
 
 .adm-mmg-v {
   font-size: 14px;
-  font-weight: 800;
+  font-weight: 500;
   text-align: center;
   letter-spacing: -0.02em;
   line-height: 1.2;
@@ -574,27 +575,25 @@
 .adm-mmg-v--sub.adm-mmg-v--annual {
   grid-column: 2;
   grid-row: 2;
-  color: #1d4ed8;
+  color: #0f172a;
 }
 
 .adm-mmg-v--cert.adm-mmg-v--annual {
-  grid-column: 3;
-  grid-row: 2;
-  color: #1d4ed8;
-  font-weight: 700;
+  grid-column: 2;
+  grid-row: 3;
+  color: #0f172a;
 }
 
 .adm-mmg-v--sub.adm-mmg-v--monthly {
-  grid-column: 2;
-  grid-row: 3;
-  color: #047857;
+  grid-column: 3;
+  grid-row: 2;
+  color: #0f172a;
 }
 
 .adm-mmg-v--cert.adm-mmg-v--monthly {
   grid-column: 3;
   grid-row: 3;
-  color: #047857;
-  font-weight: 700;
+  color: #0f172a;
 }
 
 .adm-mmg-stack {
@@ -608,13 +607,40 @@
   min-height: 0;
 }
 
-.adm-mmg-stack--sat {
+.adm-mmg-sat-badge {
   grid-column: 4;
   grid-row: 2 / 4;
-  font-size: 14px;
-  font-weight: 800;
-  color: #5b21b6;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+  justify-self: center;
+  padding: 4px 11px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 500;
   letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.adm-mmg-sat-badge--ok {
+  color: #047857;
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.28);
+}
+
+.adm-mmg-sat-badge--no {
+  color: #be123c;
+  background: rgba(244, 63, 94, 0.10);
+  border-color: rgba(244, 63, 94, 0.26);
+}
+
+.adm-mmg-sat-badge--muted {
+  color: #64748b;
+  background: rgba(100, 116, 139, 0.08);
+  border-color: rgba(100, 116, 139, 0.18);
 }
 
 .adm-mmg-stack--reward {

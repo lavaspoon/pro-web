@@ -53,11 +53,34 @@ export const fetchAllPendingCases = async () => {
 
 /**
  * 검토 대기 화면 — 대시보드 + 대기 사례 단일 요청
- * GET /api/admin/review-queue
+ * GET /api/admin/review-queue?viewerSkid=
  */
-export const fetchAdminReviewQueue = async () => {
-  const { data } = await axiosInstance.get('/api/admin/review-queue');
+export const fetchAdminReviewQueue = async (viewerSkid) => {
+  const params = {};
+  if (viewerSkid) params.viewerSkid = viewerSkid;
+  const { data } = await axiosInstance.get('/api/admin/review-queue', { params });
   return data;
+};
+
+/**
+ * 모니터링 담당자 후보 목록
+ * GET /api/admin/monitoring-users
+ */
+export const fetchMonitoringUsers = async () => {
+  const { data } = await axiosInstance.get('/api/admin/monitoring-users');
+  return data;
+};
+
+/**
+ * 사례 모니터링 담당자 지정
+ * POST /api/admin/cases/assign-monitor
+ */
+export const assignCaseMonitor = async ({ adminSkid, monitorSkid, caseIds }) => {
+  await axiosInstance.post('/api/admin/cases/assign-monitor', {
+    adminSkid,
+    monitorSkid,
+    caseIds,
+  });
 };
 
 /**
@@ -121,6 +144,28 @@ export const judgeCase = async ({
     body.aiKeyPoint = String(aiKeyPoint).trim();
   }
   const { data } = await axiosInstance.post(`/api/admin/cases/${caseId}/judge`, body);
+  return data;
+};
+
+/**
+ * 2차 인증 취소 — 1차 인증(임시저장) 상태로 복귀
+ * POST /api/admin/cases/{caseId}/cancel-final-judge
+ */
+export const cancelCaseFinalJudgment = async ({ caseId, adminSkid }) => {
+  const { data } = await axiosInstance.post(`/api/admin/cases/${caseId}/cancel-final-judge`, {
+    adminSkid,
+  });
+  return data;
+};
+
+/**
+ * 1차 인증 취소 — 대기중 상태로 복귀
+ * POST /api/admin/cases/{caseId}/cancel-draft-judge
+ */
+export const cancelCaseDraftJudgment = async ({ caseId, adminSkid }) => {
+  const { data } = await axiosInstance.post(`/api/admin/cases/${caseId}/cancel-draft-judge`, {
+    adminSkid,
+  });
   return data;
 };
 

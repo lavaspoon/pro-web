@@ -491,7 +491,7 @@
   min-width: 0;
   display: flex;
   flex-direction: row;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 6px;
 }
@@ -499,28 +499,23 @@
 .tree-leaf-text {
   flex: 1;
   min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
 }
 
-.tree-leaf-path {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--text-secondary);
-  letter-spacing: -0.02em;
-  line-height: 1.3;
+.tree-leaf-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.03em;
+  line-height: 1.35;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+.tree-leaf-path,
 .tree-leaf-name {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--text-primary);
-  letter-spacing: -0.03em;
-  line-height: 1.25;
+  display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -705,6 +700,48 @@
     0 1px 3px rgba(15, 23, 42, 0.04);
 }
 
+.pending-table-toolbar-period {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.pending-day-picker-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  background: rgba(255, 255, 255, 0.85);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  transition:
+    border-color 0.12s ease,
+    background 0.12s ease,
+    color 0.12s ease;
+}
+
+.pending-day-picker-btn:hover {
+  border-color: rgba(10, 126, 164, 0.28);
+  color: var(--accent);
+}
+
+.pending-day-picker-btn.is-active {
+  border-color: rgba(10, 126, 164, 0.35);
+  background: rgba(10, 126, 164, 0.1);
+  color: var(--accent);
+}
+
+.pending-day-picker-btn__chev {
+  opacity: 0.55;
+}
+
 .pending-stage-filters {
   display: flex;
   flex-wrap: wrap;
@@ -761,11 +798,69 @@
   background: rgba(10, 126, 164, 0.14);
 }
 
+.pending-score-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: -4px 0 12px;
+  padding: 0 2px;
+}
+
+.pending-score-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  border: 1px solid rgba(245, 158, 11, 0.22);
+  background: rgba(255, 251, 235, 0.72);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: #b45309;
+  cursor: pointer;
+  transition:
+    border-color 0.12s ease,
+    background 0.12s ease,
+    color 0.12s ease;
+}
+
+.pending-score-filter:hover {
+  border-color: rgba(245, 158, 11, 0.38);
+  background: rgba(254, 243, 199, 0.9);
+}
+
+.pending-score-filter.is-active {
+  border-color: rgba(217, 119, 6, 0.42);
+  background: rgba(251, 191, 36, 0.22);
+  color: #92400e;
+  font-weight: 700;
+}
+
+.pending-score-filter__count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.1rem;
+  padding: 0 5px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  background: rgba(180, 83, 9, 0.1);
+  color: #b45309;
+}
+
+.pending-score-filter.is-active .pending-score-filter__count {
+  background: rgba(180, 83, 9, 0.16);
+  color: #92400e;
+}
+
 .pending-table-toolbar-month {
   display: inline-flex;
   align-items: center;
   gap: 2px;
-  margin-left: auto;
   padding: 3px 6px 3px 4px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.75);
@@ -808,7 +903,7 @@
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--text-primary);
-  min-width: 5.5rem;
+  min-width: 7.5rem;
   text-align: center;
   font-variant-numeric: tabular-nums;
 }
@@ -839,13 +934,13 @@
   border-collapse: separate;
   border-spacing: 0;
   font-size: 14px;
-  border: 1px solid rgba(15, 23, 42, 0.09);
-  border-radius: 14px;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  border-radius: 16px;
   overflow: hidden;
   background: var(--surface);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.95),
-    0 2px 8px rgba(15, 23, 42, 0.045);
+    inset 0 1px 0 rgba(255, 255, 255, 0.98),
+    0 4px 18px rgba(15, 23, 42, 0.045);
 }
 
 .pending-panel:has(.pending-table--compact) .pending-panel-head {
@@ -861,6 +956,10 @@
   padding: 12px 16px 18px;
 }
 
+.pending-table--compact.pending-table--cases {
+  table-layout: auto;
+}
+
 .pending-table--compact {
   table-layout: fixed;
   width: 100%;
@@ -872,18 +971,126 @@
 
 .pending-th--check,
 .pending-td-check {
-  width: 44px;
-  padding: 10px 8px !important;
-  text-align: center;
+  width: 0;
+  min-width: 0;
+  max-width: none;
+  padding: 0 0 0 10px !important;
+  text-align: left;
   vertical-align: middle;
+  white-space: nowrap;
 }
 
-.pending-row-check {
-  width: 17px;
-  height: 17px;
-  margin: 0;
-  accent-color: var(--accent);
+.pending-td-check {
+  position: static;
+}
+
+/* ── 커스텀 체크박스 ─────────────────────────────────────────────── */
+.pending-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  min-height: 0;
+  padding: 0;
   cursor: pointer;
+  vertical-align: middle;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.pending-check__input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.pending-check__box {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  border: 1.5px solid rgba(15, 23, 42, 0.16);
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    0 1px 2px rgba(15, 23, 42, 0.05);
+  transition:
+    border-color var(--duration-fast) var(--ease),
+    background var(--duration-fast) var(--ease),
+    box-shadow var(--duration-fast) var(--ease),
+    transform var(--duration-fast) var(--ease);
+}
+
+.pending-check:hover .pending-check__box {
+  border-color: rgba(10, 126, 164, 0.42);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    0 0 0 3px rgba(10, 126, 164, 0.1);
+}
+
+.pending-check__input:focus-visible + .pending-check__box {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--surface),
+    0 0 0 4px rgba(10, 126, 164, 0.32);
+}
+
+.pending-check__input:checked + .pending-check__box,
+.pending-check__input:indeterminate + .pending-check__box {
+  background: linear-gradient(180deg, #0b8bb4 0%, var(--accent) 100%);
+  border-color: #086888;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 2px 8px rgba(10, 126, 164, 0.28);
+}
+
+.pending-check__icon {
+  position: absolute;
+  color: #fff;
+  opacity: 0;
+  transform: scale(0.55);
+  transition:
+    opacity 0.14s var(--ease),
+    transform 0.14s var(--ease);
+  pointer-events: none;
+}
+
+.pending-check__input:checked + .pending-check__box .pending-check__icon {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.pending-check__dash {
+  position: absolute;
+  width: 8px;
+  height: 2px;
+  border-radius: 999px;
+  background: #fff;
+  opacity: 0;
+  transform: scaleX(0.35);
+  transition:
+    opacity 0.14s var(--ease),
+    transform 0.14s var(--ease);
+}
+
+.pending-check__input:indeterminate + .pending-check__box .pending-check__dash {
+  opacity: 1;
+  transform: scaleX(1);
+}
+
+.pending-check:active .pending-check__box {
+  transform: scale(0.9);
 }
 
 .pending-bulk-open-btn {
@@ -893,29 +1100,51 @@
 }
 
 .pending-table-row--checked {
-  background: rgba(10, 126, 164, 0.06);
+  background: rgba(10, 126, 164, 0.055);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+.pending-table-row--checked td {
+  border-bottom-color: rgba(10, 126, 164, 0.12);
 }
 
 .pending-table-row--checked:hover {
-  background: rgba(10, 126, 164, 0.1) !important;
+  background: rgba(10, 126, 164, 0.085) !important;
 }
 
 .pending-table-row--queue-current {
+  background: rgba(10, 126, 164, 0.04);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+.pending-table-row--queue-current td {
+  border-bottom-color: rgba(10, 126, 164, 0.14);
+}
+
+.pending-table-row--checked.pending-table-row--queue-current {
   box-shadow: inset 3px 0 0 var(--accent);
 }
 
 .pending-table-row--clickable:hover {
-  background: rgba(15, 23, 42, 0.035);
+  background: rgba(15, 23, 42, 0.028);
   cursor: pointer;
 }
 
 .pending-table-row--clickable:active {
-  background: rgba(10, 126, 164, 0.08);
+  background: rgba(10, 126, 164, 0.07);
 }
 
 .pending-table--center.pending-table--compact th,
 .pending-table--center.pending-table--compact td {
   text-align: center;
+}
+
+.pending-table--cases thead th {
+  text-align: center;
+}
+
+.pending-table--cases thead .pending-th-btn {
+  justify-content: center;
 }
 
 .pending-table--center.pending-table--compact .pending-th-btn {
@@ -944,7 +1173,8 @@
 
 .pending-table--center .pending-td-name,
 .pending-table--center .pending-td-date-val,
-.pending-table--center .pending-td-call-val {
+.pending-table--center .pending-td-call-val,
+.pending-table--center .pending-td-monitor-val {
   display: block;
   text-align: center;
   margin-left: auto;
@@ -966,8 +1196,53 @@
 }
 
 .pending-table--compact td {
-  padding: 11px 12px;
+  padding: 13px 14px;
   vertical-align: middle;
+}
+
+.pending-table--cases td {
+  border-bottom: 1px solid rgba(15, 23, 42, 0.055);
+  padding: 9px 10px;
+  font-family: var(--font, 'Noto Sans KR', sans-serif);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.pending-table--cases .pending-td-team-text {
+  font-family: var(--font, 'Noto Sans KR', sans-serif);
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-secondary);
+  letter-spacing: -0.01em;
+}
+
+.pending-table--cases .pending-td-name {
+  font-family: var(--font, 'Noto Sans KR', sans-serif);
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+  display: inline;
+  max-width: none;
+  text-align: center;
+  margin: 0;
+}
+
+.pending-table--cases .pending-td-date-val,
+.pending-table--cases .pending-td-call-val,
+.pending-table--cases .pending-td-monitor-val {
+  display: inline-block;
+  font-family: var(--font, 'Noto Sans KR', sans-serif);
+  font-size: 12px;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.pending-table--cases tbody tr:last-child td {
+  border-bottom: none;
 }
 
 .pending-table--compact.pending-table--with-team .pending-th--status {
@@ -988,6 +1263,83 @@
 
 .pending-table--compact.pending-table--with-team .pending-th--callDate {
   width: 13%;
+}
+
+/* 사례 목록 — 체크열은 콘텐츠만, 나머지 열에 공간 양보 */
+.pending-table--cases.pending-table--with-team .pending-th--status {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.pending-table--cases.pending-table--with-team .pending-th--score {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.pending-table--cases .pending-td-score {
+  text-align: center;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.pending-table--cases .pending-td-score-val {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.75rem;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-family: var(--font, 'Noto Sans KR', sans-serif);
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.pending-table--cases .pending-td-score-val--empty {
+  color: var(--text-tertiary);
+  background: rgba(15, 23, 42, 0.04);
+  border-color: rgba(15, 23, 42, 0.07);
+  font-weight: 500;
+}
+
+.pending-table--cases .pending-td-score-val--default {
+  color: #475569;
+  background: rgba(15, 23, 42, 0.05);
+  border-color: rgba(15, 23, 42, 0.08);
+}
+
+.pending-table--cases .pending-td-score-val--pass {
+  color: #15803d;
+  background: rgba(52, 199, 89, 0.12);
+  border-color: rgba(34, 197, 94, 0.28);
+}
+
+.pending-table--cases.pending-table--with-team .pending-th--team {
+  width: auto;
+  min-width: 0;
+}
+
+.pending-table--cases.pending-table--with-team .pending-th--member {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.pending-table--cases.pending-table--with-team .pending-th--date,
+.pending-table--cases.pending-table--with-team .pending-th--callDate,
+.pending-table--cases.pending-table--with-team .pending-th--monitor {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.pending-table--cases .pending-td-member {
+  display: table-cell;
+  text-align: center;
+  vertical-align: middle;
+  max-width: none;
 }
 
 .pending-table--compact:not(.pending-table--with-team) .pending-th--member {
@@ -1061,7 +1413,9 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 0.9375rem;
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
 }
 
 .pending-table--compact .pending-td-title {
@@ -1197,36 +1551,42 @@
 
 .pending-table--compact tbody tr {
   background: var(--surface);
+  transition: background var(--duration-fast) var(--ease);
 }
 
-.pending-table--compact tbody tr:nth-child(even) {
-  background: rgba(10, 126, 164, 0.03);
+.pending-table--cases tbody tr:nth-child(even) {
+  background: rgba(248, 250, 252, 0.72);
 }
 
-.pending-table--compact tbody tr:hover {
-  background: rgba(10, 126, 164, 0.08);
-}
-
-.pending-table--compact tbody tr:nth-child(even):hover {
-  background: rgba(10, 126, 164, 0.1);
+.pending-table--compact tbody tr:hover,
+.pending-table--cases tbody tr:nth-child(even):hover {
+  background: rgba(10, 126, 164, 0.055);
 }
 
 .pending-table--compact tbody tr td {
   background: transparent;
-  border-bottom-color: rgba(15, 23, 42, 0.07);
+  border-bottom-color: rgba(15, 23, 42, 0.055);
 }
 
 .pending-table thead {
   position: sticky;
   top: 0;
   z-index: 2;
-  background: linear-gradient(180deg, rgba(252, 253, 255, 0.99) 0%, rgba(241, 245, 249, 0.94) 100%);
-  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.08);
-  backdrop-filter: blur(6px);
+  background: rgba(248, 250, 252, 0.96);
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.07);
+  backdrop-filter: blur(8px);
+}
+
+.pending-table--cases thead {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.98) 0%,
+    rgba(241, 245, 249, 0.95) 100%
+  );
 }
 
 .pending-table thead tr {
-  border-bottom: 1px solid var(--adm-hairline, rgba(60, 60, 67, 0.12));
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
 }
 
 .pending-th {
@@ -1235,6 +1595,26 @@
   font-weight: 600;
   color: var(--text-secondary);
   white-space: nowrap;
+}
+
+.pending-table--cases .pending-th-btn {
+  min-height: 44px;
+  padding: 10px 14px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.pending-table--cases .pending-th-btn:hover {
+  color: var(--accent);
+  background: rgba(10, 126, 164, 0.06);
+}
+
+.pending-table--cases .pending-th--check {
+  background: transparent;
+  padding-left: 10px !important;
 }
 
 .pending-th--action {
@@ -1306,9 +1686,28 @@
 }
 
 .pending-th--date,
-.pending-th--callDate {
+.pending-th--callDate,
+.pending-th--monitor {
   width: 1%;
   white-space: nowrap;
+}
+
+.pending-th-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.pending-table--cases .pending-th-label {
+  min-height: 44px;
+  padding: 10px 14px;
+  font-family: var(--font, 'Noto Sans KR', sans-serif);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
 }
 
 .pending-table td {
@@ -1404,6 +1803,18 @@
   word-break: keep-all;
 }
 
+.pending-td-monitor {
+  text-align: center;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.pending-td-monitor-val {
+  max-width: 6rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .pending-td-meta {
   display: block;
   max-width: 16rem;
@@ -1473,6 +1884,39 @@
   text-align: center;
   padding: 48px 20px;
   color: var(--text-secondary);
+}
+
+/* 사례 목록 — compact 공통 tbody 스타일 덮어쓰기 (크기·폰트) */
+.pending-table.pending-table--cases.pending-table--compact {
+  font-family: var(--font, 'Noto Sans KR', sans-serif);
+}
+
+.pending-table.pending-table--cases.pending-table--compact tbody .pending-td-team-text {
+  font-family: var(--font, 'Noto Sans KR', sans-serif);
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-secondary);
+  letter-spacing: -0.01em;
+}
+
+.pending-table.pending-table--cases.pending-table--compact tbody td.pending-td-member {
+  display: table-cell;
+  text-align: center;
+  vertical-align: middle;
+  max-width: none;
+  min-width: 0;
+}
+
+.pending-table.pending-table--cases.pending-table--compact tbody .pending-td-name {
+  font-family: var(--font, 'Noto Sans KR', sans-serif);
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+  display: inline;
+  max-width: none;
+  text-align: center;
+  margin: 0;
 }
 
 .empty-icon {
