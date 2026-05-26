@@ -324,7 +324,7 @@ function TopMembersSpotlightPanel({ items }) {
                 <th scope="col">순위</th>
                 <th scope="col">센터</th>
                 <th scope="col">이름</th>
-                <th scope="col">연간 누적 만족도</th>
+                <th scope="col">당월 만족도</th>
                 <th scope="col">인증</th>
               </tr>
             </thead>
@@ -349,7 +349,7 @@ function TopMembersSpotlightPanel({ items }) {
                     {row.memberName?.trim() ? row.memberName : '—'}
                   </td>
                   <td className="hp-top-rank-cell hp-top-rank-cell--sat">
-                    {formatYearSatisfactionPct(row.yearSatisfactionPct)}
+                    {formatYearSatisfactionPct(row.monthSatisfactionPct)}
                   </td>
                   <td className="hp-top-rank-cell hp-top-rank-cell--cert">
                     <strong>{Number(row.cumulativeCount ?? 0)}</strong>
@@ -377,37 +377,124 @@ function HomeIntro({ userName, onSubmit, loading = false }) {
           <h1 className="hp-intro-title" aria-label="YOU 프로">
             <svg
               className="hp-intro-logo"
-              viewBox="0 0 200 50"
+              viewBox="0 0 190 56"
               xmlns="http://www.w3.org/2000/svg"
               role="img"
               aria-hidden="true"
             >
               <title>YOU 프로</title>
+              <defs>
+                <linearGradient id="hp-logo-you-grad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#0F4A3E" />
+                  <stop offset="100%" stopColor="#0D9488" />
+                </linearGradient>
+                <linearGradient id="hp-logo-pro-grad" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stopColor="#14B8A6" />
+                  <stop offset="100%" stopColor="#0F766E" />
+                </linearGradient>
+                <filter id="hp-logo-glow" x="-20%" y="-20%" width="140%" height="140%">
+                  <feGaussianBlur stdDeviation="1.4" result="blur" />
+                  <feMerge>
+                    <feMergeNode in="blur" />
+                    <feMergeNode in="SourceGraphic" />
+                  </feMerge>
+                </filter>
+              </defs>
+              <g className="hp-intro-logo-spark hp-intro-logo-spark--lead" transform="translate(2 12)">
+                <path d="M5 0 L6.1 3.9 L10 5 L6.1 6.1 L5 10 L3.9 6.1 L0 5 L3.9 3.9 Z" />
+              </g>
               <text
                 className="hp-intro-logo-you"
-                x="2"
-                y="32"
+                x="20"
+                y="34"
                 dominantBaseline="middle"
+                fill="url(#hp-logo-you-grad)"
+                filter="url(#hp-logo-glow)"
               >
                 YOU
               </text>
               <text
                 className="hp-intro-logo-pro"
-                x="78"
-                y="32"
+                x="98"
+                y="34"
                 dominantBaseline="middle"
+                fill="url(#hp-logo-pro-grad)"
+                filter="url(#hp-logo-glow)"
               >
                 프로
               </text>
+              <g className="hp-intro-logo-spark hp-intro-logo-spark--trail" transform="translate(176 12)">
+                <path d="M5 0 L6.1 3.9 L10 5 L6.1 6.1 L5 10 L3.9 6.1 L0 5 L3.9 3.9 Z" />
+              </g>
               <path
                 className="hp-intro-logo-line-brand"
-                d="M2 46 L132 46"
+                d="M20 50 L150 50"
               />
               <path
                 className="hp-intro-logo-line-accent"
-                d="M136 46 L186 46"
+                d="M154 50 L186 50"
               />
+              <circle className="hp-intro-logo-line-dot" cx="152" cy="50" r="1.8" />
             </svg>
+            <span className="hp-intro-verify" aria-label="공식 인증">
+              <svg
+                className="hp-intro-verify-svg"
+                viewBox="0 0 44 58"
+                xmlns="http://www.w3.org/2000/svg"
+                role="img"
+                aria-hidden="true"
+              >
+                <title>YOU PRO 공식 인증</title>
+                <g className="hp-intro-verify-ribbon hp-intro-verify-ribbon--left">
+                  <polygon
+                    points="11,32 19,32 16,55 11,50 6,54"
+                    fill="#0F766E"
+                  />
+                  <polygon
+                    points="11,32 14,32 11,50 6,54"
+                    fill="#0B5E57"
+                    opacity="0.55"
+                  />
+                </g>
+                <g className="hp-intro-verify-ribbon hp-intro-verify-ribbon--right">
+                  <polygon
+                    points="25,32 33,32 38,54 33,50 28,55"
+                    fill="#0F766E"
+                  />
+                  <polygon
+                    points="30,32 33,32 38,54 33,50"
+                    fill="#0B5E57"
+                    opacity="0.55"
+                  />
+                </g>
+                <polygon
+                  className="hp-intro-verify-hex"
+                  points="22,3 37.5,12 37.5,33 22,42 6.5,33 6.5,12"
+                  fill="#0D9488"
+                />
+                <polygon
+                  className="hp-intro-verify-hex-inner"
+                  points="22,6.5 34.5,13.7 34.5,31.3 22,38.5 9.5,31.3 9.5,13.7"
+                  fill="none"
+                  stroke="rgba(255,255,255,0.45)"
+                  strokeWidth="0.8"
+                />
+                <path
+                  className="hp-intro-verify-check"
+                  d="M14 22.5 L19.5 28 L30 17.5"
+                  fill="none"
+                  stroke="#ffffff"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path
+                  className="hp-intro-verify-star"
+                  d="M22 1 L23.1 3.3 L25.5 3.7 L23.8 5.4 L24.2 7.8 L22 6.6 L19.8 7.8 L20.2 5.4 L18.5 3.7 L20.9 3.3 Z"
+                  fill="#FCD34D"
+                />
+              </svg>
+            </span>
           </h1>
           <p className="hp-intro-line">
             <strong className="hp-intro-name">{displayName}</strong>님
@@ -422,14 +509,17 @@ function HomeIntro({ userName, onSubmit, loading = false }) {
         ) : (
           <button
             type="button"
-            className="hp-intro-cta"
+            className="hp-intro-cta hp-intro-cta--keycap"
             onClick={onSubmit}
             aria-label="사례 접수하기"
           >
-            <span className="hp-intro-cta-icon" aria-hidden>
-              <Plus size={20} strokeWidth={3} />
+            <span className="hp-intro-cta-keytop">
+              <span className="hp-intro-cta-icon" aria-hidden>
+                <Plus size={18} strokeWidth={2.75} />
+              </span>
+              <span className="hp-intro-cta-label">접수하기</span>
+              <span className="hp-intro-cta-kbd" aria-hidden>↵</span>
             </span>
-            <span className="hp-intro-cta-label">접수하기</span>
           </button>
         )}
       </div>

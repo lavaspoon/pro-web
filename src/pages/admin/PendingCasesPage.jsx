@@ -13,6 +13,7 @@ import {
   ArrowUpDown,
   RefreshCw,
   Upload,
+  Download,
   Check,
   Calendar,
 } from 'lucide-react';
@@ -21,6 +22,7 @@ import {
   fetchAdminLeafTeams,
   fetchAdminReviewQueue,
   fetchCaseForReview,
+  downloadAdminCasesExport,
   uploadCaseHistoryMigrationExcel,
 } from '../../api/adminApi';
 import useAuthStore from '../../store/authStore';
@@ -197,8 +199,10 @@ export default function PendingCasesPage() {
   const selectAllCheckRef = useRef(null);
   const [migratePending, setMigratePending] = useState(false);
   const [migrateMessage, setMigrateMessage] = useState('');
+  const [exportPending, setExportPending] = useState(false);
 
   const migrationYear = new Date().getFullYear();
+  const exportYear = migrationYear;
   const MIGRATION_FROM_MONTH = 1;
   const MIGRATION_TO_MONTH = 4;
 
@@ -515,6 +519,18 @@ export default function PendingCasesPage() {
     [migrationYear, refetch]
   );
 
+  const handleExportExcel = useCallback(async () => {
+    if (!user?.skid) return;
+    setExportPending(true);
+    try {
+      await downloadAdminCasesExport(exportYear, user.skid);
+    } catch (err) {
+      window.alert(err.message || '엑셀 다운로드에 실패했습니다.');
+    } finally {
+      setExportPending(false);
+    }
+  }, [exportYear, user?.skid]);
+
   const loadReviewCase = useCallback(async (c) => {
     setLoadingCaseId(c.id);
     try {
@@ -667,6 +683,18 @@ export default function PendingCasesPage() {
               <h1 className="adm-title">접수 현황</h1>
             </div>
             <div className="pending-header-actions">
+              {isAdmin ? (
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm pending-export-btn"
+                  onClick={handleExportExcel}
+                  disabled={exportPending}
+                  title={`${exportYear}년 전체 센터 접수 raw 엑셀 다운로드`}
+                >
+                  <Download size={14} aria-hidden />
+                  {exportPending ? '다운로드 중…' : '엑셀 다운로드'}
+                </button>
+              ) : null}
               <input
                 ref={migrateFileRef}
                 type="file"

@@ -98,6 +98,18 @@ function formatMemberDetailPeriodHint(detail) {
   return '당월 기준';
 }
 
+/** 전체 센터 현황 힌트 — API statTo(yyyy-MM-dd) 기준 */
+function formatLatestDataAsOfHint(latestDataDate) {
+  const s = String(latestDataDate ?? '').trim();
+  if (s.length < 10) return '최신 데이터 없음';
+  const month = Number(s.slice(5, 7));
+  const day = Number(s.slice(8, 10));
+  if (!Number.isFinite(month) || !Number.isFinite(day) || month < 1 || day < 1) {
+    return '최신 데이터 없음';
+  }
+  return `최근 ${month}월 ${day}일 기준의 최신 데이터`;
+}
+
 /** 목표 대비 달성 — achievementRate 우선, 없으면 actual ≥ target (높을수록 유리 지표) */
 function resolveTargetMet({ actualPct, targetPct, achievementRate }) {
   if (achievementRate != null && !Number.isNaN(Number(achievementRate))) {
@@ -476,13 +488,7 @@ export default function AdminSatisfactionPage() {
       overallProblemAchievement,
     [summaryTotals.probPct, annualMetricTargets.problem, overallProblemAchievement],
   );
-  const statPeriodHint = useMemo(() => {
-    const d = summaryQuery.data;
-    if (d?.statFrom && d?.statTo) {
-      return `${d.statFrom} ~ ${d.statTo} (KST · 1일이면 전월 전체, 아니면 당월 1일~전일)`;
-    }
-    return monthLabel;
-  }, [summaryQuery.data, monthLabel]);
+  const latestSatisfactionDataDate = summaryQuery.data?.statTo ?? null;
   const memberRows = useMemo(
     () => centerMonthDetailQuery.data?.members ?? [],
     [centerMonthDetailQuery.data],
@@ -790,16 +796,9 @@ export default function AdminSatisfactionPage() {
               전체 센터 현황
             </h2>
             <p className="adm-section-hint">
-              <strong>{secondDepthLabelHint}</strong> · 기준:{' '}
-              {kpiData?.kpiMonth != null ? (
-                <>
-                  {kpiData.kpiYear}년 {kpiData.kpiMonth}월
-                </>
-              ) : (
-                '당월'
-              )}
+              <strong>{secondDepthLabelHint}</strong>
               {' · '}
-              중점 추진은 연간 목표 기준
+              {formatLatestDataAsOfHint(latestSatisfactionDataDate)}
             </p>
           </div>
         </div>

@@ -1212,6 +1212,35 @@
   white-space: nowrap;
 }
 
+.adm-rank-compact__team-inner {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.adm-rank-compact__center {
+  flex: 0 0 auto;
+  min-width: 1.75rem;
+  padding: 0.1rem 0.3rem;
+  border-radius: 4px;
+  background: rgba(15, 118, 110, 0.08);
+  color: #0f766e;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  text-align: center;
+  line-height: 1.3;
+}
+
+.adm-rank-compact__team-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
 .adm-rank-compact__td--val {
   text-align: right;
   font-weight: 800;

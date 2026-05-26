@@ -52,6 +52,30 @@ export const fetchAllPendingCases = async () => {
 };
 
 /**
+ * 접수 현황 raw 엑셀 — 관리자 전용, 올해·전체 센터
+ * GET /api/admin/cases/export?year=&adminSkid=
+ */
+export const downloadAdminCasesExport = async (year, adminSkid) => {
+  const response = await axiosInstance.get('/api/admin/cases/export', {
+    params: { year, adminSkid },
+    responseType: 'blob',
+    timeout: 120000,
+  });
+  const blob = new Blob(
+    [response.data],
+    { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' },
+  );
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `youpro-접수현황-${year}.xlsx`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
+};
+
+/**
  * 검토 대기 화면 — 대시보드 + 대기 사례 단일 요청
  * GET /api/admin/review-queue?viewerSkid=
  */

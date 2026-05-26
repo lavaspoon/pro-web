@@ -44,6 +44,8 @@ function rankRowsFromApi(entries) {
   return entries.map((e) => ({
     id: e.skid,
     name: e.memberName,
+    centerName: e.centerName,
+    centerShort: shortCenterPrefix(e.centerName),
     teamName: e.teamName,
     value: `${Number(e.cumulativeCount ?? 0)}건`,
   }));
@@ -66,6 +68,13 @@ function normFilterKey(v) {
 function shortCenterLabel(name) {
   const s = formatCenterDisplayName(name);
   return s || '—';
+}
+
+/** 연간 순위 — 센터명 앞 2글자 */
+function shortCenterPrefix(name) {
+  const s = formatCenterDisplayName(name);
+  if (!s || s === '—') return '—';
+  return s.slice(0, 2);
 }
 
 /** 연간 평가대상자 평균(tb_you_incentive_month_stat 월별 평균) — 소수 첫째자리 반올림 */
@@ -545,7 +554,19 @@ export default function DashboardPage() {
                                 </span>
                               </td>
                               <td className="adm-rank-compact__td adm-rank-compact__td--name">{row.name}</td>
-                              <td className="adm-rank-compact__td adm-rank-compact__td--team">{row.teamName}</td>
+                              <td className="adm-rank-compact__td adm-rank-compact__td--team">
+                                <span className="adm-rank-compact__team-inner">
+                                  <span
+                                    className="adm-rank-compact__center"
+                                    title={row.centerName?.trim() ? formatCenterDisplayName(row.centerName) : undefined}
+                                  >
+                                    {row.centerShort}
+                                  </span>
+                                  <span className="adm-rank-compact__team-name">
+                                    {row.teamName?.trim() ? row.teamName : '—'}
+                                  </span>
+                                </span>
+                              </td>
                               <td className="adm-rank-compact__td adm-rank-compact__td--val">{row.value}</td>
                             </tr>
                           );

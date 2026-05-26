@@ -193,59 +193,20 @@ function getMonthIntakeStats(memberRowsData, month, satData) {
   return { totalReceived, satisfiedCount, unsatisfiedCount };
 }
 
-/** 중점추진과제 산식 분모·분자 (당월 row 우선, 없으면 API 건수 폴백) */
-function getMonthFocusMetrics(memberRowsData, month, satData) {
-  const bucket = (memberRowsData?.months ?? []).find(
-    (m) => Number(m.month) === Number(month),
-  );
-  const rows = (bucket?.rows ?? []).filter(isActiveUseYn);
-  const yn = (r, field) => String(r?.[field] ?? '').trim().toUpperCase();
-
-  if (rows.length > 0) {
-    const received = rows.length;
-    const fiveEligible = rows.filter((r) => yn(r, 'fiveMajorCitiesYn') === 'Y').length;
-    const fiveNum = rows.filter(
-      (r) => yn(r, 'satisfiedYn') === 'Y' && yn(r, 'fiveMajorCitiesYn') === 'Y',
-    ).length;
-    const genEligible = rows.filter((r) => yn(r, 'gen5060Yn') === 'Y').length;
-    const genNum = rows.filter(
-      (r) => yn(r, 'satisfiedYn') === 'Y' && yn(r, 'gen5060Yn') === 'Y',
-    ).length;
-    const problemNum = rows.filter((r) => yn(r, 'problemResolvedYn') === 'Y').length;
-    return {
-      received,
-      fiveEligible,
-      fiveNum,
-      genEligible,
-      genNum,
-      problemNum,
-      problemDenom: received,
-      hasRowDetail: true,
-    };
-  }
-
-  const received = toNum(satData?.receivedCount ?? satData?.totalSamples, 0) ?? 0;
-  const problemNum = received > 0 && satData?.problemResolvedPct != null
-    ? Math.round((Number(satData.problemResolvedPct) * received) / 100)
-    : null;
-
-  return {
-    received,
-    fiveEligible: null,
-    fiveNum: null,
-    genEligible: null,
-    genNum: null,
-    problemNum,
-    problemDenom: received,
-    hasRowDetail: false,
-  };
-}
 
 function computeFocusMetricMet(pct, target) {
   if (pct == null || Number.isNaN(Number(pct))) return null;
   const t = toNum(target);
   if (t == null || t <= 0) return null;
   return Number(pct) >= t;
+}
+
+/** 문제해결 — 목표 이하일수록 유리 */
+function computeProblemFocusMet(pct, target) {
+  if (pct == null || Number.isNaN(Number(pct))) return null;
+  const t = toNum(target);
+  if (t == null || t <= 0) return null;
+  return Number(pct) <= t;
 }
 
 function computeShortageVsTarget(d, intakeStats) {
@@ -1237,20 +1198,58 @@ function CsSatisfactionIntroLogo() {
   return (
     <svg
       className="hp-intro-logo csx-intro-logo"
-      viewBox="0 0 168 50"
+      viewBox="0 0 200 56"
       xmlns="http://www.w3.org/2000/svg"
       role="img"
       aria-hidden
     >
       <title>CS 만족도</title>
-      <text className="hp-intro-logo-you" x="2" y="32" dominantBaseline="middle">
+      <defs>
+        <linearGradient id="csx-logo-cs-grad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#1E40AF" />
+          <stop offset="100%" stopColor="#3182F6" />
+        </linearGradient>
+        <linearGradient id="csx-logo-sat-grad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#3182F6" />
+          <stop offset="100%" stopColor="#1F5FCC" />
+        </linearGradient>
+        <filter id="csx-logo-glow" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="1.4" result="blur" />
+          <feMerge>
+            <feMergeNode in="blur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+      </defs>
+      <g className="hp-intro-logo-spark hp-intro-logo-spark--lead csx-intro-logo-spark" transform="translate(2 12)">
+        <path d="M5 0 L6.1 3.9 L10 5 L6.1 6.1 L5 10 L3.9 6.1 L0 5 L3.9 3.9 Z" />
+      </g>
+      <text
+        className="hp-intro-logo-you"
+        x="20"
+        y="34"
+        dominantBaseline="middle"
+        fill="url(#csx-logo-cs-grad)"
+        filter="url(#csx-logo-glow)"
+      >
         CS
       </text>
-      <text className="hp-intro-logo-pro csx-intro-logo-sat" x="44" y="32" dominantBaseline="middle">
+      <text
+        className="hp-intro-logo-pro csx-intro-logo-sat"
+        x="64"
+        y="34"
+        dominantBaseline="middle"
+        fill="url(#csx-logo-sat-grad)"
+        filter="url(#csx-logo-glow)"
+      >
         만족도
       </text>
-      <path className="hp-intro-logo-line-brand" d="M2 46 L78 46" />
-      <path className="hp-intro-logo-line-accent" d="M82 46 L158 46" />
+      <g className="hp-intro-logo-spark hp-intro-logo-spark--trail csx-intro-logo-spark" transform="translate(166 12)">
+        <path d="M5 0 L6.1 3.9 L10 5 L6.1 6.1 L5 10 L3.9 6.1 L0 5 L3.9 3.9 Z" />
+      </g>
+      <path className="hp-intro-logo-line-brand" d="M20 50 L130 50" />
+      <path className="hp-intro-logo-line-accent" d="M134 50 L176 50" />
+      <circle className="hp-intro-logo-line-dot csx-intro-logo-line-dot" cx="132" cy="50" r="1.8" />
     </svg>
   );
 }
@@ -1873,19 +1872,9 @@ function SatisfactionRateDeck({
   data,
   received,
   onOpenFiltered,
-  memberRowsData,
-  month,
 }) {
   const d = data ?? {};
   const hasBase = received > 0;
-  const targetPct = toNum(d.monthlyTargetPct ?? d.target);
-
-  const focusMetrics = useMemo(
-    () => getMonthFocusMetrics(memberRowsData, month, data),
-    [memberRowsData, month, data],
-  );
-
-  const numClass = (mod) => (mod && mod !== 'none' ? `csx-stat-num csx-stat-num--${mod}` : 'csx-stat-num');
 
   const focusItems = [
     {
@@ -1893,39 +1882,33 @@ function SatisfactionRateDeck({
       label: '5대도시',
       sub: '',
       field: 'fiveMajorCitiesPct',
+      targetField: 'fiveMajorCitiesTargetPct',
+      metKind: 'higher',
       mod: 'five',
       Icon: MapPinned,
       filter: RATE_CARD_FILTERS.five,
-      denom: focusMetrics.fiveEligible,
-      numer: focusMetrics.fiveNum,
-      denomLabel: '해당건수',
-      numerLabel: '만족건수',
     },
     {
       key: 'gen',
       label: '5060',
       sub: '',
       field: 'gen5060Pct',
+      targetField: 'gen5060TargetPct',
+      metKind: 'higher',
       mod: 'gen',
       Icon: UserCircle2,
       filter: RATE_CARD_FILTERS.gen,
-      denom: focusMetrics.genEligible,
-      numer: focusMetrics.genNum,
-      denomLabel: '해당건수',
-      numerLabel: '만족건수',
     },
     {
       key: 'solve',
       label: '문제해결',
       sub: '',
       field: 'problemResolvedPct',
+      targetField: 'problemResolvedTargetPct',
+      metKind: 'lower',
       mod: 'solve',
       Icon: CheckCircle2,
       filter: RATE_CARD_FILTERS.solve,
-      denom: focusMetrics.problemDenom,
-      numer: focusMetrics.problemNum,
-      denomLabel: '해당건수',
-      numerLabel: '만족건수',
     },
   ];
 
@@ -1934,25 +1917,20 @@ function SatisfactionRateDeck({
     const raw = hasBase ? toNum(d[it.field]) : null;
     const display = raw == null || Number.isNaN(raw) ? '—' : `${fmt(raw)}%`;
     const width = raw != null && !Number.isNaN(raw) ? Math.min(100, Math.max(0, raw)) : 0;
-    const focusMet = computeFocusMetricMet(raw, targetPct);
+    const itemTarget = toNum(d[it.targetField]);
+    const focusMet = it.metKind === 'lower'
+      ? computeProblemFocusMet(raw, itemTarget)
+      : computeFocusMetricMet(raw, itemTarget);
     const statusMod = focusMet === true ? 'met' : focusMet === false ? 'no' : 'none';
 
-    const formulaText = (() => {
-      if (!hasBase) return null;
-      if (it.denom == null || it.numer == null) {
-        if (!focusMetrics.hasRowDetail) return null;
-        return '해당 0건';
-      }
-      return (
-        <>
-          {it.denomLabel}{' '}
-          <strong className={numClass(null)}>{numKo(it.denom)}</strong>
-          <span className="csx-rate-card-formula-sep" aria-hidden>·</span>
-          {it.numerLabel}{' '}
-          <strong className={numClass(null)}>{numKo(it.numer)}</strong>
-        </>
-      );
-    })();
+    const targetText = itemTarget != null && itemTarget > 0 ? (
+      <>
+        목표{' '}
+        <strong className="csx-rate-card-target-val">{fmt(itemTarget)}%</strong>
+      </>
+    ) : (
+      <span className="csx-rate-card-target-muted">목표 미설정</span>
+    );
 
     return (
       <li key={it.key} className="csx-rate-deck-item">
@@ -1976,9 +1954,7 @@ function SatisfactionRateDeck({
                 <span className="csx-rate-meter-fill" style={{ width: `${width}%` }} />
               </span>
             ) : null}
-            {formulaText ? (
-              <span className="csx-rate-card-formula">{formulaText}</span>
-            ) : null}
+            <span className="csx-rate-card-target">{targetText}</span>
           </span>
         </button>
       </li>
@@ -2091,7 +2067,6 @@ function ReceptionFocusSection({
   data,
   onShowAll,
   onOpenFiltered,
-  memberRowsData,
   month,
 }) {
   const d = data ?? {};
@@ -2117,8 +2092,6 @@ function ReceptionFocusSection({
             data={d}
             received={received}
             onOpenFiltered={onOpenFiltered}
-            memberRowsData={memberRowsData}
-            month={month}
           />
         </div>
         <div className="csx-rates-dual-divider" aria-hidden />
@@ -2393,7 +2366,6 @@ export default function CsSatisfactionPage() {
           <ReceptionFocusSection
             data={satData}
             month={month}
-            memberRowsData={memberRowsQuery.data}
             onShowAll={() => {
               setModalYnFilters({ ...DEFAULT_MODAL_FILTERS });
               setShowModal(true);

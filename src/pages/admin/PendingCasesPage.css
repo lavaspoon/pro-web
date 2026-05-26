@@ -97,6 +97,23 @@
   background: #fffbeb;
 }
 
+.pending-export-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-color: rgba(15, 118, 110, 0.35);
+  background: rgba(240, 253, 250, 0.95);
+  color: #0f766e;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.pending-export-btn:hover:not(:disabled) {
+  border-color: rgba(15, 118, 110, 0.55);
+  background: #ecfdf5;
+}
+
 .pending-migrate-msg {
   flex: 1 1 100%;
   margin: 0;

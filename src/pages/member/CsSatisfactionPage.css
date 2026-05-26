@@ -538,7 +538,7 @@
   margin-top: 0;
 }
 
-.csx-rates-dual-layout--compact .csx-rate-deck--focus-row .csx-rate-card-formula {
+.csx-rates-dual-layout--compact .csx-rate-deck--focus-row .csx-rate-card-target {
   margin-top: 0;
   font-size: 11px;
   font-weight: 600;
@@ -778,13 +778,34 @@
   background: linear-gradient(90deg, var(--csx-accent-strong), var(--csx-accent));
 }
 
-/* 중점 카드 — %·산식 숫자만 목표 색 */
+/* 중점 카드 — %·목표 숫자 색 */
 .csx-rate-card-pct--met {
   color: var(--csx-met-strong);
 }
 
 .csx-rate-card-pct--no {
   color: #dc2626;
+}
+
+.csx-rate-card-target {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: #94a3b8;
+  line-height: 1.35;
+}
+
+.csx-rate-card-target-val {
+  font-size: inherit;
+  font-weight: 800;
+  color: #64748b;
+  font-variant-numeric: tabular-nums;
+}
+
+.csx-rate-card-target-muted {
+  color: #cbd5e1;
 }
 
 .csx-rate-card-formula {
@@ -1274,7 +1295,7 @@
 /* CS 만족도 워드마크 — 선 길이·viewBox에 맞춘 dash (잘림 방지) */
 .csx-page.hp-home .csx-intro-logo {
   display: block;
-  height: 44px;
+  height: 48px;
   width: auto;
   max-width: 100%;
   overflow: visible;
@@ -1287,13 +1308,27 @@
 }
 
 .csx-page.hp-home .csx-intro-logo .hp-intro-logo-line-brand {
-  stroke-dasharray: 78;
-  stroke-dashoffset: 78;
+  stroke: #3182F6;
+  stroke-dasharray: 110;
+  stroke-dashoffset: 110;
 }
 
 .csx-page.hp-home .csx-intro-logo .hp-intro-logo-line-accent {
-  stroke-dasharray: 78;
-  stroke-dashoffset: 78;
+  stroke: #1F5FCC;
+  stroke-dasharray: 42;
+  stroke-dashoffset: 42;
+}
+
+.csx-page.hp-home .csx-intro-logo-spark.hp-intro-logo-spark--lead {
+  fill: #3182F6;
+}
+
+.csx-page.hp-home .csx-intro-logo-spark.hp-intro-logo-spark--trail {
+  fill: #1F5FCC;
+}
+
+.csx-page.hp-home .csx-intro-logo-line-dot {
+  fill: #1F5FCC;
 }
 
 .csx-page.hp-home .hp-intro-title {
