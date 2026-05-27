@@ -14,6 +14,7 @@ export default function CsSatisfactionModalDayStats({
   personalTargetPercent = null,
   deptSummary = null,
   deptTargetPercent = null,
+  scope = 'day',
 }) {
   const personal = computePersonalDaySatisfaction(rows);
   const deptRate = deptSummary?.satisfactionRate ?? null;
@@ -28,9 +29,14 @@ export default function CsSatisfactionModalDayStats({
   const rateTone = dualOk ? 'is-ok' : 'is-no';
 
   return (
-    <div className="adm-sat-modal-day-stats-panel" aria-label="선택 일자 만족도 요약">
+    <div
+      className="adm-sat-modal-day-stats-panel"
+      aria-label={scope === 'month' ? '선택 월 만족도 요약' : '선택 일자 만족도 요약'}
+    >
       <div className="adm-sat-modal-day-stats-head">
-        <span className="adm-sat-modal-day-stats-kicker">당일 만족도</span>
+        <span className="adm-sat-modal-day-stats-kicker">
+          {scope === 'month' ? '당월 만족도' : '당일 만족도'}
+        </span>
         <span className="adm-sat-modal-day-stats-note">평가시간 적용 건 기준</span>
       </div>
       <div className="adm-sat-modal-day-metrics">
