@@ -1386,6 +1386,75 @@
   overflow: visible;
 }
 
+/* ── CS 만족도 스마일 인증 마크 ─────────────────────────── */
+.csx-page.hp-home .csx-intro-smile {
+  width: 34px;
+  height: 42px;
+  margin-left: -18px;
+  filter: drop-shadow(0 3px 6px rgba(49, 130, 246, 0.32));
+}
+
+.csx-page.hp-home .csx-intro-smile .csx-smile-face {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: csx-smile-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 1.5s both;
+}
+
+.csx-page.hp-home .csx-intro-smile .csx-smile-eye {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: csx-smile-blink 0.35s ease-out 1.95s both;
+}
+
+.csx-page.hp-home .csx-intro-smile .csx-smile-cheek {
+  opacity: 0;
+  animation: csx-smile-fade 0.4s ease-out 2.15s forwards;
+}
+
+.csx-page.hp-home .csx-intro-smile .csx-smile-mouth {
+  stroke-dasharray: 22;
+  stroke-dashoffset: 22;
+  animation: csx-smile-draw 0.45s cubic-bezier(0.22, 1, 0.36, 1) 2.05s forwards;
+}
+
+@keyframes csx-smile-pop {
+  0% { opacity: 0; transform: scale(0.4); }
+  60% { opacity: 1; transform: scale(1.08); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes csx-smile-blink {
+  0% { opacity: 0; transform: scaleY(0.2); }
+  60% { opacity: 1; transform: scaleY(1.1); }
+  100% { opacity: 1; transform: scaleY(1); }
+}
+
+@keyframes csx-smile-fade {
+  to { opacity: 0.75; }
+}
+
+@keyframes csx-smile-draw {
+  to { stroke-dashoffset: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .csx-page.hp-home .csx-intro-smile .csx-smile-face,
+  .csx-page.hp-home .csx-intro-smile .csx-smile-eye,
+  .csx-page.hp-home .csx-intro-smile .csx-smile-cheek {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+  .csx-page.hp-home .csx-intro-smile .csx-smile-cheek {
+    opacity: 0.75;
+  }
+  .csx-page.hp-home .csx-intro-smile .csx-smile-mouth {
+    stroke-dashoffset: 0;
+    animation: none;
+  }
+}
+
 /* ── 공통 섹션 — 홈 카드와 동일 radius·border·padding ────── */
 .csx-hero,
 .csx-focus {

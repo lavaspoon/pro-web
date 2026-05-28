@@ -26,8 +26,8 @@ const currentMonthNum = now.getMonth() + 1;
 /** 월별 반영 시점·조건 (백엔드 스케줄러와 동일 개념) */
 const PAYOUT_POLICY_LINES = [
   <>매년 <strong>1~9월</strong> 프로그램 기간, <strong>다음 달 5일 09:00</strong>에 전월 실적이 반영됩니다.</>,
-  <>부서 스킬 <strong>만족도 목표 달성</strong> 월에만 그달 인증 건이 누적되며, 반영 건이 <strong>1건 이상</strong>일 때만 해당 월 등급 단가가 지급됩니다.</>,
-  <>만족도만 달성하고 인증 건이 없으면 그달 지급은 없고, 누적·등급은 그대로 유지됩니다.</>,
+  <>선정 건은 만족도와 무관하게 연간 누적되며, <strong>만족도 목표 달성</strong> 월이고 반영 건이 <strong>1건 이상</strong>일 때만 해당 월 등급 단가가 지급됩니다.</>,
+  <>만족도만 달성하고 선정 건이 없으면 그달 지급은 없고, 누적·등급은 그대로 유지됩니다.</>,
 ];
 
 const TIERS = [
@@ -583,7 +583,7 @@ function ReflectTimeline({ rows, cumulative, totalReflectedWon, onPickMonth }) {
                 <span className="hp-rfx-cell-num">{it.raw}건</span>
                 <span className="hp-rfx-cell-cap">
                   {it.state === 'met' && '만족도 달성'}
-                  {it.state === 'no' && '무효 · 만족도 미달성'}
+                  {it.state === 'no' && '만족도 미달 · 미지급'}
                   {it.state === 'done' && '종료'}
                   {it.state === 'na' && '대기'}
                 </span>

@@ -1334,6 +1334,71 @@ function CsSatisfactionIntroLogo() {
   );
 }
 
+/** CS 만족도 — 워드마크 우측 스마일 인증 마크 */
+function CsSatisfactionSmileMark() {
+  return (
+    <span className="hp-intro-verify csx-intro-smile" aria-label="만족도 인증">
+      <svg
+        className="hp-intro-verify-svg"
+        viewBox="0 0 44 58"
+        xmlns="http://www.w3.org/2000/svg"
+        role="img"
+        aria-hidden
+      >
+        <title>CS 만족 스마일</title>
+        <defs>
+          <radialGradient id="csx-smile-face" cx="40%" cy="38%" r="65%">
+            <stop offset="0%" stopColor="#60A5FA" />
+            <stop offset="60%" stopColor="#3182F6" />
+            <stop offset="100%" stopColor="#1F5FCC" />
+          </radialGradient>
+        </defs>
+        <g className="hp-intro-verify-ribbon hp-intro-verify-ribbon--left">
+          <polygon points="11,32 19,32 16,55 11,50 6,54" fill="#1F5FCC" />
+          <polygon points="11,32 14,32 11,50 6,54" fill="#163F8C" opacity="0.55" />
+        </g>
+        <g className="hp-intro-verify-ribbon hp-intro-verify-ribbon--right">
+          <polygon points="25,32 33,32 38,54 33,50 28,55" fill="#1F5FCC" />
+          <polygon points="30,32 33,32 38,54 33,50" fill="#163F8C" opacity="0.55" />
+        </g>
+        <circle
+          className="csx-smile-face"
+          cx="22"
+          cy="22"
+          r="17"
+          fill="url(#csx-smile-face)"
+        />
+        <circle
+          className="csx-smile-face-inner"
+          cx="22"
+          cy="22"
+          r="14"
+          fill="none"
+          stroke="rgba(255,255,255,0.5)"
+          strokeWidth="0.8"
+        />
+        <circle className="csx-smile-cheek csx-smile-cheek--l" cx="15.5" cy="25" r="1.6" fill="#FCA5A5" opacity="0.75" />
+        <circle className="csx-smile-cheek csx-smile-cheek--r" cx="28.5" cy="25" r="1.6" fill="#FCA5A5" opacity="0.75" />
+        <circle className="csx-smile-eye csx-smile-eye--l" cx="17" cy="19" r="1.7" fill="#ffffff" />
+        <circle className="csx-smile-eye csx-smile-eye--r" cx="27" cy="19" r="1.7" fill="#ffffff" />
+        <path
+          className="csx-smile-mouth"
+          d="M14.5 24 Q22 31.5 29.5 24"
+          fill="none"
+          stroke="#ffffff"
+          strokeWidth="2.4"
+          strokeLinecap="round"
+        />
+        <path
+          className="hp-intro-verify-star"
+          d="M22 1 L23.1 3.3 L25.5 3.7 L23.8 5.4 L24.2 7.8 L22 6.6 L19.8 7.8 L20.2 5.4 L18.5 3.7 L20.9 3.3 Z"
+          fill="#FCD34D"
+        />
+      </svg>
+    </span>
+  );
+}
+
 function CsPageIntro({ skill, name, loading = false }) {
   const displayName = name?.trim() ? name.trim() : '구성원';
 
@@ -1345,7 +1410,10 @@ function CsPageIntro({ skill, name, loading = false }) {
             {loading ? (
               <Skeleton width={156} height={44} radius={8} />
             ) : (
-              <CsSatisfactionIntroLogo />
+              <>
+                <CsSatisfactionIntroLogo />
+                <CsSatisfactionSmileMark />
+              </>
             )}
           </h1>
           {loading ? (
