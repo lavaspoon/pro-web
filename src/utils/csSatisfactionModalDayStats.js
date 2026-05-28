@@ -69,3 +69,25 @@ export function fmtCount(v) {
   if (v == null) return '—';
   return Number(v).toLocaleString('ko-KR');
 }
+
+function defaultDateKeyFromDateTime(dt) {
+  if (!dt) return '';
+  return String(dt).slice(0, 10);
+}
+
+/** row 목록 → 일자별 { evalCount, satisfiedCount, satisfactionRate } Map */
+export function buildDaySatisfactionStatsByDay(rows, dateKeyFromDateTime = defaultDateKeyFromDateTime) {
+  const grouped = new Map();
+  for (const row of rows ?? []) {
+    if (!isActiveUseYn(row)) continue;
+    const dayKey = dateKeyFromDateTime(row?.consultDateTime);
+    if (!dayKey) continue;
+    if (!grouped.has(dayKey)) grouped.set(dayKey, []);
+    grouped.get(dayKey).push(row);
+  }
+  const statsByDay = new Map();
+  for (const [dayKey, dayRows] of grouped) {
+    statsByDay.set(dayKey, computePersonalDaySatisfaction(dayRows));
+  }
+  return statsByDay;
+}

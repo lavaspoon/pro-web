@@ -1116,6 +1116,32 @@
   box-shadow: 0 2px 8px rgba(10, 126, 164, 0.22);
 }
 
+.pending-bulk-phase2-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.28);
+}
+
+.pending-bulk-phase2-msg {
+  margin: 0 0 0.65rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: 8px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #166534;
+  background: rgba(220, 252, 231, 0.75);
+  border: 1px solid rgba(16, 185, 129, 0.28);
+}
+
+.pending-bulk-phase2-msg--err {
+  color: #991b1b;
+  background: rgba(254, 226, 226, 0.85);
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
 .pending-table-row--checked {
   background: rgba(10, 126, 164, 0.055);
   box-shadow: inset 2px 0 0 var(--accent);
@@ -1293,6 +1319,11 @@
   white-space: nowrap;
 }
 
+.pending-table--cases.pending-table--with-team .pending-th--cert {
+  width: 1%;
+  white-space: nowrap;
+}
+
 .pending-table--cases .pending-td-score {
   text-align: center;
   vertical-align: middle;
@@ -1333,6 +1364,46 @@
   color: #15803d;
   background: rgba(52, 199, 89, 0.12);
   border-color: rgba(34, 197, 94, 0.28);
+}
+
+.pending-table--cases .pending-td-cert {
+  text-align: center;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.pending-table--cases .pending-td-cert-val {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.85rem;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.35;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.pending-table--cases .pending-td-cert-val--cert {
+  color: #15803d;
+  background: rgba(52, 199, 89, 0.12);
+  border-color: rgba(34, 197, 94, 0.28);
+}
+
+.pending-table--cases .pending-td-cert-val--uncert {
+  color: #b91c1c;
+  background: rgba(254, 226, 226, 0.85);
+  border-color: rgba(239, 68, 68, 0.32);
+}
+
+.pending-table--cases .pending-td-cert-val--empty {
+  color: var(--text-tertiary);
+  background: rgba(15, 23, 42, 0.04);
+  border-color: rgba(15, 23, 42, 0.07);
+  font-weight: 500;
 }
 
 .pending-table--cases.pending-table--with-team .pending-th--team {

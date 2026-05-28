@@ -5,6 +5,7 @@ import useAuthStore from '../../store/authStore';
 import { fetchMemberSatisfaction } from '../../api/memberApi';
 import { fetchCsSatisfactionMemberMonthlyRows } from '../../api/adminApi';
 import CsSatisfactionModalDayStats from '../cs/CsSatisfactionModalDayStats';
+import { problemResolvedNegRateClass, problemResolvedNegRateText } from '../../utils/caseDisplay';
 import '../../pages/admin/AdminSatisfactionPage.css';
 
 const PAGE_SIZE = 10;
@@ -185,7 +186,7 @@ export default function MemberCsMentDetailModal({
           <div>
             <h3 className="adm-sat-row-modal-title">실시간 고객 만족</h3>
             <p className="adm-sat-row-modal-sub">
-              {formatKoDateRange(windowStart, windowEnd)} · {mentSource === 'bad' ? 'Bad' : 'Good'} 멘트
+              {formatKoDateRange(windowStart, windowEnd)} · {mentSource === 'bad' ? '고객 제안' : 'Good 멘트'}
             </p>
           </div>
           <button
@@ -230,7 +231,7 @@ export default function MemberCsMentDetailModal({
                       <th><span className="adm-sat-modal-th-wrap">만족</span></th>
                       <th><span className="adm-sat-modal-th-wrap">5대도시</span></th>
                       <th><span className="adm-sat-modal-th-wrap">5060</span></th>
-                      <th><span className="adm-sat-modal-th-wrap">문제해결</span></th>
+                      <th><span className="adm-sat-modal-th-wrap">문제해결 부정비율</span></th>
                       <th><span className="adm-sat-modal-th-wrap">Good 멘트</span></th>
                       <th><span className="adm-sat-modal-th-wrap">불만족 유형</span></th>
                     </tr>
@@ -247,7 +248,11 @@ export default function MemberCsMentDetailModal({
                         <td><span className={`adm-sat-yn-chip ${ynClass(row.satisfiedYn)}`}>{yesNo(row.satisfiedYn)}</span></td>
                         <td><span className={`adm-sat-yn-chip ${ynClass(row.fiveMajorCitiesYn)}`}>{yesNo(row.fiveMajorCitiesYn)}</span></td>
                         <td><span className={`adm-sat-yn-chip ${ynClass(row.gen5060Yn)}`}>{yesNo(row.gen5060Yn)}</span></td>
-                        <td><span className={`adm-sat-yn-chip ${ynClass(row.problemResolvedYn)}`}>{yesNo(row.problemResolvedYn)}</span></td>
+                        <td>
+                          <span className={problemResolvedNegRateClass(row.problemResolvedYn)}>
+                            {problemResolvedNegRateText(row.problemResolvedYn)}
+                          </span>
+                        </td>
                         <td className="adm-sat-modal-cell-ment">{row.goodMent?.trim() ? row.goodMent : '—'}</td>
                         <td className="adm-sat-modal-cell-untype">
                           {String(row.satisfiedYn ?? '').trim().toUpperCase() === 'N'

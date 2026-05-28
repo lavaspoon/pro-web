@@ -1,22 +1,25 @@
 .pending-daypicker-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 280;
+  z-index: 1200;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
-  background: rgba(15, 23, 42, 0.38);
-  backdrop-filter: blur(4px);
+  padding: 24px;
+  background: rgba(15, 23, 42, 0.56);
+  backdrop-filter: blur(6px);
 }
 
 .pending-daypicker-modal {
-  width: min(360px, 100%);
-  padding: 16px 18px 18px;
-  border-radius: 16px;
-  background: var(--surface);
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  box-shadow: var(--shadow-lg);
+  width: min(400px, calc(100vw - 32px));
+  padding: 18px 20px 20px;
+  border-radius: 18px;
+  background: #fff;
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  box-shadow:
+    0 28px 72px rgba(15, 23, 42, 0.32),
+    0 8px 24px rgba(15, 23, 42, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
 }
 
 .pending-daypicker-head {
@@ -24,34 +27,40 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
 .pending-daypicker-title {
   margin: 0;
-  font-size: 1rem;
-  font-weight: 700;
+  font-size: 1.0625rem;
+  font-weight: 800;
   letter-spacing: -0.02em;
+  color: #0f172a;
 }
 
 .pending-daypicker-close {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   border-radius: 999px;
-  color: var(--text-secondary);
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  background: #fff;
+  color: #475569;
 }
 
 .pending-daypicker-close:hover {
   background: rgba(15, 23, 42, 0.06);
+  color: #0f172a;
 }
 
 .pending-daypicker-desc {
-  margin: 0 0 12px;
-  font-size: 0.8125rem;
-  color: var(--text-secondary);
+  margin: 0 0 14px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #64748b;
+  line-height: 1.45;
 }
 
 .pending-daypicker-all {
@@ -59,40 +68,51 @@
   align-items: center;
   justify-content: center;
   width: 100%;
-  min-height: 38px;
-  margin-bottom: 12px;
-  border-radius: 10px;
-  border: 1px solid rgba(10, 126, 164, 0.22);
-  background: rgba(10, 126, 164, 0.05);
-  font-size: 0.875rem;
-  font-weight: 700;
-  color: var(--accent);
+  min-height: 42px;
+  margin-bottom: 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(10, 126, 164, 0.28);
+  background: rgba(10, 126, 164, 0.08);
+  font-size: 0.9375rem;
+  font-weight: 800;
+  color: #0a7ea4;
 }
 
 .pending-daypicker-all.is-active {
-  border-color: rgba(10, 126, 164, 0.4);
-  background: rgba(10, 126, 164, 0.14);
-  box-shadow: inset 0 0 0 1px rgba(10, 126, 164, 0.12);
+  border-color: rgba(10, 126, 164, 0.5);
+  background: rgba(10, 126, 164, 0.18);
+  box-shadow: inset 0 0 0 1px rgba(10, 126, 164, 0.16);
+}
+
+.pending-daypicker-calendar {
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: linear-gradient(180deg, #f8fafc 0%, #fff 100%);
 }
 
 .pending-daypicker-weekdays {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 4px;
-  margin-bottom: 6px;
+  gap: 6px;
+  margin-bottom: 8px;
 }
 
 .pending-daypicker-weekday {
   text-align: center;
-  font-size: 0.6875rem;
-  font-weight: 700;
-  color: var(--text-tertiary);
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #64748b;
+}
+
+.pending-daypicker-weekday:first-child {
+  color: #e11d48;
 }
 
 .pending-daypicker-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 4px;
+  gap: 6px;
 }
 
 .pending-daypicker-cell {
@@ -101,62 +121,210 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 42px;
-  border-radius: 10px;
-  border: 1px solid transparent;
-  background: rgba(248, 250, 252, 0.9);
-  color: var(--text-primary);
-  font-size: 0.8125rem;
-  font-weight: 600;
+  min-height: 48px;
+  border-radius: 11px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: #fff;
+  color: #0f172a;
+  font-size: 0.875rem;
+  font-weight: 700;
   transition:
     border-color 0.12s ease,
     background 0.12s ease,
-    color 0.12s ease;
+    color 0.12s ease,
+    box-shadow 0.12s ease;
 }
 
 .pending-daypicker-cell--empty {
   background: transparent;
   border: none;
-  min-height: 42px;
+  min-height: 48px;
 }
 
 .pending-daypicker-cell:hover:not(:disabled):not(.pending-daypicker-cell--empty) {
-  border-color: rgba(10, 126, 164, 0.28);
-  background: rgba(10, 126, 164, 0.08);
+  border-color: rgba(10, 126, 164, 0.35);
+  background: rgba(10, 126, 164, 0.1);
+  box-shadow: 0 2px 8px rgba(10, 126, 164, 0.12);
 }
 
 .pending-daypicker-cell.is-selected {
-  border-color: rgba(10, 126, 164, 0.45);
-  background: rgba(10, 126, 164, 0.16);
-  color: var(--accent);
+  border-color: rgba(10, 126, 164, 0.55);
+  background: linear-gradient(180deg, rgba(10, 126, 164, 0.22) 0%, rgba(10, 126, 164, 0.14) 100%);
+  color: #0a5f80;
   font-weight: 800;
+  box-shadow:
+    inset 0 0 0 1px rgba(10, 126, 164, 0.18),
+    0 2px 10px rgba(10, 126, 164, 0.18);
 }
 
 .pending-daypicker-cell.is-today:not(.is-selected) {
-  border-color: rgba(10, 126, 164, 0.22);
-}
-
-.pending-daypicker-cell.has-cases:not(.is-selected) {
+  border-color: rgba(10, 126, 164, 0.42);
   background: rgba(10, 126, 164, 0.06);
 }
 
+.pending-daypicker-cell.has-cases:not(.is-selected) {
+  border-color: rgba(10, 126, 164, 0.24);
+  background: rgba(10, 126, 164, 0.08);
+}
+
 .pending-daypicker-cell:disabled {
-  opacity: 0.32;
+  opacity: 0.28;
   cursor: not-allowed;
+  background: rgba(248, 250, 252, 0.7);
 }
 
 .pending-daypicker-cell-day {
   line-height: 1.2;
 }
 
-.pending-daypicker-cell-count {
-  margin-top: 1px;
-  font-size: 0.5625rem;
-  font-weight: 700;
-  color: var(--accent);
+.pending-daypicker-modal--satisfaction {
+  width: min(760px, calc(100vw - 32px));
+  max-height: min(92vh, 920px);
+  overflow: auto;
+}
+
+.pending-daypicker-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: -4px 0 12px;
+}
+
+.pending-daypicker-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 0.625rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.35;
+  white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
 
+.pending-daypicker-badge--eval {
+  color: #334155;
+  background: rgba(148, 163, 184, 0.18);
+  border: 1px solid rgba(100, 116, 139, 0.22);
+}
+
+.pending-daypicker-badge--sat {
+  color: #047857;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.24);
+}
+
+.pending-daypicker-badge--rate {
+  color: #0a7ea4;
+  background: rgba(10, 126, 164, 0.12);
+  border: 1px solid rgba(10, 126, 164, 0.24);
+}
+
+.pending-daypicker-modal--satisfaction .pending-daypicker-calendar {
+  padding: 14px;
+}
+
+.pending-daypicker-modal--satisfaction .pending-daypicker-grid {
+  gap: 8px;
+}
+
+.pending-daypicker-cell--rich {
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 4px;
+  min-height: 92px;
+  padding: 7px 6px 8px;
+  text-align: center;
+}
+
+.pending-daypicker-cell--rich .pending-daypicker-cell-day {
+  font-size: 0.9375rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.pending-daypicker-cell-badges {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 3px;
+  width: 100%;
+}
+
+.pending-daypicker-cell-badges .pending-daypicker-badge {
+  width: 100%;
+  padding: 3px 4px;
+  font-size: 0.5625rem;
+}
+
+.pending-daypicker-cell--rich.is-selected .pending-daypicker-cell-day {
+  color: #0a5f80;
+}
+
+.pending-daypicker-cell--rich.is-selected .pending-daypicker-badge--eval {
+  color: #1e293b;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.pending-daypicker-cell--rich.is-selected .pending-daypicker-badge--sat {
+  color: #047857;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.pending-daypicker-cell--rich.is-selected .pending-daypicker-badge--rate {
+  color: #0a7ea4;
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.pending-daypicker-cell-count {
+  margin-top: 2px;
+  padding: 1px 5px;
+  border-radius: 999px;
+  font-size: 0.625rem;
+  font-weight: 800;
+  color: #0a7ea4;
+  background: rgba(10, 126, 164, 0.14);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.3;
+}
+
 .pending-daypicker-cell.is-selected .pending-daypicker-cell-count {
-  color: inherit;
+  color: #fff;
+  background: rgba(10, 126, 164, 0.72);
+}
+
+@media (max-width: 480px) {
+  .pending-daypicker-backdrop {
+    padding: 16px;
+    align-items: flex-end;
+  }
+
+  .pending-daypicker-modal {
+    width: 100%;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+
+  .pending-daypicker-modal--satisfaction {
+    width: 100%;
+    max-height: 94vh;
+  }
+
+  .pending-daypicker-cell {
+    min-height: 44px;
+    font-size: 0.8125rem;
+  }
+
+  .pending-daypicker-cell--rich {
+    min-height: 84px;
+    padding: 6px 4px;
+  }
+
+  .pending-daypicker-cell-badges .pending-daypicker-badge {
+    font-size: 0.5rem;
+    padding: 2px 3px;
+  }
 }

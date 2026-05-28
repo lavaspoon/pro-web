@@ -44,7 +44,7 @@ function MemberTopbarMentBubble({ skid, onMentClick }) {
     if (recentGoodTop5.length > 0) {
       return { mentPool: recentGoodTop5, mentSource: 'good' };
     }
-    // Good 멘트가 비어 있을 때만 Bad에서 최근 5개를 보조로 사용
+    // Good 멘트가 비어 있을 때만 고객 제안에서 최근 5개를 보조로 사용
     return {
       mentPool: normalizeMentList(data?.badMents).slice(0, 5),
       mentSource: 'bad',

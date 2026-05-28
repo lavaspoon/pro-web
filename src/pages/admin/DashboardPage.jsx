@@ -18,7 +18,7 @@ import {
 import { mergeSecondDepthOptions } from '../../utils/adminSecondDepth';
 import { formatCenterDisplayName } from '../../utils/teamHierarchy';
 import useAuthStore from '../../store/authStore';
-import { canAccessPendingCases } from '../../utils/youProRole';
+import { canAccessPendingCases, isYouProAdmin } from '../../utils/youProRole';
 import AdminMemberDetailCard from './AdminMemberDetailCard';
 import AdminTargetMembersUploadModal from './AdminTargetMembersUploadModal';
 import {
@@ -137,6 +137,7 @@ function SortTh({ label, sortKey, sortConfig, onSort }) {
 export default function DashboardPage() {
   const user = useAuthStore((s) => s.user);
   const showPendingCasesLink = canAccessPendingCases(user);
+  const showAdminTools = isYouProAdmin(user);
   const [targetUploadModalOpen, setTargetUploadModalOpen] = useState(false);
   const [selectedTeamId, setSelectedTeamId] = useState(null);
   /** null = 미적용, 문자열(빈 문자열 포함) = 해당 값과 일치하는 행만 */
@@ -341,13 +342,15 @@ export default function DashboardPage() {
             </p>
           </div>
           <div className="adm-sat-header-actions">
-            <button
-              type="button"
-              className="btn btn-secondary btn-sm adm-sat-upload-entry"
-              onClick={() => setTargetUploadModalOpen(true)}
-            >
-              평가 대상자
-            </button>
+            {showAdminTools && (
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm adm-sat-upload-entry"
+                onClick={() => setTargetUploadModalOpen(true)}
+              >
+                평가 대상자
+              </button>
+            )}
             {showPendingCasesLink && (
               <Link
                 to="/admin/pending"
@@ -857,11 +860,13 @@ export default function DashboardPage() {
         ) : null}
       </section>
 
-      <AdminTargetMembersUploadModal
-        open={targetUploadModalOpen}
-        onClose={() => setTargetUploadModalOpen(false)}
-        variant="you"
-      />
+      {showAdminTools && (
+        <AdminTargetMembersUploadModal
+          open={targetUploadModalOpen}
+          onClose={() => setTargetUploadModalOpen(false)}
+          variant="you"
+        />
+      )}
     </div>
   );
 }

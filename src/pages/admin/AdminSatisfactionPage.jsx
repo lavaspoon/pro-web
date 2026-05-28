@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -11,6 +11,7 @@ import {
   Building2,
 } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
+import { isYouProAdmin } from '../../utils/youProRole';
 import AdminSatisfactionSetupModal from './AdminSatisfactionSetupModal';
 import AdminTargetMembersUploadModal from './AdminTargetMembersUploadModal';
 import {
@@ -21,17 +22,73 @@ import {
   fetchCsSatisfactionSummary,
   fetchCsSatisfactionExcludeLog,
   excludeCsSatisfactionEvalRange,
+  cancelCsSatisfactionExcludeLog,
 } from '../../api/adminApi';
+import AdminExcludeLogHistory from './AdminExcludeLogHistory';
+import { formatExcludeRangeSpan } from '../../utils/excludeLogDateTime';
 import { mergeSecondDepthOptions } from '../../utils/adminSecondDepth';
 import CsSatisfactionModalDayStats from '../../components/cs/CsSatisfactionModalDayStats';
-import { formatCaseDateTimeMmDdKorean } from '../../utils/caseDisplay';
-import { isActiveUseYn } from '../../utils/csSatisfactionModalDayStats';
+import CsSatisfactionModalPeriodToolbar from '../../components/cs/CsSatisfactionModalPeriodToolbar';
+import { formatCaseDateTimeMmDdKorean, problemResolvedNegRateClass, problemResolvedNegRateText } from '../../utils/caseDisplay';
+import { isActiveUseYn, buildDaySatisfactionStatsByDay } from '../../utils/csSatisfactionModalDayStats';
+import PendingCaseDayPickerModal from './PendingCaseDayPickerModal';
 import { KpiOverviewSkeleton, SummaryTableSkeletonRows } from './adminLoadingSkeletons';
 import './DashboardPage.css';
 import './TeamDetailPage.css';
 import './AdminSatisfactionPage.css';
+import './PendingCasesPage.css';
+import './PendingCaseDayPickerModal.css';
 
-const MEMBER_ROWS_PAGE_SIZE = 10;
+const MEMBER_ROWS_PAGE_SIZE = 7;
+
+const now = new Date();
+const currentYear = now.getFullYear();
+const currentMonth = now.getMonth() + 1;
+
+function monthKeyFromParts(y, m) {
+  return `${y}-${String(m).padStart(2, '0')}`;
+}
+
+function currentMonthKey() {
+  return monthKeyFromParts(currentYear, currentMonth);
+}
+
+function currentDayKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function addMonths(ym, delta) {
+  const [y, m] = ym.split('-').map(Number);
+  if (!y || !m) return ym;
+  const d = new Date(y, m - 1 + delta, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function rowMonthKeyFromDateTime(dt) {
+  if (!dt) return '';
+  return String(dt).slice(0, 7);
+}
+
+function formatModalMonthLabel(ym) {
+  const [y, m] = ym.split('-').map(Number);
+  if (!y || !m) return ym;
+  if (ym === currentMonthKey()) return `이번 달 · ${y}년 ${m}월`;
+  return `${y}년 ${m}월`;
+}
+
+function formatDayPickerButtonLabel(dayKey) {
+  if (!dayKey) return '전체';
+  if (dayKey === currentDayKey()) return '오늘';
+  const mo = Number(dayKey.slice(5, 7));
+  const d = Number(dayKey.slice(8, 10));
+  return `${mo}월 ${d}일`;
+}
+
+function flattenMemberRows(memberRowsData) {
+  const months = memberRowsData?.months ?? [];
+  return months.flatMap((m) => m.rows ?? []);
+}
 
 /** 평가 제외 — TB_YOU_CS.스킬 과 동일한 4종 (고정) */
 const SAT_EXCLUDE_SKILLS = ['일반', '리텐션', '이관', '멀티/기술'];
@@ -188,23 +245,6 @@ function dateKeyFromDateTime(dt) {
   return String(dt).slice(0, 10);
 }
 
-function nextYnFilter(v) {
-  if (v === 'ALL') return 'Y';
-  if (v === 'Y') return 'N';
-  return 'ALL';
-}
-
-function matchesYnFilter(value, filterValue) {
-  if (filterValue === 'ALL') return true;
-  return String(value ?? '').trim().toUpperCase() === filterValue;
-}
-
-function filterToneClass(v) {
-  if (v === 'Y') return 'is-filter-y';
-  if (v === 'N') return 'is-filter-n';
-  return 'is-filter-all';
-}
-
 function KpiScopeListCard({ title, icon: Icon, rows = [] }) {
   const shortScopeLabel = (name) => {
     const s = String(name ?? '').trim();
@@ -345,6 +385,7 @@ function computeSummaryTotals(list) {
 export default function AdminSatisfactionPage() {
   const queryClient = useQueryClient();
   const authUser = useAuthStore((s) => s.user);
+  const showAdminTools = isYouProAdmin(authUser);
   const adminSkid = authUser?.skid ?? authUser?.id ?? '';
   const [baseMonth, setBaseMonth] = useState(() => {
     const now = new Date();
@@ -364,6 +405,7 @@ export default function AdminSatisfactionPage() {
   const [excludeEndLocal, setExcludeEndLocal] = useState('');
   const [excludeMsg, setExcludeMsg] = useState('');
   const [excludeErr, setExcludeErr] = useState('');
+  const [cancelExcludeId, setCancelExcludeId] = useState(null);
 
   /** null = 미적용, 문자열(빈 문자열 포함) = 해당 값과 일치하는 행만 — Dashboard와 동일 */
   const [filterCenter, setFilterCenter] = useState(null);
@@ -410,7 +452,7 @@ export default function AdminSatisfactionPage() {
 
   const excludeLogQuery = useQuery({
     queryKey: ['cs-satisfaction-exclude-log'],
-    queryFn: () => fetchCsSatisfactionExcludeLog(40),
+    queryFn: () => fetchCsSatisfactionExcludeLog(200),
     enabled: excludeModalOpen,
   });
 
@@ -505,57 +547,80 @@ export default function AdminSatisfactionPage() {
     () => rows.find((r) => r.secondDepthDeptId === selectedSecondDepthId) ?? null,
     [rows, selectedSecondDepthId],
   );
-  const modalDateBuckets = useMemo(() => {
-    const months = memberMonthlyRowsQuery.data?.months ?? [];
-    const allRows = months.flatMap((m) => m.rows ?? []);
-    const grouped = new Map();
-    for (const row of allRows) {
-      if (!isActiveUseYn(row)) continue;
-      const k = dateKeyFromDateTime(row?.consultDateTime);
-      if (!k) continue;
-      if (!grouped.has(k)) grouped.set(k, []);
-      grouped.get(k).push(row);
-    }
-    return [...grouped.entries()]
-      .sort((a, b) => String(b[0]).localeCompare(String(a[0]), 'ko'))
-      .map(([date, rowsInDate]) => ({ date, rows: rowsInDate, count: rowsInDate.length }));
-  }, [memberMonthlyRowsQuery.data]);
-  const [modalDate, setModalDate] = useState(null);
+  const [modalMonthKey, setModalMonthKey] = useState(() => monthKeyFromParts(year, month));
+  /** null = 월 전체, yyyy-MM-dd = 해당 일자만 */
+  const [modalDayFilterKey, setModalDayFilterKey] = useState(null);
+  const [modalDayPickerOpen, setModalDayPickerOpen] = useState(false);
   const [modalPage, setModalPage] = useState(1);
-  const [modalYnFilters, setModalYnFilters] = useState({
-    satisfiedYn: 'ALL',
-    fiveMajorCitiesYn: 'ALL',
-    gen5060Yn: 'ALL',
-    problemResolvedYn: 'ALL',
-  });
-  const modalDateIndex = useMemo(
-    () => modalDateBuckets.findIndex((b) => String(b.date) === String(modalDate)),
-    [modalDateBuckets, modalDate],
+
+  const allMemberRows = useMemo(
+    () => flattenMemberRows(memberMonthlyRowsQuery.data),
+    [memberMonthlyRowsQuery.data],
   );
-  const modalSelectedBucket = modalDateIndex >= 0 ? modalDateBuckets[modalDateIndex] : null;
+
+  const { minModalMonthKey, maxModalMonthKey } = useMemo(() => {
+    const currentKey = monthKeyFromParts(year, month);
+    const keys = [...new Set(
+      allMemberRows
+        .map((row) => rowMonthKeyFromDateTime(row?.consultDateTime))
+        .filter(Boolean),
+    )].sort();
+    const yearKeys = keys.filter((k) => k.startsWith(`${year}-`));
+    if (yearKeys.length === 0) {
+      return { minModalMonthKey: currentKey, maxModalMonthKey: currentKey };
+    }
+    const latest = yearKeys[yearKeys.length - 1];
+    return {
+      minModalMonthKey: yearKeys[0],
+      maxModalMonthKey: latest > currentKey ? currentKey : latest,
+    };
+  }, [allMemberRows, year, month]);
+
+  const canPrevModalMonth = modalMonthKey > minModalMonthKey;
+  const canNextModalMonth = modalMonthKey < maxModalMonthKey;
+
+  const modalRowsInMonth = useMemo(
+    () => allMemberRows.filter((row) => {
+      if (!isActiveUseYn(row)) return false;
+      return rowMonthKeyFromDateTime(row?.consultDateTime) === modalMonthKey;
+    }),
+    [allMemberRows, modalMonthKey],
+  );
+
+  const modalDayStatsByDay = useMemo(
+    () => buildDaySatisfactionStatsByDay(modalRowsInMonth, dateKeyFromDateTime),
+    [modalRowsInMonth],
+  );
+
+  const modalRowsInView = useMemo(() => {
+    if (!modalDayFilterKey) return modalRowsInMonth;
+    return modalRowsInMonth.filter(
+      (row) => dateKeyFromDateTime(row?.consultDateTime) === modalDayFilterKey,
+    );
+  }, [modalRowsInMonth, modalDayFilterKey]);
 
   const scopeDaySummaryQuery = useQuery({
-    queryKey: ['cs-satisfaction-scope-day-summary', selectedSecondDepthId, modalDate],
-    queryFn: () => fetchCsSatisfactionScopeDaySummary(selectedSecondDepthId, modalDate),
+    queryKey: ['cs-satisfaction-scope-day-summary', selectedSecondDepthId, modalDayFilterKey],
+    queryFn: () => fetchCsSatisfactionScopeDaySummary(selectedSecondDepthId, modalDayFilterKey),
     enabled:
       selectedMemberSkid != null
       && selectedSecondDepthId != null
-      && modalDate != null
-      && modalDate !== '',
+      && modalDayFilterKey != null
+      && modalDayFilterKey !== '',
     staleTime: 30_000,
   });
 
   const modalFilteredRows = useMemo(() => {
-    const rowsInDate = modalSelectedBucket?.rows ?? [];
-    return rowsInDate.filter((r) => {
-      if (!isActiveUseYn(r)) return false;
-      if (!matchesYnFilter(r?.satisfiedYn, modalYnFilters.satisfiedYn)) return false;
-      if (!matchesYnFilter(r?.fiveMajorCitiesYn, modalYnFilters.fiveMajorCitiesYn)) return false;
-      if (!matchesYnFilter(r?.gen5060Yn, modalYnFilters.gen5060Yn)) return false;
-      if (!matchesYnFilter(r?.problemResolvedYn, modalYnFilters.problemResolvedYn)) return false;
-      return true;
-    });
-  }, [modalSelectedBucket, modalYnFilters]);
+    const filtered = modalRowsInView.filter((r) => isActiveUseYn(r));
+    return [...filtered].sort(
+      (a, b) => String(b.consultDateTime ?? '').localeCompare(String(a.consultDateTime ?? ''), 'ko'),
+    );
+  }, [modalRowsInView]);
+
+  const handleSelectModalDayFilter = useCallback((dayKey) => {
+    setModalDayFilterKey(dayKey);
+    setModalDayPickerOpen(false);
+  }, []);
   const modalTotalPages = useMemo(() => {
     const total = modalFilteredRows.length;
     return Math.max(1, Math.ceil(total / MEMBER_ROWS_PAGE_SIZE));
@@ -564,6 +629,24 @@ export default function AdminSatisfactionPage() {
     const start = (modalPage - 1) * MEMBER_ROWS_PAGE_SIZE;
     return modalFilteredRows.slice(start, start + MEMBER_ROWS_PAGE_SIZE);
   }, [modalFilteredRows, modalPage]);
+
+  const cancelExcludeMutation = useMutation({
+    mutationFn: (id) => cancelCsSatisfactionExcludeLog(id),
+    onSuccess: (res) => {
+      setExcludeMsg(`평가 제외를 취소했습니다. (${Number(res?.revertedCount ?? 0)}건 복구)`);
+      setExcludeErr('');
+      summaryQuery.refetch();
+      centerMonthDetailQuery.refetch();
+      dashboardKpisQuery.refetch();
+      queryClient.invalidateQueries({ queryKey: ['cs-satisfaction-summary'] });
+      queryClient.invalidateQueries({ queryKey: ['cs-satisfaction-exclude-log'] });
+    },
+    onError: (e) => {
+      setExcludeErr(e?.message ?? '평가 제외 취소 중 오류가 발생했습니다.');
+      setExcludeMsg('');
+    },
+    onSettled: () => setCancelExcludeId(null),
+  });
 
   const excludeTimeMutation = useMutation({
     mutationFn: ({ skill, startAt, endAt, excludedBySkid }) =>
@@ -589,13 +672,14 @@ export default function AdminSatisfactionPage() {
   const err = summaryQuery.error?.message;
 
   useEffect(() => {
+    if (!showAdminTools) return;
     if (searchParams.get('setup') === '1') {
       setSetupModalOpen(true);
       const next = new URLSearchParams(searchParams);
       next.delete('setup');
       navigate({ pathname: '/admin/satisfaction', search: next.toString() }, { replace: true });
     }
-  }, [searchParams, navigate]);
+  }, [searchParams, navigate, showAdminTools]);
 
   useEffect(() => {
     if (selectedSecondDepthId == null) return;
@@ -618,27 +702,31 @@ export default function AdminSatisfactionPage() {
 
   useEffect(() => {
     if (selectedMemberSkid == null) {
-      setModalDate(null);
+      setModalDayFilterKey(null);
+      setModalDayPickerOpen(false);
       setModalPage(1);
-      setModalYnFilters({
-        satisfiedYn: 'ALL',
-        fiveMajorCitiesYn: 'ALL',
-        gen5060Yn: 'ALL',
-        problemResolvedYn: 'ALL',
-      });
       return;
     }
-    if (modalDateBuckets.length === 0) return;
-    const exists = modalDateBuckets.some((b) => String(b.date) === String(modalDate));
-    if (!exists) {
-      setModalDate(modalDateBuckets[0].date);
-      setModalPage(1);
+    setModalMonthKey(monthKeyFromParts(year, month));
+    setModalDayFilterKey(null);
+    setModalDayPickerOpen(false);
+    setModalPage(1);
+  }, [selectedMemberSkid, year, month]);
+
+  useEffect(() => {
+    setModalDayFilterKey(null);
+  }, [modalMonthKey]);
+
+  useEffect(() => {
+    if (!modalDayFilterKey) return;
+    if (!modalDayFilterKey.startsWith(`${modalMonthKey}-`)) {
+      setModalDayFilterKey(null);
     }
-  }, [selectedMemberSkid, modalDateBuckets, modalDate]);
+  }, [modalMonthKey, modalDayFilterKey]);
 
   useEffect(() => {
     setModalPage(1);
-  }, [modalDate, modalYnFilters]);
+  }, [modalMonthKey, modalDayFilterKey]);
 
   useEffect(() => {
     setModalPage((p) => Math.min(p, modalTotalPages));
@@ -704,6 +792,19 @@ export default function AdminSatisfactionPage() {
     setExcludeModalOpen(false);
     setExcludeMsg('');
     setExcludeErr('');
+    setCancelExcludeId(null);
+  };
+
+  const handleCancelExclude = (entry) => {
+    if (!entry?.id) return;
+    const ok = window.confirm(
+      `${entry.skill} · ${formatExcludeRangeSpan(entry.startAt, entry.endAt)}\n이 평가 제외를 취소하고 데이터를 복구할까요?`,
+    );
+    if (!ok) return;
+    setExcludeErr('');
+    setExcludeMsg('');
+    setCancelExcludeId(entry.id);
+    cancelExcludeMutation.mutate(entry.id);
   };
 
   const handleExcludeSubmit = () => {
@@ -759,27 +860,33 @@ export default function AdminSatisfactionPage() {
                 <ChevronRight size={14} aria-hidden />
               </button>
             </div>
-            <button
-              type="button"
-              className="btn btn-secondary btn-sm adm-sat-upload-entry"
-              onClick={openExcludeModal}
-            >
-              평가 제외
-            </button>
-            <button
-              type="button"
-              className="btn btn-secondary btn-sm adm-sat-upload-entry"
-              onClick={() => setTargetUploadModalOpen(true)}
-            >
-              평가 대상자
-            </button>
-            <button
-              type="button"
-              className="btn btn-secondary btn-sm adm-sat-upload-entry"
-              onClick={() => setSetupModalOpen(true)}
-            >
-              목표 설정
-            </button>
+            {showAdminTools && (
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm adm-sat-upload-entry"
+                onClick={openExcludeModal}
+              >
+                평가 제외
+              </button>
+            )}
+            {showAdminTools && (
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm adm-sat-upload-entry"
+                onClick={() => setTargetUploadModalOpen(true)}
+              >
+                평가 대상자
+              </button>
+            )}
+            {showAdminTools && (
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm adm-sat-upload-entry"
+                onClick={() => setSetupModalOpen(true)}
+              >
+                목표 설정
+              </button>
+            )}
           </div>
         </div>
       </header>
@@ -1177,49 +1284,46 @@ export default function AdminSatisfactionPage() {
             aria-label="구성원 접수 상세"
             onClick={(e) => e.stopPropagation()}
           >
-            <header className="adm-sat-row-modal-head">
-              <div>
+            <header className="adm-sat-row-modal-head csx-modal-head">
+              <div className="csx-modal-head-text">
                 <h3 className="adm-sat-row-modal-title">
                   {(memberMonthlyRowsQuery.data?.memberName || selectedMember?.mbName || selectedMemberSkid)} ({selectedMemberSkid})
                 </h3>
               </div>
-              <div className="adm-sat-row-modal-month-nav">
+              {!memberMonthlyRowsQuery.isLoading
+                && !memberMonthlyRowsQuery.isError
+                && (memberMonthlyRowsQuery.data?.months?.length ?? 0) > 0 ? (
+                  <div className="csx-modal-head-controls">
+                    <CsSatisfactionModalPeriodToolbar
+                      monthLabel={formatModalMonthLabel(modalMonthKey)}
+                      dayLabel={formatDayPickerButtonLabel(modalDayFilterKey)}
+                      dayPickerOpen={modalDayPickerOpen}
+                      dayFilterActive={!!modalDayFilterKey}
+                      canPrevMonth={canPrevModalMonth}
+                      canNextMonth={canNextModalMonth}
+                      onPrevMonth={() => setModalMonthKey((k) => addMonths(k, -1))}
+                      onNextMonth={() => setModalMonthKey((k) => addMonths(k, 1))}
+                      onOpenDayPicker={() => setModalDayPickerOpen(true)}
+                    />
+                    <button
+                      type="button"
+                      className="adm-sat-row-modal-close"
+                      onClick={() => setSelectedMemberSkid(null)}
+                      aria-label="모달 닫기"
+                    >
+                      <X size={18} aria-hidden />
+                    </button>
+                  </div>
+              ) : (
                 <button
                   type="button"
-                  className="adm-sat-row-modal-month-btn"
-                  onClick={() => {
-                    if (modalDateIndex >= modalDateBuckets.length - 1) return;
-                    setModalDate(modalDateBuckets[modalDateIndex + 1].date);
-                  }}
-                  disabled={modalDateIndex < 0 || modalDateIndex >= modalDateBuckets.length - 1}
-                  aria-label="이전 일자"
+                  className="adm-sat-row-modal-close"
+                  onClick={() => setSelectedMemberSkid(null)}
+                  aria-label="모달 닫기"
                 >
-                  <ChevronLeft size={14} aria-hidden />
+                  <X size={18} aria-hidden />
                 </button>
-                <strong className="adm-sat-row-modal-month-label">
-                  {modalSelectedBucket ? modalSelectedBucket.date : '—'}
-                </strong>
-                <button
-                  type="button"
-                  className="adm-sat-row-modal-month-btn"
-                  onClick={() => {
-                    if (modalDateIndex <= 0) return;
-                    setModalDate(modalDateBuckets[modalDateIndex - 1].date);
-                  }}
-                  disabled={modalDateIndex <= 0}
-                  aria-label="다음 일자"
-                >
-                  <ChevronRight size={14} aria-hidden />
-                </button>
-              </div>
-              <button
-                type="button"
-                className="adm-sat-row-modal-close"
-                onClick={() => setSelectedMemberSkid(null)}
-                aria-label="모달 닫기"
-              >
-                <X size={18} aria-hidden />
-              </button>
+              )}
             </header>
 
             <div className="adm-sat-row-modal-body">
@@ -1237,9 +1341,10 @@ export default function AdminSatisfactionPage() {
               ) : (
                 <div className="adm-sat-member-month-bucket">
                   <CsSatisfactionModalDayStats
-                    rows={modalSelectedBucket?.rows ?? []}
+                    rows={modalRowsInView}
+                    scope={modalDayFilterKey ? 'day' : 'month'}
                     personalTargetPercent={selectedMember?.targetPercent ?? null}
-                    deptSummary={scopeDaySummaryQuery.data ?? null}
+                    deptSummary={modalDayFilterKey ? (scopeDaySummaryQuery.data ?? null) : null}
                     deptTargetPercent={
                       selectedDeptRow?.targetPercent ?? scopeDaySummaryQuery.data?.targetPercent ?? null
                     }
@@ -1250,86 +1355,12 @@ export default function AdminSatisfactionPage() {
                         <tr>
                           <th><span className="adm-sat-modal-th-wrap">상담일시</span></th>
                           <th><span className="adm-sat-modal-th-wrap">상담유형</span></th>
-                          <th>
-                            <div className="adm-sat-modal-th-filter">
-                              <button
-                                type="button"
-                                className="adm-sat-modal-th-btn"
-                                onClick={() =>
-                                  setModalYnFilters((prev) => ({
-                                    ...prev,
-                                    satisfiedYn: nextYnFilter(prev.satisfiedYn),
-                                  }))
-                                }
-                                aria-label={`만족 필터 변경 현재 ${modalYnFilters.satisfiedYn}`}
-                              >
-                                <span
-                                  className={`adm-sat-modal-th-wrap ${filterToneClass(modalYnFilters.satisfiedYn)}`}
-                                >
-                                  만족
-                                </span>
-                              </button>
-                            </div>
-                          </th>
-                          <th>
-                            <button
-                              type="button"
-                              className="adm-sat-modal-th-btn"
-                              onClick={() =>
-                                setModalYnFilters((prev) => ({
-                                  ...prev,
-                                  fiveMajorCitiesYn: nextYnFilter(prev.fiveMajorCitiesYn),
-                                }))
-                              }
-                              aria-label={`5대도시 필터 변경 현재 ${modalYnFilters.fiveMajorCitiesYn}`}
-                            >
-                              <span
-                                className={`adm-sat-modal-th-wrap ${filterToneClass(modalYnFilters.fiveMajorCitiesYn)}`}
-                              >
-                                5대도시
-                              </span>
-                            </button>
-                          </th>
-                          <th>
-                            <button
-                              type="button"
-                              className="adm-sat-modal-th-btn"
-                              onClick={() =>
-                                setModalYnFilters((prev) => ({
-                                  ...prev,
-                                  gen5060Yn: nextYnFilter(prev.gen5060Yn),
-                                }))
-                              }
-                              aria-label={`5060 필터 변경 현재 ${modalYnFilters.gen5060Yn}`}
-                            >
-                              <span
-                                className={`adm-sat-modal-th-wrap ${filterToneClass(modalYnFilters.gen5060Yn)}`}
-                              >
-                                5060
-                              </span>
-                            </button>
-                          </th>
-                          <th>
-                            <button
-                              type="button"
-                              className="adm-sat-modal-th-btn"
-                              onClick={() =>
-                                setModalYnFilters((prev) => ({
-                                  ...prev,
-                                  problemResolvedYn: nextYnFilter(prev.problemResolvedYn),
-                                }))
-                              }
-                              aria-label={`문제해결 필터 변경 현재 ${modalYnFilters.problemResolvedYn}`}
-                            >
-                              <span
-                                className={`adm-sat-modal-th-wrap ${filterToneClass(modalYnFilters.problemResolvedYn)}`}
-                              >
-                                문제해결
-                              </span>
-                            </button>
-                          </th>
+                          <th><span className="adm-sat-modal-th-wrap">만족</span></th>
+                          <th><span className="adm-sat-modal-th-wrap">5대도시</span></th>
+                          <th><span className="adm-sat-modal-th-wrap">5060</span></th>
+                          <th><span className="adm-sat-modal-th-wrap">문제해결 부정비율</span></th>
                           <th><span className="adm-sat-modal-th-wrap">Good 멘트</span></th>
-                          <th><span className="adm-sat-modal-th-wrap">Bad 멘트</span></th>
+                          <th><span className="adm-sat-modal-th-wrap">고객 제안</span></th>
                           <th><span className="adm-sat-modal-th-wrap">불만족 유형</span></th>
                         </tr>
                       </thead>
@@ -1352,7 +1383,11 @@ export default function AdminSatisfactionPage() {
                               <td><span className={`adm-sat-yn-chip ${ynClass(row.satisfiedYn)}`}>{yesNo(row.satisfiedYn)}</span></td>
                               <td><span className={`adm-sat-yn-chip ${ynClass(row.fiveMajorCitiesYn)}`}>{yesNo(row.fiveMajorCitiesYn)}</span></td>
                               <td><span className={`adm-sat-yn-chip ${ynClass(row.gen5060Yn)}`}>{yesNo(row.gen5060Yn)}</span></td>
-                              <td><span className={`adm-sat-yn-chip ${ynClass(row.problemResolvedYn)}`}>{yesNo(row.problemResolvedYn)}</span></td>
+                              <td>
+                                <span className={problemResolvedNegRateClass(row.problemResolvedYn)}>
+                                  {problemResolvedNegRateText(row.problemResolvedYn)}
+                                </span>
+                              </td>
                               <td className="adm-sat-modal-cell-ment">{row.goodMent?.trim() ? row.goodMent : '—'}</td>
                               <td className="adm-sat-modal-cell-ment">{row.badMent?.trim() ? row.badMent : '—'}</td>
                               <td className="adm-sat-modal-cell-untype">
@@ -1399,7 +1434,16 @@ export default function AdminSatisfactionPage() {
         </div>
       )}
 
-      {excludeModalOpen && (
+      <PendingCaseDayPickerModal
+        open={selectedMemberSkid != null && modalDayPickerOpen}
+        monthKey={modalMonthKey}
+        selectedDayKey={modalDayFilterKey}
+        dayStatsByDay={modalDayStatsByDay}
+        onClose={() => setModalDayPickerOpen(false)}
+        onSelectDay={handleSelectModalDayFilter}
+      />
+
+      {showAdminTools && excludeModalOpen && (
         <div className="adm-sat-exclude-backdrop" onClick={closeExcludeModal} role="presentation">
           <section
             className="adm-sat-exclude-modal"
@@ -1472,29 +1516,13 @@ export default function AdminSatisfactionPage() {
               {excludeMsg && <p className="adm-sat-exclude-msg adm-sat-exclude-msg--ok">{excludeMsg}</p>}
               <div className="adm-sat-exclude-history">
                 <h4 className="adm-sat-exclude-history-title">최근 평가 제외 이력</h4>
-                {excludeLogQuery.isLoading ? (
-                  <p className="adm-sat-exclude-history-empty">불러오는 중…</p>
-                ) : excludeLogQuery.isError ? (
-                  <p className="adm-sat-exclude-history-empty">이력을 불러오지 못했습니다.</p>
-                ) : (excludeLogQuery.data?.entries ?? []).length === 0 ? (
-                  <p className="adm-sat-exclude-history-empty">
-                    저장된 이력이 없습니다. 제외를 적용하면 스킬·구간·건수가 기록됩니다.
-                  </p>
-                ) : (
-                  <ul className="adm-sat-exclude-history-list">
-                    {(excludeLogQuery.data?.entries ?? []).map((e) => (
-                      <li key={e.id} className="adm-sat-exclude-history-item">
-                        <span className="adm-sat-exclude-history-skill">{e.skill}</span>
-                        <span className="adm-sat-exclude-history-range">
-                          {formatDateTime(e.startAt)} ~ {formatDateTime(e.endAt)}
-                        </span>
-                        <span className="adm-sat-exclude-history-meta">
-                          {num(e.updatedRowCount)}건 · {e.excludedBySkid?.trim() ? e.excludedBySkid : '—'}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
+                <AdminExcludeLogHistory
+                  entries={excludeLogQuery.data?.entries ?? []}
+                  isLoading={excludeLogQuery.isLoading}
+                  isError={excludeLogQuery.isError}
+                  onCancel={handleCancelExclude}
+                  cancelPendingId={cancelExcludeId}
+                />
               </div>
               <div className="adm-sat-exclude-actions">
                 <button type="button" className="btn btn-secondary btn-sm" onClick={closeExcludeModal}>
@@ -1521,12 +1549,16 @@ export default function AdminSatisfactionPage() {
         </div>
       )}
 
-      <AdminSatisfactionSetupModal open={setupModalOpen} onClose={() => setSetupModalOpen(false)} />
-      <AdminTargetMembersUploadModal
-        open={targetUploadModalOpen}
-        onClose={() => setTargetUploadModalOpen(false)}
-        variant="cs"
-      />
+      {showAdminTools && (
+        <AdminSatisfactionSetupModal open={setupModalOpen} onClose={() => setSetupModalOpen(false)} />
+      )}
+      {showAdminTools && (
+        <AdminTargetMembersUploadModal
+          open={targetUploadModalOpen}
+          onClose={() => setTargetUploadModalOpen(false)}
+          variant="cs"
+        />
+      )}
     </div>
   );
 }

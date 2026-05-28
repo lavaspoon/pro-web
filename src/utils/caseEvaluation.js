@@ -51,6 +51,16 @@ export function parseScoreValue(raw, maxScore = 100) {
   return Math.round(n);
 }
 
+/** 입력 중인 값이 해당 항목 만점을 넘는지 (빈 값·미완성 입력은 false) */
+export function isScoreInputOverMax(raw, maxScore) {
+  const s = String(raw ?? '').trim();
+  if (s === '' || s === '-') return false;
+  const n = Number(s);
+  const max = Number(maxScore);
+  if (!Number.isFinite(n) || !Number.isFinite(max)) return false;
+  return n > max;
+}
+
 export function sumScores(form) {
   let total = 0;
   for (const { key, maxScore } of CASE_SCORE_ITEMS) {

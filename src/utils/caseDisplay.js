@@ -1,3 +1,5 @@
+import { DEFAULT_CERTIFICATION_MIN_TOTAL } from './caseEvaluation';
+
 function parseToLocalDate(value) {
   if (value == null || String(value).trim() === '') return null;
   const s = String(value).trim();
@@ -39,6 +41,44 @@ export function resolveCaseListScoreBadgeTone(caseItem) {
   const raw = caseItem?.totalScore;
   if (raw == null || !Number.isFinite(Number(raw))) return 'empty';
   return Number(raw) >= 80 ? 'pass' : 'default';
+}
+
+/**
+ * 접수 목록 — 인증여부 (2차 완료: 최종 판정, 1차 완료: 총점·인증 기준점 예상)
+ * @returns {'인증'|'미인증'|'—'}
+ */
+export function formatCaseListCertLabel(caseItem) {
+  const st = String(caseItem?.status ?? '').toLowerCase();
+  if (st === 'selected') return '인증';
+  if (st === 'rejected') return '미인증';
+  const raw = caseItem?.totalScore;
+  if (raw == null || !Number.isFinite(Number(raw))) return '—';
+  const min =
+    caseItem?.certificationMinTotalScore != null &&
+    Number.isFinite(Number(caseItem.certificationMinTotalScore))
+      ? Number(caseItem.certificationMinTotalScore)
+      : DEFAULT_CERTIFICATION_MIN_TOTAL;
+  return Number(raw) >= min ? '인증' : '미인증';
+}
+
+/** 목록용 인증여부 뱃지 톤 — empty | cert | uncert */
+export function resolveCaseListCertBadgeTone(caseItem) {
+  const label = formatCaseListCertLabel(caseItem);
+  if (label === '인증') return 'cert';
+  if (label === '미인증') return 'uncert';
+  return 'empty';
+}
+
+/** 문제해결 부정비율 — Y만 표시, N·빈값은 '-' */
+export function problemResolvedNegRateText(value) {
+  const s = String(value ?? '').trim().toUpperCase();
+  return s === 'Y' ? 'Y' : '-';
+}
+
+/** 문제해결 부정비율 셀 톤 — Y: 빨간 뱃지, N·빈값: 회색 '-' 뱃지 */
+export function problemResolvedNegRateClass(value) {
+  const s = String(value ?? '').trim().toUpperCase();
+  return s === 'Y' ? 'adm-sat-yn-chip is-no' : 'adm-sat-yn-chip is-empty';
 }
 
 /** 상담일시 — 목록용 mm-dd HH:mm (24시간) */

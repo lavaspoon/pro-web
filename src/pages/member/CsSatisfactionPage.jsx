@@ -8,8 +8,6 @@ import {
   Inbox,
   ChevronLeft,
   ChevronRight,
-  ChevronDown,
-  Calendar,
   X,
   ArrowRight,
 } from 'lucide-react';
@@ -17,11 +15,12 @@ import useAuthStore from '../../store/authStore';
 import { fetchMemberSatisfaction, fetchCsSatisfactionTeamDaySummary } from '../../api/memberApi';
 import { fetchCsSatisfactionMemberMonthlyRows } from '../../api/adminApi';
 import CsSatisfactionModalDayStats from '../../components/cs/CsSatisfactionModalDayStats';
+import CsSatisfactionModalPeriodToolbar from '../../components/cs/CsSatisfactionModalPeriodToolbar';
 import PendingCaseDayPickerModal from '../admin/PendingCaseDayPickerModal';
 import { fetchCsCoachScenario, fetchCsDayOverDayInsight, fetchCsGoodMentInsight } from '../../api/lmStudioClient';
 import { parseCoachScenario, parseDayOverDayInsight, parseGoodMentInsight } from '../../utils/parseCsAiInsight';
-import { formatCaseDateTimeMmDdKorean } from '../../utils/caseDisplay';
-import { isActiveUseYn } from '../../utils/csSatisfactionModalDayStats';
+import { formatCaseDateTimeMmDdKorean, problemResolvedNegRateClass, problemResolvedNegRateText } from '../../utils/caseDisplay';
+import { isActiveUseYn, buildDaySatisfactionStatsByDay } from '../../utils/csSatisfactionModalDayStats';
 import Skeleton, { SkeletonLines } from '../../components/common/Skeleton';
 import '../admin/DashboardPage.css';
 import '../admin/AdminSatisfactionPage.css';
@@ -104,7 +103,7 @@ function useCountUpFloat(target, duration = 1200) {
   return value;
 }
 
-const MEMBER_ROWS_PAGE_SIZE = 10;
+const MEMBER_ROWS_PAGE_SIZE = 7;
 
 function fmt(v, decimals = 1) {
   if (v == null || Number.isNaN(Number(v))) return '—';
@@ -141,12 +140,6 @@ function ynClass(v) {
   return 'is-empty';
 }
 
-function nextYnFilter(v) {
-  if (v === 'ALL') return 'Y';
-  if (v === 'Y') return 'N';
-  return 'ALL';
-}
-
 function matchesYnFilter(value, filterValue) {
   if (filterValue === 'ALL') return true;
   return String(value ?? '').trim().toUpperCase() === filterValue;
@@ -155,12 +148,6 @@ function matchesYnFilter(value, filterValue) {
 function matchesDissatTypeFilter(rawType, filterType) {
   if (filterType == null) return true;
   return toNum(rawType) === filterType;
-}
-
-function filterToneClass(v) {
-  if (v === 'Y') return 'is-filter-y';
-  if (v === 'N') return 'is-filter-n';
-  return 'is-filter-all';
 }
 
 function computeActualPct(d) {
@@ -359,6 +346,44 @@ function topUnsatLabels(unsatTypeCounts, limit = 3) {
     .map(([label]) => label);
 }
 
+/** 불만족 유형 라벨 → 코멘트에 직접 쓰지 않을 부드러운 주제 표현 */
+function implicitUnsatTheme(label) {
+  const s = String(label ?? '');
+  if (/지식|혜택|안내/.test(s)) return '안내·혜택 설명';
+  if (/설명|알아듣/.test(s)) return '설명 방식';
+  if (/태도|성의/.test(s)) return '응대 태도';
+  if (/이해|문의/.test(s)) return '문의 파악·이해';
+  return '응대·안내 과정';
+}
+
+/** 고객 제안 원문 없이 의미만 담은 하락 원인 문장 */
+function buildImplicitDownReasonFromCustomerSuggestion(badMent) {
+  const t = String(badMent ?? '').trim();
+  if (!t) return null;
+  if (/느리|지연|기다|오래|늦|답변/.test(t)) {
+    return '처리·연락 속도에 대한 고객 제안이 늘어 만족도에 영향을 주었을 수 있습니다.';
+  }
+  if (/불친|태도|말투|성의|무례|냉|친절/.test(t)) {
+    return '응대 톤·태도에 대한 고객 제안이 전일보다 두드러진 것으로 보입니다.';
+  }
+  if (/설명|이해|모르|알|안내|혜택|복잡/.test(t)) {
+    return '안내·설명이 충분히 전달되지 않았다는 고객 제안이 늘어 만족도 하락 요인으로 보입니다.';
+  }
+  if (/해결|처리|조치|미/.test(t)) {
+    return '문의 해결·조치 과정에 대한 고객 제안이 전해져 만족도에 영향을 주었을 수 있습니다.';
+  }
+  return '고객 제안 내용이 전일보다 두드러져 만족도 하락과 연관된 것으로 보입니다.';
+}
+
+/** 불만족 유형 건수 → 유형명 없이 의미만 담은 하락 원인 문장 */
+function buildImplicitDownReasonFromUnsat(label, count) {
+  const theme = implicitUnsatTheme(label);
+  if (count >= 2) {
+    return `고객님께서 ${theme}에서 아쉬움을 느끼신 피드백이 ${count}건 집계되어 만족도 하락에 영향을 주었을 수 있습니다.`;
+  }
+  return `고객님께서 ${theme}에서 전달해 주신 아쉬운 점이 만족도 하락과 연관된 것으로 보입니다.`;
+}
+
 /** 불릿 본문 — 변동폭(%p)·건수 변화(→)만 은은하게 강조 */
 const INSIGHT_HIGHLIGHT_RE = /(\d+(?:\.\d+)?%p|\d+건→\d+건)/g;
 
@@ -384,11 +409,11 @@ function InsightHighlightedText({ text }) {
   return nodes.length ? nodes : text;
 }
 
-/** 원인 문장 — Good 멘트·불만족 유형 형광 강조 */
+/** 원인 문장 — 상승 시 Good 멘트만 형광 강조 */
 function InsightReasonText({ reason, driver }) {
   if (!reason) return null;
   const label = driver?.text?.trim();
-  if (!label || !reason.includes(label)) {
+  if (!label || driver?.kind !== 'good' || !reason.includes(label)) {
     return <InsightHighlightedText text={reason} />;
   }
   const idx = reason.indexOf(label);
@@ -410,8 +435,12 @@ function pickInsightDriver(latest, previous, direction) {
     return text ? { kind: 'good', text } : null;
   }
   if (direction === 'down') {
-    const text = topUnsatLabels(latest.unsatTypeCounts, 1)[0] ?? null;
-    return text ? { kind: 'unsat', text } : null;
+    const topUnsat = topUnsatLabels(latest.unsatTypeCounts, 1)[0] ?? null;
+    if (topUnsat) return { kind: 'unsat', text: topUnsat };
+    const prevSet = new Set(previous.badMents ?? []);
+    const novelBad = (latest.badMents ?? []).find((m) => !prevSet.has(m));
+    const text = novelBad ?? latest.badMents?.[0] ?? null;
+    return text ? { kind: 'bad', text } : null;
   }
   return null;
 }
@@ -424,14 +453,13 @@ function pickInsightDrivers(latest, previous, direction) {
     return drivers;
   }
   if (direction === 'down') {
-    topUnsatLabels(latest.unsatTypeCounts, 2).forEach((text) => {
-      drivers.push({ kind: 'unsat', text });
+    topUnsatLabels(latest.unsatTypeCounts, 2).forEach((label) => {
+      drivers.push({ kind: 'unsat', text: label });
     });
-    if (latest.badMents.length > previous.badMents.length) {
-      const prevSet = new Set(previous.badMents ?? []);
-      const novelBad = (latest.badMents ?? []).find((m) => !prevSet.has(m));
-      if (novelBad) drivers.push({ kind: 'bad', text: novelBad });
-    }
+    const prevSet = new Set(previous.badMents ?? []);
+    const novelBad = (latest.badMents ?? []).find((m) => !prevSet.has(m));
+    const badText = novelBad ?? latest.badMents?.[0] ?? null;
+    if (badText) drivers.push({ kind: 'bad', text: badText });
     return drivers;
   }
   return drivers;
@@ -561,7 +589,7 @@ function buildReasonFallback(latest, previous, direction) {
     }
     if (latest.badMents.length < previous.badMents.length) {
       reasons.push(
-        `Bad 멘트가 ${previous.badMents.length}→${latest.badMents.length}건으로 감소했습니다.`,
+        `고객 제안이 ${previous.badMents.length}→${latest.badMents.length}건으로 감소했습니다.`,
       );
     }
     if (latest.evaluatedCount !== previous.evaluatedCount) {
@@ -570,40 +598,29 @@ function buildReasonFallback(latest, previous, direction) {
       );
     }
   } else if (direction === 'down') {
-    if (primaryDriver?.kind === 'unsat') {
-      const count = latest.unsatTypeCounts.get(primaryDriver.text) ?? 0;
+    const topUnsat = topUnsatLabels(latest.unsatTypeCounts, 2);
+    topUnsat.forEach((label) => {
+      const count = latest.unsatTypeCounts.get(label) ?? 0;
+      if (count > 0) reasons.push(buildImplicitDownReasonFromUnsat(label, count));
+    });
+
+    const badDriver = drivers.find((d) => d.kind === 'bad');
+    const implicitSuggestion = buildImplicitDownReasonFromCustomerSuggestion(badDriver?.text);
+    if (implicitSuggestion) reasons.push(implicitSuggestion);
+    else if (latest.badMents.length > previous.badMents.length) {
       reasons.push(
-        `${primaryDriver.text} 유형 불만이 ${count}건으로 가장 많이 집계되었습니다.`,
+        `고객 제안이 ${previous.badMents.length}→${latest.badMents.length}건으로 늘어 만족도에 영향을 주었을 수 있습니다.`,
       );
     }
-    const secondUnsat = drivers.find((d, i) => i > 0 && d.kind === 'unsat');
-    if (secondUnsat) {
-      const count = latest.unsatTypeCounts.get(secondUnsat.text) ?? 0;
-      reasons.push(`${secondUnsat.text} 유형 불만도 ${count}건으로 함께 나타났습니다.`);
-    }
+
     if (latest.unsatisfiedCount > previous.unsatisfiedCount) {
       reasons.push(
-        `불만족(N) 응답이 ${previous.unsatisfiedCount}→${latest.unsatisfiedCount}건으로 늘었습니다.`,
-      );
-    }
-    const badDriver = drivers.find((d) => d.kind === 'bad');
-    if (badDriver) {
-      reasons.push(
-        `${badDriver.text} Bad 멘트가 늘며 아쉬움 피드백이 만족도 하락에 영향을 준 것으로 보입니다.`,
-      );
-    } else if (latest.badMents.length > previous.badMents.length) {
-      reasons.push(
-        `Bad 멘트가 ${previous.badMents.length}→${latest.badMents.length}건으로 늘었습니다.`,
+        `고객님께 아쉬움이 전해진 응답이 ${previous.unsatisfiedCount}→${latest.unsatisfiedCount}건으로 늘었습니다.`,
       );
     }
     if (latest.satisfiedCount < previous.satisfiedCount) {
       reasons.push(
         `만족(Y) 응답이 ${previous.satisfiedCount}→${latest.satisfiedCount}건으로 줄었습니다.`,
-      );
-    }
-    if (latest.goodMents.length < previous.goodMents.length) {
-      reasons.push(
-        `Good 멘트가 ${previous.goodMents.length}→${latest.goodMents.length}건으로 감소했습니다.`,
       );
     }
     if (latest.evaluatedCount !== previous.evaluatedCount) {
@@ -626,7 +643,7 @@ function buildReasonFallback(latest, previous, direction) {
       direction === 'up'
         ? '만족 응답 비중이 커져 만족도가 상승했습니다.'
         : direction === 'down'
-          ? '불만 응답이 늘어 만족도가 하락했습니다.'
+          ? '고객님께 전해진 아쉬움이 늘어 만족도가 소폭 하락했습니다.'
           : '큰 변동 요인이 없었습니다.',
     );
   }
@@ -665,19 +682,19 @@ function buildLatestTwoDayComparison(memberRowsData, unsatLabelMap) {
   };
 }
 
-const COACH_WINDOW_DAYS = 7;
+const COACH_WINDOW_DAYS = 30;
+/** 긍정 코멘트 랜덤 추첨 풀 — 최근일자 기준 상위 N건 */
+const POSITIVE_COMMENT_POOL_SIZE = 10;
 
-/** 최근 N일 Good 멘트 — 상단 격려 섹션용 (중복 제거) */
+/** 최근 N일 Good 멘트 — 상단 격려 섹션용 (최근일자 우선, 공백 제외) */
 function collectGoodMentHighlights(memberRowsData, dayLimit = COACH_WINDOW_DAYS) {
   const buckets = groupRowsByConsultDate(flattenMemberRows(memberRowsData));
   const items = [];
-  const seen = new Set();
 
   buckets.slice(0, dayLimit).forEach(({ date, rows }) => {
     rows.forEach((row, idx) => {
       const text = String(row.goodMent ?? '').trim();
-      if (!text || seen.has(text)) return;
-      seen.add(text);
+      if (!text) return;
       items.push({
         id: `good-${date}-${row.id ?? idx}`,
         date,
@@ -687,6 +704,14 @@ function collectGoodMentHighlights(memberRowsData, dayLimit = COACH_WINDOW_DAYS)
   });
 
   return items;
+}
+
+/** 최근일자 상위 N건 중 1건 무작위 선택 (새로고침마다 변경) */
+function pickRandomPositiveComment(items) {
+  if (!items.length) return null;
+  const pool = items.slice(0, POSITIVE_COMMENT_POOL_SIZE);
+  const idx = Math.floor(Math.random() * pool.length);
+  return pool[idx] ?? null;
 }
 
 /** AI 실패 시 Good 멘트 강점 요약 폴백 */
@@ -964,9 +989,17 @@ function CoachPanelSkeleton() {
   );
 }
 
-/** Good 멘트 — 잘하는 점 요약 + 대표 멘트 1건 */
+/** Good 멘트 — 잘하는 점 요약 + 긍정 코멘트 1건(랜덤) */
 function CoachGoodMentSection({ items, pending: dataPending }) {
-  const exampleMent = items[0] ?? null;
+  const [displayComment, setDisplayComment] = useState(null);
+
+  useEffect(() => {
+    if (!items.length) {
+      setDisplayComment(null);
+      return;
+    }
+    setDisplayComment(pickRandomPositiveComment(items));
+  }, [items]);
 
   const goodAiQuery = useQuery({
     queryKey: [
@@ -1012,11 +1045,11 @@ function CoachGoodMentSection({ items, pending: dataPending }) {
       ) : (
         <p className="csx-coach-good-strength">{strength}</p>
       )}
-      {exampleMent ? (
+      {displayComment ? (
         <div className="csx-coach-good-badge">
           <span className="csx-coach-good-badge-label">긍정 코멘트</span>
-          <p className="csx-coach-good-badge-text">{`“${truncateMent(exampleMent.text, 56)}”`}</p>
-          <span className="csx-coach-good-badge-date">{formatKoDate(exampleMent.date)}</span>
+          <p className="csx-coach-good-badge-text">{`“${truncateMent(displayComment.text, 56)}”`}</p>
+          <span className="csx-coach-good-badge-date">{formatKoDate(displayComment.date)}</span>
         </div>
       ) : null}
       <p className="csx-coach-good-foot">
@@ -2335,15 +2368,10 @@ export default function CsSatisfactionPage() {
     [allMemberRows, modalMonthKey],
   );
 
-  const modalCaseCountByDay = useMemo(() => {
-    const counts = new Map();
-    for (const row of modalRowsInMonth) {
-      const dk = dateKeyFromDateTime(row?.consultDateTime);
-      if (!dk) continue;
-      counts.set(dk, (counts.get(dk) ?? 0) + 1);
-    }
-    return counts;
-  }, [modalRowsInMonth]);
+  const modalDayStatsByDay = useMemo(
+    () => buildDaySatisfactionStatsByDay(modalRowsInMonth, dateKeyFromDateTime),
+    [modalRowsInMonth],
+  );
 
   const modalRowsInView = useMemo(() => {
     if (!modalDayFilterKey) return modalRowsInMonth;
@@ -2362,7 +2390,7 @@ export default function CsSatisfactionPage() {
     if (modalYnFilters.satisfiedYn === 'N') parts.push('불만족');
     if (modalYnFilters.fiveMajorCitiesYn === 'Y') parts.push('5대도시');
     if (modalYnFilters.gen5060Yn === 'Y') parts.push('5060');
-    if (modalYnFilters.problemResolvedYn === 'Y') parts.push('문제해결');
+    if (modalYnFilters.problemResolvedYn === 'Y') parts.push('문제해결 부정비율');
     return parts.length ? parts.join(' · ') : null;
   }, [modalYnFilters, unsatTypeLabelMap]);
 
@@ -2496,22 +2524,48 @@ export default function CsSatisfactionPage() {
             onClick={(e) => e.stopPropagation()}
           >
             <header className="adm-sat-row-modal-head csx-modal-head">
-              <div>
+              <div className="csx-modal-head-text">
                 <h3 className="adm-sat-row-modal-title">
                   {user?.name ?? user?.skid} 접수 상세
                 </h3>
-                <p className="adm-sat-row-modal-sub">
-                  {modalFilterHint ? `${modalFilterHint}` : ''}
-                </p>
+                {modalFilterHint ? (
+                  <p className="adm-sat-row-modal-sub">{modalFilterHint}</p>
+                ) : null}
               </div>
-              <button
-                type="button"
-                className="adm-sat-row-modal-close"
-                onClick={() => setShowModal(false)}
-                aria-label="모달 닫기"
-              >
-                <X size={18} aria-hidden />
-              </button>
+              {!memberRowsQuery.isLoading
+                && !memberRowsQuery.isError
+                && (memberRowsQuery.data?.months?.length ?? 0) > 0 ? (
+                  <div className="csx-modal-head-controls">
+                    <CsSatisfactionModalPeriodToolbar
+                      monthLabel={formatModalMonthLabel(modalMonthKey)}
+                      dayLabel={formatDayPickerButtonLabel(modalDayFilterKey)}
+                      dayPickerOpen={modalDayPickerOpen}
+                      dayFilterActive={!!modalDayFilterKey}
+                      canPrevMonth={canPrevModalMonth}
+                      canNextMonth={canNextModalMonth}
+                      onPrevMonth={() => setModalMonthKey((k) => addMonths(k, -1))}
+                      onNextMonth={() => setModalMonthKey((k) => addMonths(k, 1))}
+                      onOpenDayPicker={() => setModalDayPickerOpen(true)}
+                    />
+                    <button
+                      type="button"
+                      className="adm-sat-row-modal-close"
+                      onClick={() => setShowModal(false)}
+                      aria-label="모달 닫기"
+                    >
+                      <X size={18} aria-hidden />
+                    </button>
+                  </div>
+              ) : (
+                <button
+                  type="button"
+                  className="adm-sat-row-modal-close"
+                  onClick={() => setShowModal(false)}
+                  aria-label="모달 닫기"
+                >
+                  <X size={18} aria-hidden />
+                </button>
+              )}
             </header>
 
             <div className="adm-sat-row-modal-body">
@@ -2528,45 +2582,8 @@ export default function CsSatisfactionPage() {
                 <p className="adm-sat-query-empty">해당 연도 접수 내역이 없습니다.</p>
               ) : (
                 <div className="adm-sat-member-month-bucket">
-                  <div className="csx-modal-period-bar">
-                    <div className="pending-table-toolbar-period csx-modal-period-toolbar" role="group" aria-label="접수 기간 선택">
-                      <div className="pending-table-toolbar-month" role="group" aria-label="접수 월 이동">
-                        <button
-                          type="button"
-                          className="pending-month-nav-btn"
-                          disabled={!canPrevModalMonth}
-                          onClick={() => setModalMonthKey((k) => addMonths(k, -1))}
-                          aria-label="이전 달"
-                        >
-                          <ChevronLeft size={18} strokeWidth={2.25} aria-hidden />
-                        </button>
-                        <span className="pending-month-nav-label">{formatModalMonthLabel(modalMonthKey)}</span>
-                        <button
-                          type="button"
-                          className="pending-month-nav-btn"
-                          disabled={!canNextModalMonth}
-                          onClick={() => setModalMonthKey((k) => addMonths(k, 1))}
-                          aria-label="다음 달"
-                        >
-                          <ChevronRight size={18} strokeWidth={2.25} aria-hidden />
-                        </button>
-                      </div>
-                      <button
-                        type="button"
-                        className={`pending-day-picker-btn${modalDayFilterKey ? ' is-active' : ''}`}
-                        onClick={() => setModalDayPickerOpen(true)}
-                        aria-haspopup="dialog"
-                        aria-expanded={modalDayPickerOpen}
-                        title="일자 선택"
-                      >
-                        <Calendar size={14} aria-hidden />
-                        <span>{formatDayPickerButtonLabel(modalDayFilterKey)}</span>
-                        <ChevronDown size={14} className="pending-day-picker-btn__chev" aria-hidden />
-                      </button>
-                    </div>
-                  </div>
                   <CsSatisfactionModalDayStats
-                    rows={modalFilteredRows}
+                    rows={modalRowsInView}
                     scope={modalDayFilterKey ? 'day' : 'month'}
                     personalTargetPercent={satData?.monthlyTargetPct ?? satData?.target ?? null}
                     deptSummary={modalDayFilterKey ? (teamDaySummaryQuery.data ?? null) : null}
@@ -2577,40 +2594,10 @@ export default function CsSatisfactionPage() {
                         <tr>
                           <th><span className="adm-sat-modal-th-wrap">상담일시</span></th>
                           <th><span className="adm-sat-modal-th-wrap">상담유형</span></th>
-                          <th>
-                            <div className="adm-sat-modal-th-filter">
-                              <button type="button" className="adm-sat-modal-th-btn"
-                                onClick={() => setModalYnFilters((p) => ({ ...p, satisfiedYn: nextYnFilter(p.satisfiedYn) }))}
-                                aria-label={`만족 필터 ${modalYnFilters.satisfiedYn}`}
-                              >
-                                <span className={`adm-sat-modal-th-wrap ${filterToneClass(modalYnFilters.satisfiedYn)}`}>만족</span>
-                              </button>
-                            </div>
-                          </th>
-                          <th>
-                            <button type="button" className="adm-sat-modal-th-btn"
-                              onClick={() => setModalYnFilters((p) => ({ ...p, fiveMajorCitiesYn: nextYnFilter(p.fiveMajorCitiesYn) }))}
-                              aria-label={`5대도시 필터 ${modalYnFilters.fiveMajorCitiesYn}`}
-                            >
-                              <span className={`adm-sat-modal-th-wrap ${filterToneClass(modalYnFilters.fiveMajorCitiesYn)}`}>5대도시</span>
-                            </button>
-                          </th>
-                          <th>
-                            <button type="button" className="adm-sat-modal-th-btn"
-                              onClick={() => setModalYnFilters((p) => ({ ...p, gen5060Yn: nextYnFilter(p.gen5060Yn) }))}
-                              aria-label={`5060 필터 ${modalYnFilters.gen5060Yn}`}
-                            >
-                              <span className={`adm-sat-modal-th-wrap ${filterToneClass(modalYnFilters.gen5060Yn)}`}>5060</span>
-                            </button>
-                          </th>
-                          <th>
-                            <button type="button" className="adm-sat-modal-th-btn"
-                              onClick={() => setModalYnFilters((p) => ({ ...p, problemResolvedYn: nextYnFilter(p.problemResolvedYn) }))}
-                              aria-label={`문제해결 필터 ${modalYnFilters.problemResolvedYn}`}
-                            >
-                              <span className={`adm-sat-modal-th-wrap ${filterToneClass(modalYnFilters.problemResolvedYn)}`}>문제해결</span>
-                            </button>
-                          </th>
+                          <th><span className="adm-sat-modal-th-wrap">만족</span></th>
+                          <th><span className="adm-sat-modal-th-wrap">5대도시</span></th>
+                          <th><span className="adm-sat-modal-th-wrap">5060</span></th>
+                          <th><span className="adm-sat-modal-th-wrap">문제해결 부정비율</span></th>
                           <th><span className="adm-sat-modal-th-wrap">Good 멘트</span></th>
                           <th><span className="adm-sat-modal-th-wrap">불만족 유형</span></th>
                         </tr>
@@ -2634,7 +2621,11 @@ export default function CsSatisfactionPage() {
                               <td><span className={`adm-sat-yn-chip ${ynClass(row.satisfiedYn)}`}>{yesNo(row.satisfiedYn)}</span></td>
                               <td><span className={`adm-sat-yn-chip ${ynClass(row.fiveMajorCitiesYn)}`}>{yesNo(row.fiveMajorCitiesYn)}</span></td>
                               <td><span className={`adm-sat-yn-chip ${ynClass(row.gen5060Yn)}`}>{yesNo(row.gen5060Yn)}</span></td>
-                              <td><span className={`adm-sat-yn-chip ${ynClass(row.problemResolvedYn)}`}>{yesNo(row.problemResolvedYn)}</span></td>
+                              <td>
+                                <span className={problemResolvedNegRateClass(row.problemResolvedYn)}>
+                                  {problemResolvedNegRateText(row.problemResolvedYn)}
+                                </span>
+                              </td>
                               <td className="adm-sat-modal-cell-ment">{row.goodMent?.trim() ? row.goodMent : '—'}</td>
                               <td className="adm-sat-modal-cell-untype">
                                 {String(row.satisfiedYn ?? '').trim().toUpperCase() === 'N'
@@ -2674,7 +2665,7 @@ export default function CsSatisfactionPage() {
         open={showModal && modalDayPickerOpen}
         monthKey={modalMonthKey}
         selectedDayKey={modalDayFilterKey}
-        caseCountByDay={modalCaseCountByDay}
+        dayStatsByDay={modalDayStatsByDay}
         onClose={() => setModalDayPickerOpen(false)}
         onSelectDay={handleSelectModalDayFilter}
       />

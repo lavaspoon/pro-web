@@ -1,5 +1,7 @@
 import React, { useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
+import { fmtPct } from '../../utils/csSatisfactionModalDayStats';
 import './PendingCaseDayPickerModal.css';
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
@@ -28,23 +30,36 @@ function formatModalTitle(monthKey) {
   return `${y}년 ${m}월`;
 }
 
+function buildDayAriaLabel(dayKey, stats, fallbackCount) {
+  const day = Number(dayKey.slice(8, 10));
+  if (stats?.evalCount > 0) {
+    return `${day}일, 평가모수 ${stats.evalCount}건, 만족모수 ${stats.satisfiedCount}건, 만족도 ${fmtPct(stats.satisfactionRate)}`;
+  }
+  if (fallbackCount > 0) {
+    return `${day}일, 접수 ${fallbackCount}건`;
+  }
+  return `${day}일`;
+}
+
 export default function PendingCaseDayPickerModal({
   open,
   monthKey,
   selectedDayKey,
   caseCountByDay,
+  dayStatsByDay,
   onClose,
   onSelectDay,
 }) {
   const todayKey = currentDayKey();
   const cells = useMemo(() => buildCalendarCells(monthKey), [monthKey]);
+  const showSatisfactionPreview = dayStatsByDay instanceof Map;
 
   if (!open) return null;
 
-  return (
+  return createPortal(
     <div className="pending-daypicker-backdrop" onClick={onClose} role="presentation">
       <div
-        className="pending-daypicker-modal"
+        className={`pending-daypicker-modal${showSatisfactionPreview ? ' pending-daypicker-modal--satisfaction' : ''}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="pending-daypicker-title"
@@ -58,7 +73,18 @@ export default function PendingCaseDayPickerModal({
             <X size={18} aria-hidden />
           </button>
         </div>
-        <p className="pending-daypicker-desc">{formatModalTitle(monthKey)} 접수 일자를 선택하세요.</p>
+        <p className="pending-daypicker-desc">
+          {formatModalTitle(monthKey)} 접수 일자를 선택하세요.
+          {showSatisfactionPreview ? ' 각 일자에 평가모수·만족모수·만족도가 표시됩니다.' : null}
+        </p>
+
+        {showSatisfactionPreview ? (
+          <div className="pending-daypicker-legend" aria-hidden>
+            <span className="pending-daypicker-badge pending-daypicker-badge--eval">평가모수</span>
+            <span className="pending-daypicker-badge pending-daypicker-badge--sat">만족모수</span>
+            <span className="pending-daypicker-badge pending-daypicker-badge--rate">만족도</span>
+          </div>
+        ) : null}
 
         <button
           type="button"
@@ -85,7 +111,12 @@ export default function PendingCaseDayPickerModal({
               const isFuture = dayKey > todayKey;
               const isSelected = selectedDayKey === dayKey;
               const isToday = dayKey === todayKey;
-              const count = caseCountByDay?.get(dayKey) ?? 0;
+              const stats = dayStatsByDay?.get(dayKey);
+              const fallbackCount = caseCountByDay?.get(dayKey) ?? 0;
+              const evalCount = stats?.evalCount ?? 0;
+              const hasPreview = showSatisfactionPreview && evalCount > 0;
+              const hasCases = hasPreview || fallbackCount > 0;
+
               return (
                 <button
                   key={dayKey}
@@ -94,24 +125,40 @@ export default function PendingCaseDayPickerModal({
                   disabled={isFuture}
                   className={[
                     'pending-daypicker-cell',
+                    showSatisfactionPreview ? 'pending-daypicker-cell--rich' : '',
                     isSelected ? 'is-selected' : '',
                     isToday ? 'is-today' : '',
-                    count > 0 ? 'has-cases' : '',
+                    hasCases ? 'has-cases' : '',
                   ]
                     .filter(Boolean)
                     .join(' ')}
                   onClick={() => onSelectDay(dayKey)}
                   aria-pressed={isSelected}
-                  aria-label={`${Number(dayKey.slice(8, 10))}일${count > 0 ? `, 접수 ${count}건` : ''}`}
+                  aria-label={buildDayAriaLabel(dayKey, stats, fallbackCount)}
                 >
                   <span className="pending-daypicker-cell-day">{Number(dayKey.slice(8, 10))}</span>
-                  {count > 0 ? <span className="pending-daypicker-cell-count">{count}</span> : null}
+                  {hasPreview ? (
+                    <span className="pending-daypicker-cell-badges">
+                      <span className="pending-daypicker-badge pending-daypicker-badge--eval">
+                        평가모수 {evalCount}
+                      </span>
+                      <span className="pending-daypicker-badge pending-daypicker-badge--sat">
+                        만족모수 {stats.satisfiedCount}
+                      </span>
+                      <span className="pending-daypicker-badge pending-daypicker-badge--rate">
+                        {fmtPct(stats.satisfactionRate)}
+                      </span>
+                    </span>
+                  ) : fallbackCount > 0 ? (
+                    <span className="pending-daypicker-cell-count">{fallbackCount}</span>
+                  ) : null}
                 </button>
               );
             })}
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

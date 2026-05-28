@@ -11,32 +11,48 @@ import {
   ArrowUp,
   ArrowDown,
   ArrowUpDown,
-  RefreshCw,
   Upload,
   Download,
   Check,
   Calendar,
+  CheckCircle2,
 } from 'lucide-react';
 import {
   assignCaseMonitor,
   fetchAdminLeafTeams,
   fetchAdminReviewQueue,
   fetchCaseForReview,
+  judgeCase,
   downloadAdminCasesExport,
   uploadCaseHistoryMigrationExcel,
 } from '../../api/adminApi';
-import useAuthStore from '../../store/authStore';
-import CaseReviewModal from './CaseReviewModal';
-import PendingCaseAssignMonitorModal from './PendingCaseAssignMonitorModal';
-import PendingCaseDayPickerModal from './PendingCaseDayPickerModal';
-import CaseReviewStageBadge from '../../components/common/CaseReviewStageBadge';
-import { formatCaseListDateMmDdHm, formatCaseListScoreDisplay, resolveCaseListScoreBadgeTone } from '../../utils/caseDisplay';
+import {
+  buildJudgePayload,
+  CASE_SCORE_ITEMS,
+  decisionFromTotal,
+  DEFAULT_CERTIFICATION_MIN_TOTAL,
+  parseScoreValue,
+  scoresFromCaseData,
+  sumScores,
+} from '../../utils/caseEvaluation';
 import {
   CASE_STAGE_FILTERS,
   caseMatchesStageFilter,
   countCasesByStageFilter,
   getCaseReviewStage,
 } from '../../utils/caseReviewStage';
+import useAuthStore from '../../store/authStore';
+import CaseReviewModal from './CaseReviewModal';
+import PendingCaseAssignMonitorModal from './PendingCaseAssignMonitorModal';
+import PendingCaseDayPickerModal from './PendingCaseDayPickerModal';
+import CaseReviewStageBadge from '../../components/common/CaseReviewStageBadge';
+import {
+  formatCaseListCertLabel,
+  formatCaseListDateMmDdHm,
+  formatCaseListScoreDisplay,
+  resolveCaseListCertBadgeTone,
+  resolveCaseListScoreBadgeTone,
+} from '../../utils/caseDisplay';
 import { mergeSecondDepthOptions } from '../../utils/adminSecondDepth';
 import {
   buildTeamHierarchyPath,
@@ -200,13 +216,15 @@ export default function PendingCasesPage() {
   const [migratePending, setMigratePending] = useState(false);
   const [migrateMessage, setMigrateMessage] = useState('');
   const [exportPending, setExportPending] = useState(false);
+  const [bulkPhase2Pending, setBulkPhase2Pending] = useState(false);
+  const [bulkPhase2Message, setBulkPhase2Message] = useState('');
 
   const migrationYear = new Date().getFullYear();
   const exportYear = migrationYear;
   const MIGRATION_FROM_MONTH = 1;
   const MIGRATION_TO_MONTH = 4;
 
-  const { data: queue, isLoading: queueLoading, refetch, isFetching } = useQuery({
+  const { data: queue, isLoading: queueLoading, refetch } = useQuery({
     queryKey: ['admin-review-queue', user?.skid],
     queryFn: () => fetchAdminReviewQueue(user?.skid),
   });
@@ -410,6 +428,7 @@ export default function PendingCasesPage() {
 
   /** null = 범위 내 전체 팀 (상단 '범위' 셀렉트와 동일 스코프) */
   const isAllTeamsView = selectedTeamKey == null;
+  const showCertColumn = stageFilter === 'phase1' || stageFilter === 'phase2';
 
   const sortedCases = useMemo(() => {
     const raw = isAllTeamsView ? casesForTable : (selectedTeam?.cases ?? []);
@@ -561,6 +580,16 @@ export default function PendingCasesPage() {
     return n;
   }, [sortedCases, checkedCaseIds]);
 
+  /** 선택 중 1차 완료(2차 인증 가능) 건 */
+  const checkedPhase1Cases = useMemo(
+    () =>
+      sortedCases.filter(
+        (c) => checkedCaseIds.has(c.id) && getCaseReviewStage(c) === 'phase1',
+      ),
+    [sortedCases, checkedCaseIds],
+  );
+  const checkedPhase1Count = checkedPhase1Cases.length;
+
   const allVisibleChecked =
     sortedCases.length > 0 && sortedCases.every((c) => checkedCaseIds.has(c.id));
   const someVisibleChecked = sortedCases.some((c) => checkedCaseIds.has(c.id));
@@ -612,6 +641,87 @@ export default function PendingCasesPage() {
     setAssignModalOpen(false);
     setAssignError('');
   }, [assignSubmitting]);
+
+  const handleBulkPhase2Certify = useCallback(async () => {
+    if (!isAdmin) return;
+    const targets = checkedPhase1Cases;
+    if (!user?.skid) return;
+    if (targets.length === 0) {
+      window.alert('1차 완료 상태인 사례만 2차 인증할 수 있습니다.');
+      return;
+    }
+    const skipped = checkedCount - targets.length;
+    const skipHint =
+      skipped > 0 ? `\n(선택 ${checkedCount}건 중 1차 완료가 아닌 ${skipped}건은 제외됩니다)` : '';
+    const ok = window.confirm(
+      `선택한 ${targets.length}건을 1차 저장 점수·종합점수 기준(90점 이상 인증)으로 2차 인증합니다.${skipHint}\n계속할까요?`,
+    );
+    if (!ok) return;
+
+    setBulkPhase2Pending(true);
+    setBulkPhase2Message('');
+    let success = 0;
+    const failures = [];
+
+    for (const row of targets) {
+      try {
+        const full = await fetchCaseForReview(row.id);
+        const form = scoresFromCaseData(full);
+        const missing = CASE_SCORE_ITEMS.filter(
+          ({ key, maxScore }) => parseScoreValue(form[key], maxScore) == null,
+        ).map((i) => i.label);
+        if (missing.length > 0) {
+          failures.push({
+            label: row.memberName ?? row.id,
+            reason: `점수 누락: ${missing.join(', ')}`,
+          });
+          continue;
+        }
+        const minTotal =
+          full.certificationMinTotalScore != null
+            ? Number(full.certificationMinTotalScore)
+            : DEFAULT_CERTIFICATION_MIN_TOTAL;
+        const decision = decisionFromTotal(sumScores(form), minTotal);
+        await judgeCase({
+          caseId: row.id,
+          ...buildJudgePayload({
+            form,
+            adminSkid: user.skid,
+            draft: false,
+            decision,
+          }),
+        });
+        success += 1;
+      } catch (err) {
+        failures.push({
+          label: row.memberName ?? row.id,
+          reason: err?.message ?? '2차 인증 실패',
+        });
+      }
+    }
+
+    setCheckedCaseIds(new Set());
+    await refetch();
+
+    if (failures.length === 0) {
+      setBulkPhase2Message(`${success}건 2차 인증 완료`);
+    } else if (success === 0) {
+      setBulkPhase2Message(
+        `2차 인증에 실패했습니다. ${failures
+          .slice(0, 3)
+          .map((f) => `${f.label}: ${f.reason}`)
+          .join(' · ')}${failures.length > 3 ? ` 외 ${failures.length - 3}건` : ''}`,
+      );
+    } else {
+      setBulkPhase2Message(
+        `${success}건 완료 · 실패 ${failures.length}건 (${failures
+          .slice(0, 2)
+          .map((f) => f.label)
+          .join(', ')}${failures.length > 2 ? '…' : ''})`,
+      );
+    }
+    setBulkPhase2Pending(false);
+  }, [isAdmin, checkedPhase1Cases, checkedCount, user?.skid, refetch]);
 
   const handleAssignMonitor = useCallback(
     async (monitorSkid) => {
@@ -863,12 +973,28 @@ export default function PendingCasesPage() {
                       </h2>
                     </div>
                     <div className="pending-panel-head-right">
-                      {isAdmin && checkedCount >= 1 ? (
+                      {isAdmin && stageFilter === 'phase1' && checkedPhase1Count >= 1 ? (
+                        <button
+                          type="button"
+                          className="btn btn-primary btn-sm pending-bulk-phase2-btn"
+                          onClick={handleBulkPhase2Certify}
+                          disabled={bulkPhase2Pending || loadingCaseId != null}
+                          title="1차 완료 건을 1차 저장 점수 기준으로 일괄 2차 인증(최종 저장)합니다"
+                        >
+                          <CheckCircle2 size={14} aria-hidden />
+                          {bulkPhase2Pending
+                            ? '일괄 2차 인증 처리 중…'
+                            : `일괄 2차 인증처리 (${checkedPhase1Count}건)`}
+                        </button>
+                      ) : null}
+                      {isAdmin &&
+                      checkedCount >= 1 &&
+                      (stageFilter === 'all' || stageFilter === 'waiting') ? (
                         <button
                           type="button"
                           className="btn btn-secondary btn-sm pending-assign-btn"
                           onClick={openAssignMonitorModal}
-                          disabled={loadingCaseId != null}
+                          disabled={loadingCaseId != null || bulkPhase2Pending}
                         >
                           담당자 지정 ({checkedCount}건)
                         </button>
@@ -878,21 +1004,11 @@ export default function PendingCasesPage() {
                           type="button"
                           className="btn btn-primary btn-sm pending-bulk-open-btn"
                           onClick={openBulkReview}
-                          disabled={loadingCaseId != null}
+                          disabled={loadingCaseId != null || bulkPhase2Pending}
                         >
                           다중 선택하여 열기 ({checkedCount}건)
                         </button>
                       ) : null}
-                      <button
-                        type="button"
-                        className="btn btn-secondary btn-sm pending-refresh-btn pending-panel-refresh"
-                        onClick={() => refetch()}
-                        disabled={isFetching}
-                        title="목록을 다시 불러옵니다"
-                      >
-                        <RefreshCw size={14} className={isFetching ? 'pending-refresh-spin' : ''} aria-hidden />
-                        새로고침
-                      </button>
                     </div>
                   </div>
                 </div>
@@ -976,6 +1092,17 @@ export default function PendingCasesPage() {
                     </div>
                   ) : null}
 
+                  {bulkPhase2Message ? (
+                    <p
+                      className={`pending-bulk-phase2-msg${
+                        bulkPhase2Message.includes('실패') ? ' pending-bulk-phase2-msg--err' : ''
+                      }`}
+                      role="status"
+                    >
+                      {bulkPhase2Message}
+                    </p>
+                  ) : null}
+
                   {(isAllTeamsView ? casesForTable.length === 0 : selectedTeam.cases.length === 0) ? (
                     <div className="pending-panel-empty pending-panel-empty--in-table">
                       <div className="pending-panel-empty-visual" aria-hidden>
@@ -1048,6 +1175,11 @@ export default function PendingCasesPage() {
                               />
                             </button>
                           </th>
+                          {showCertColumn ? (
+                            <th scope="col" className="pending-th pending-th--cert">
+                              <span className="pending-th-label">인증여부</span>
+                            </th>
+                          ) : null}
                           <th
                             scope="col"
                             className="pending-th pending-th--team"
@@ -1177,6 +1309,15 @@ export default function PendingCasesPage() {
                                 {formatCaseListScoreDisplay(c)}
                               </span>
                             </td>
+                            {showCertColumn ? (
+                              <td className="pending-td-cert">
+                                <span
+                                  className={`pending-td-cert-val pending-td-cert-val--${resolveCaseListCertBadgeTone(c)}`}
+                                >
+                                  {formatCaseListCertLabel(c)}
+                                </span>
+                              </td>
+                            ) : null}
                             <td className="pending-td-team">
                               {(() => {
                                 const hier = skidToTeamHierarchy.get(c.skid);

@@ -324,6 +324,15 @@ export const fetchCsSatisfactionExcludeLog = async (limit = 50) => {
 };
 
 /**
+ * 평가 제외 이력 취소 (useYn 복구)
+ * DELETE /api/admin/cs-satisfaction/exclude-log/{id}
+ */
+export const cancelCsSatisfactionExcludeLog = async (id) => {
+  const { data } = await axiosInstance.delete(`/api/admin/cs-satisfaction/exclude-log/${id}`);
+  return data;
+};
+
+/**
  * CS 만족도 — 해당 연·월의 센터별 목표% 조회 (월 1회 설정, DB는 그 달 1일 키)
  * GET /api/admin/cs-satisfaction/monthly-targets?year=&month=
  */

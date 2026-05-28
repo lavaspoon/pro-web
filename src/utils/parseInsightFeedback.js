@@ -1,5 +1,5 @@
 /**
- * Good/Bad 멘트 기반 코칭 JSON 파싱
+ * Good 멘트·고객 제안 기반 코칭 JSON 파싱
  */
 
 function unwrapJsonFence(raw) {

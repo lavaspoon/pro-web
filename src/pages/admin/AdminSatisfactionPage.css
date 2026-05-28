@@ -474,7 +474,7 @@
 }
 
 .adm-sat-exclude-modal {
-  width: min(540px, 100%);
+  width: min(800px, 100%);
   border-radius: 14px;
   border: 1px solid rgba(15, 23, 42, 0.14);
   background: #fff;
@@ -595,43 +595,241 @@
   color: #64748b;
 }
 
-.adm-sat-exclude-history-list {
+.adm-sat-exclude-history-panel {
+  display: grid;
+  grid-template-columns: minmax(272px, 300px) minmax(0, 1fr);
+  gap: 0.85rem;
+  align-items: start;
+}
+
+.adm-sat-exclude-cal {
+  min-width: 272px;
+  border-radius: 10px;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  background: rgba(248, 250, 252, 0.65);
+  padding: 0.55rem 0.6rem;
+}
+
+.adm-sat-exclude-cal-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem;
+  margin-bottom: 0.45rem;
+}
+
+.adm-sat-exclude-cal-nav-btn {
+  min-width: 1.75rem;
+  padding: 0.2rem 0.35rem;
+}
+
+.adm-sat-exclude-cal-month {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+.adm-sat-exclude-cal-grid-wrap {
+  padding: 0.35rem;
+  border-radius: 8px;
+  background: #fff;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.adm-sat-exclude-cal-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  margin-bottom: 4px;
+}
+
+.adm-sat-exclude-cal-weekday {
+  text-align: center;
+  font-size: 0.625rem;
+  font-weight: 800;
+  color: #64748b;
+}
+
+.adm-sat-exclude-cal-weekday:first-child {
+  color: #e11d48;
+}
+
+.adm-sat-exclude-cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(2rem, 1fr));
+  gap: 4px;
+}
+
+.adm-sat-exclude-cal-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  min-height: 2.85rem;
+  min-width: 0;
+  padding: 0.2rem 0.12rem 0.22rem;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  font-size: 0.625rem;
+  color: #334155;
+  line-height: 1.2;
+  overflow: visible;
+}
+
+.adm-sat-exclude-cal-cell--empty {
+  pointer-events: none;
+}
+
+.adm-sat-exclude-cal-cell:disabled:not(.adm-sat-exclude-cal-cell--empty) {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.adm-sat-exclude-cal-cell.is-future:not(.has-entries) {
+  opacity: 0.45;
+}
+
+.adm-sat-exclude-cal-cell.has-entries:not(:disabled) {
+  cursor: pointer;
+  border-color: rgba(10, 126, 164, 0.2);
+  background: rgba(10, 126, 164, 0.06);
+}
+
+.adm-sat-exclude-cal-cell.has-entries:not(:disabled):hover {
+  background: rgba(10, 126, 164, 0.12);
+}
+
+.adm-sat-exclude-cal-cell.is-selected {
+  border-color: rgba(10, 126, 164, 0.45);
+  background: rgba(10, 126, 164, 0.18);
+  box-shadow: inset 0 0 0 1px rgba(10, 126, 164, 0.12);
+}
+
+.adm-sat-exclude-cal-cell.is-today .adm-sat-exclude-cal-day {
+  color: #0a7ea4;
+  font-weight: 800;
+}
+
+.adm-sat-exclude-cal-day {
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.adm-sat-exclude-cal-count {
+  display: block;
+  min-height: 0.85rem;
+  font-size: 0.625rem;
+  font-weight: 800;
+  color: #0a7ea4;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.adm-sat-exclude-cal-count--empty {
+  visibility: hidden;
+}
+
+.adm-sat-exclude-day-list {
+  min-height: 12rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.adm-sat-exclude-day-list-title {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 800;
+  color: #0f172a;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.6rem;
+}
+
+.adm-sat-exclude-day-list-sub {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.adm-sat-exclude-day-items {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
   gap: 0.45rem;
-  max-height: 200px;
+  max-height: 220px;
   overflow: auto;
 }
 
-.adm-sat-exclude-history-item {
+.adm-sat-exclude-day-item {
   display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.35rem 0.65rem;
-  padding: 0.45rem 0.55rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.55rem;
+  padding: 0.48rem 0.55rem;
   border-radius: 8px;
   background: rgba(248, 250, 252, 0.95);
   border: 1px solid rgba(15, 23, 42, 0.08);
-  font-size: 0.76rem;
 }
 
-.adm-sat-exclude-history-skill {
+.adm-sat-exclude-day-item-line {
+  margin: 0;
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: baseline;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  color: #334155;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.adm-sat-exclude-day-item-skill {
+  flex-shrink: 0;
   font-weight: 700;
   color: #0f172a;
 }
 
-.adm-sat-exclude-history-range {
-  color: #334155;
+.adm-sat-exclude-day-item-sep {
+  flex-shrink: 0;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.adm-sat-exclude-day-item-range {
+  flex-shrink: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   font-variant-numeric: tabular-nums;
 }
 
-.adm-sat-exclude-history-meta {
-  margin-left: auto;
-  color: #64748b;
-  font-size: 0.8125rem;
+.adm-sat-exclude-day-item-count {
+  flex-shrink: 0;
+  font-weight: 700;
+  color: #475569;
+}
+
+.adm-sat-exclude-cancel-btn {
+  flex-shrink: 0;
+  white-space: nowrap;
+  color: #b91c1c;
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
+.adm-sat-exclude-cancel-btn:hover:not(:disabled) {
+  background: rgba(254, 226, 226, 0.85);
 }
 
 .adm-sat-row-modal {
@@ -727,6 +925,108 @@
 .adm-sat-row-modal-body {
   overflow: auto;
   padding: 0.9rem 1rem 1.1rem;
+}
+
+/* 접수 상세 모달 — 헤더(제목 + 기간 선택 + 닫기) */
+.adm-sat-page .adm-sat-row-modal-head.csx-modal-head,
+.cs-sat-page .adm-sat-row-modal-head.csx-modal-head {
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.55rem 0.75rem;
+  padding: 0.72rem 0.95rem;
+}
+
+.csx-modal-head-text {
+  flex: 1 1 10rem;
+  min-width: 0;
+}
+
+.csx-modal-head-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.adm-sat-page .csx-modal-head-controls .csx-modal-period-toolbar,
+.cs-sat-page .csx-modal-head-controls .csx-modal-period-toolbar {
+  margin-left: 0;
+  gap: 6px;
+}
+
+.adm-sat-page .csx-modal-head-controls .pending-table-toolbar-month,
+.cs-sat-page .csx-modal-head-controls .pending-table-toolbar-month {
+  gap: 2px;
+  padding: 2px 6px 2px 2px;
+}
+
+.adm-sat-page .csx-modal-head-controls .pending-month-nav-btn,
+.cs-sat-page .csx-modal-head-controls .pending-month-nav-btn {
+  width: 30px;
+  height: 30px;
+}
+
+.adm-sat-page .csx-modal-head-controls .pending-month-nav-label,
+.cs-sat-page .csx-modal-head-controls .pending-month-nav-label {
+  min-width: 6.8rem;
+  font-size: 0.78rem;
+  padding: 0 2px;
+}
+
+.adm-sat-page .csx-modal-head-controls .pending-day-picker-btn,
+.cs-sat-page .csx-modal-head-controls .pending-day-picker-btn {
+  min-height: 34px;
+  padding: 5px 10px;
+  gap: 5px;
+  font-size: 0.78rem;
+  border-color: rgba(10, 126, 164, 0.22);
+  background: rgba(255, 255, 255, 0.96);
+  color: #334155;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+}
+
+.adm-sat-page .csx-modal-head-controls .pending-day-picker-btn.is-active,
+.cs-sat-page .csx-modal-head-controls .pending-day-picker-btn.is-active {
+  border-color: rgba(10, 126, 164, 0.45);
+  background: rgba(10, 126, 164, 0.12);
+  color: #0a7ea4;
+  box-shadow: inset 0 0 0 1px rgba(10, 126, 164, 0.12);
+}
+
+.adm-sat-page .csx-modal-head-controls .adm-sat-row-modal-close,
+.cs-sat-page .csx-modal-head-controls .adm-sat-row-modal-close {
+  flex-shrink: 0;
+}
+
+@media (max-width: 900px) {
+  .adm-sat-page .adm-sat-row-modal-head.csx-modal-head,
+  .cs-sat-page .adm-sat-row-modal-head.csx-modal-head {
+    align-items: flex-start;
+  }
+
+  .csx-modal-head-controls {
+    width: 100%;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 640px) {
+  .adm-sat-page .csx-modal-head-controls .csx-modal-period-toolbar,
+  .cs-sat-page .csx-modal-head-controls .csx-modal-period-toolbar {
+    flex: 1 1 100%;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .adm-sat-page .csx-modal-head-controls .pending-day-picker-btn,
+  .cs-sat-page .csx-modal-head-controls .pending-day-picker-btn {
+    flex: 1;
+    justify-content: center;
+    min-width: 0;
+  }
 }
 
 .adm-sat-member-rows {
@@ -967,27 +1267,59 @@
   border-radius: 0;
   border: 0;
   box-shadow: none;
+  overflow-x: auto;
 }
 
 .adm-sat-modal-rows-table {
   width: 100%;
+  min-width: 960px;
   border-collapse: collapse;
   margin: 0;
+  table-layout: fixed;
   font-family: inherit;
   font-size: 13px;
   letter-spacing: -0.02em;
 }
 
 .adm-sat-modal-rows-table thead th {
-  padding: 0.55rem 0.7rem;
-  font-size: 12px;
+  padding: 0.875rem 0.7rem;
+  min-height: 3.1rem;
+  font-size: 0.875rem;
   font-weight: 700;
-  color: #475569;
+  color: #334155;
   text-align: center;
   vertical-align: middle;
-  white-space: nowrap;
+  white-space: normal;
+  line-height: 1.45;
+  word-break: keep-all;
   background: #f8fafc;
   border-bottom: 1px solid rgba(15, 23, 42, 0.12);
+}
+
+.adm-sat-modal-rows-table thead th:nth-child(1) {
+  width: 6.75rem;
+}
+
+.adm-sat-modal-rows-table thead th:nth-child(2) {
+  width: 12%;
+}
+
+.adm-sat-modal-rows-table thead th:nth-child(3),
+.adm-sat-modal-rows-table thead th:nth-child(4),
+.adm-sat-modal-rows-table thead th:nth-child(5) {
+  width: 5.25rem;
+  padding: 0.875rem 0.4rem;
+}
+
+.adm-sat-modal-rows-table thead th:nth-child(6) {
+  width: 7.5rem;
+  padding: 0.875rem 0.45rem;
+}
+
+.adm-sat-modal-rows-table thead th:last-child {
+  width: 12.5rem;
+  min-width: 12.5rem;
+  padding: 0.875rem 0.85rem;
 }
 
 .adm-sat-modal-th-wrap {
@@ -1031,10 +1363,16 @@
   padding: 0;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0;
-  cursor: pointer;
+  width: 100%;
+  min-height: 2rem;
   font: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
   color: inherit;
+  cursor: pointer;
 }
 
 .adm-sat-modal-rows-table tbody td {
@@ -1063,10 +1401,18 @@
 
 .adm-sat-modal-cell-ment {
   text-align: left;
-  min-width: 14rem;
-  max-width: 17rem;
+  min-width: 9rem;
+  max-width: 15rem;
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+.adm-sat-modal-rows-table tbody td:nth-child(3),
+.adm-sat-modal-rows-table tbody td:nth-child(4),
+.adm-sat-modal-rows-table tbody td:nth-child(5),
+.adm-sat-modal-rows-table tbody td:nth-child(6) {
+  padding-left: 0.35rem;
+  padding-right: 0.35rem;
 }
 
 .adm-sat-row-modal .adm-sat-yn-chip {
@@ -1203,17 +1549,30 @@
 
 /* ── 모달: 불만족 유형 칩 ─────────────────────────────────── */
 .adm-sat-modal-cell-untype {
-  white-space: nowrap;
+  width: 12.5rem;
+  min-width: 12.5rem;
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+  text-align: center;
+  white-space: normal;
+  word-break: keep-all;
+  line-height: 1.4;
 }
 
 .adm-sat-untype-chip {
   display: inline-flex;
   align-items: center;
-  padding: 0.1rem 0.5rem 0.12rem;
+  justify-content: center;
+  max-width: 100%;
+  padding: 0.18rem 0.55rem;
   border-radius: 999px;
-  font-size: 0.68rem;
+  font-size: 0.6875rem;
   font-weight: 700;
   letter-spacing: -0.02em;
+  line-height: 1.35;
+  text-align: center;
+  white-space: normal;
+  word-break: keep-all;
   color: #9f1239;
   background: rgba(244, 63, 94, 0.1);
   border: 1px solid rgba(244, 63, 94, 0.26);
@@ -1677,6 +2036,15 @@
 @media (max-width: 768px) {
   .adm-sat-exclude-grid {
     grid-template-columns: 1fr;
+  }
+
+  .adm-sat-exclude-history-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .adm-sat-exclude-day-item {
+    flex-direction: column;
+    align-items: stretch;
   }
 
   .adm-sat-member-detail-card .member-card-header {

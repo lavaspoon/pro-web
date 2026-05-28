@@ -4,6 +4,7 @@ import {
   CASE_MAX_TOTAL_SCORE,
   DEFAULT_CERTIFICATION_MIN_TOTAL,
   parseScoreValue,
+  isScoreInputOverMax,
 } from '../../utils/caseEvaluation';
 import './CaseScorePanel.css';
 
@@ -47,7 +48,14 @@ function ScoreCell({ label, scoreKey, maxScore, raw, readonly, onScoreChange, in
         inputMode="numeric"
         className="mce-score-cell-input"
         value={raw ?? ''}
-        onChange={(e) => onScoreChange?.(scoreKey, e.target.value)}
+        onChange={(e) => {
+          const next = e.target.value;
+          if (isScoreInputOverMax(next, maxScore)) {
+            window.alert(`${label} 항목의 최대점수(${maxScore}점)를 초과할 수 없습니다.`);
+            return;
+          }
+          onScoreChange?.(scoreKey, next);
+        }}
         placeholder="—"
         aria-label={`${label} 점수 0~${maxScore}`}
       />
