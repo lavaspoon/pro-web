@@ -401,7 +401,7 @@ async function uploadTargetMembersExcelTo(path, file) {
 }
 
 /**
- * YOU 프로 평가 대상자 엑셀 업로드 (.xlsx) — TB_YOU_TARGET + you_yn
+ * YOU 프로 평가 대상자 엑셀 업로드 (.xlsx) — TB_YOU_TARGET(스윙ID 포함) + you_yn + b_id
  * POST /api/admin/target-members/upload
  */
 export const uploadYouProTargetMembersExcel = async (file) =>

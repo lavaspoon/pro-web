@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import useAuthStore from './store/authStore';
 import { canAccessPendingCases } from './utils/youProRole';
 import Layout from './components/common/Layout';
+import AuthPage from './pages/AuthPage';
 import LoginPage from './pages/LoginPage';
 import HomePage from './pages/member/HomePage';
 import CaseListPage from './pages/member/CaseListPage';
@@ -28,7 +29,7 @@ const queryClient = new QueryClient({
 
 function ProtectedRoute({ children, requiredRole }) {
   const { isAuthenticated, user } = useAuthStore();
-  if (!isAuthenticated) return <Navigate to="/" replace />;
+  if (!isAuthenticated) return <Navigate to="/auth" replace />;
   if (requiredRole && user?.role !== requiredRole) {
     return <Navigate to={user?.role === 'admin' ? '/admin' : '/member'} replace />;
   }
@@ -37,7 +38,7 @@ function ProtectedRoute({ children, requiredRole }) {
 
 function PendingCasesRoute({ children }) {
   const { isAuthenticated, user } = useAuthStore();
-  if (!isAuthenticated) return <Navigate to="/" replace />;
+  if (!isAuthenticated) return <Navigate to="/auth" replace />;
   if (user?.role !== 'admin') {
     return <Navigate to="/member" replace />;
   }
@@ -90,13 +91,15 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Routes>
+          <Route path="/auth/login" element={<LoginPage />} />
+          <Route path="/auth" element={<AuthPage />} />
           <Route
             path="/"
             element={
               isAuthenticated ? (
                 <Navigate to={user?.role === 'admin' ? '/admin' : '/member'} replace />
               ) : (
-                <LoginPage />
+                <Navigate to="/auth" replace />
               )
             }
           />
@@ -116,7 +119,7 @@ export default function App() {
               </ProtectedRoute>
             }
           />
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<Navigate to={isAuthenticated ? (user?.role === 'admin' ? '/admin' : '/member') : '/auth'} replace />} />
         </Routes>
       </BrowserRouter>
     </QueryClientProvider>

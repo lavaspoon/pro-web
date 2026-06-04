@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Headphones, ShieldCheck, LogIn, Award, AlertCircle } from 'lucide-react';
 import useAuthStore from '../store/authStore';
@@ -9,8 +9,17 @@ export default function LoginPage() {
   const [skid, setSkid] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const { login } = useAuthStore();
+  const login = useAuthStore((s) => s.login);
+  const logout = useAuthStore((s) => s.logout);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    logout();
+    const unsub = useAuthStore.persist?.onFinishHydration?.(() => {
+      logout();
+    });
+    return () => unsub?.();
+  }, [logout]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -20,11 +29,12 @@ export default function LoginPage() {
     }
     setError('');
     setIsLoading(true);
+    logout();
 
     try {
-      const user = await loginWithSkid(skid.trim());
-      login(user);
-      navigate(user.role === 'admin' ? '/admin' : '/member');
+      const userData = await loginWithSkid(skid.trim());
+      login(userData);
+      navigate(userData.role === 'admin' ? '/admin' : '/member', { replace: true });
     } catch (err) {
       setError(err.message || '로그인에 실패했습니다. SKID를 확인해주세요.');
     } finally {

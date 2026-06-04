@@ -67,6 +67,8 @@
   flex-shrink: 0;
   border-bottom: 1px solid var(--border-strong);
   background: linear-gradient(180deg, var(--surface) 0%, var(--surface-inset) 100%);
+  overflow: visible;
+  z-index: 2;
 }
 
 .review-modal-bulk-nav {
@@ -1401,6 +1403,11 @@
 
 .review-modal-header-meta.member-case-detail-meta-row {
   padding: 8px 10px;
+  overflow: visible;
+}
+
+.review-modal-header-meta.member-case-detail-meta-row:has(.member-case-detail-meta-copy-tip) {
+  padding-bottom: 28px;
 }
 
 .review-modal-footer--judge.review-modal-footer--bar {

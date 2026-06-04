@@ -293,6 +293,7 @@ export default function CaseReviewModal({
             status={liveCase.status}
             submittedAt={liveCase.submittedAt}
             callDate={liveCase.callDate}
+            swingId={liveCase.swingId}
             caseItem={liveCase}
             statusMode="review"
             callTitle={callDateTime ? `STT 조회: ${callDateTime.searchKey}` : undefined}

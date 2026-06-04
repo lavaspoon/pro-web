@@ -16,6 +16,25 @@ export function formatSubmittedDateMmDd(value) {
   return `${mo}-${day}`;
 }
 
+/** 접수 목록 — STT 조회용 스윙 ID (TB_LMS_MEMBER.b_id) */
+export function formatCaseListSwingId(value) {
+  const s = String(value ?? '').trim();
+  return s || '—';
+}
+
+/** 접수 목록 — 상담시간 강조 표시 (날짜·시간 2줄 + STT searchKey) */
+export function formatCaseListCallTimeForStt(value) {
+  const parts = parseCaseCallDateTime(value);
+  if (!parts) {
+    return { primary: '—', hint: null, title: null };
+  }
+  return {
+    primary: parts.fullDisplay,
+    hint: parts.searchKey,
+    title: parts.searchKey ? `STT 조회: ${parts.searchKey}` : parts.fullDisplay,
+  };
+}
+
 /** 목록용 mm월dd일 HH:mm (24시간) — 접수·상담 일시 공통 */
 export function formatCaseListDateMmDdHm(value) {
   const d = parseToLocalDate(value);

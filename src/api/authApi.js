@@ -1,5 +1,10 @@
 import axiosInstance from './axiosInstance';
-import { isAdminRouteRole } from '../utils/youProRole';
+
+/** comCode >= 31 이고 mbPosition !== 719 이면 관리자 화면 */
+export function isAdminRouteByMemberProfile({ comCode, mbPosition } = {}) {
+  if (comCode == null || mbPosition == null) return false;
+  return comCode >= 31 && mbPosition !== 719;
+}
 
 /**
  * SKID로 로그인
@@ -11,10 +16,10 @@ export const loginWithSkid = async (skid) => {
 
   return {
     ...data,
-    id: data.skid,                                        // 기존 user.id 호환
-    name: data.userName,                                  // 화면 표시명
-    position: data.mbPositionName || '상담사',            // 직급명
-    youProRole: data.role,                                // TB_YOUPRO_ROLE.role 원본
-    role: isAdminRouteRole(data.role) ? 'admin' : 'member', // 라우팅용 역할
+    id: data.skid,
+    name: data.userName,
+    position: data.mbPositionName || '상담사',
+    youProRole: data.role,
+    role: isAdminRouteByMemberProfile(data) ? 'admin' : 'member',
   };
 };

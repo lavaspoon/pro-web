@@ -105,6 +105,12 @@ export default function AdminTargetMembersUploadModal({ open, onClose, variant =
             <p className="sat-setup-modal-lead">
               업로드 시 <strong>{config.tableLabel} 기존 데이터는 전체 삭제</strong> 후 재적재되며,{' '}
               <strong>TB_LMS_MEMBER.{config.memberColumn}</strong> 은 먼저 전체 N 처리 후 엑셀 기준으로 반영됩니다.
+              {variant === 'you' ? (
+                <>
+                  {' '}
+                  <strong>TB_LMS_MEMBER.b_id</strong> 는 상담사ID(skid) 매칭 후 엑셀 스윙ID 값으로 동기화됩니다.
+                </>
+              ) : null}
             </p>
           </div>
           <button type="button" className="sat-setup-modal-close" onClick={onClose} aria-label="닫기">
@@ -141,7 +147,10 @@ export default function AdminTargetMembersUploadModal({ open, onClose, variant =
                 >
                   <Upload size={22} strokeWidth={2.1} className="sat-setup-drop-ico" aria-hidden />
                   <span className="sat-setup-drop-title">파일 선택</span>
-                  <span className="sat-setup-drop-hint">.xlsx · 평가대상여부 열: 대상 또는 평가</span>
+                  <span className="sat-setup-drop-hint">
+                    .xlsx · 평가대상여부: 대상 또는 평가
+                    {variant === 'you' ? ' · 평가대상여부 우측 스윙ID 열' : null}
+                  </span>
                 </button>
 
                 <div className="sat-setup-upload-actions">

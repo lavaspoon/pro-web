@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { BarChart3, LogOut, Sparkles } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import { BarChart3, Sparkles } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import useAuthStore from '../../store/authStore';
 import { fetchMemberCsInsightPromptMents } from '../../api/memberApi';
@@ -103,16 +103,9 @@ function MemberTopbarMentBubble({ skid, onMentClick }) {
 }
 
 function MemberLayout({ children }) {
-  const navigate = useNavigate();
   const { pathname } = useLocation();
   const user = useAuthStore((s) => s.user);
-  const logout = useAuthStore((s) => s.logout);
   const [mentModal, setMentModal] = useState(null);
-
-  const handleLogout = () => {
-    logout();
-    navigate('/', { replace: true });
-  };
 
   const isCsSatisfaction = pathname.startsWith('/member/cs-satisfaction');
 
@@ -146,10 +139,6 @@ function MemberLayout({ children }) {
             <div className="member-topbar-center">
               <MemberTopbarMentBubble skid={user?.skid} onMentClick={setMentModal} />
             </div>
-            <button type="button" className="admin-topbar-logout" onClick={handleLogout}>
-              <LogOut size={16} strokeWidth={2} aria-hidden />
-              로그아웃
-            </button>
           </div>
         </div>
       </header>
@@ -187,14 +176,7 @@ const ADMIN_TABS = [
 ];
 
 function AdminLayout({ children }) {
-  const navigate = useNavigate();
   const { pathname } = useLocation();
-  const logout = useAuthStore((s) => s.logout);
-
-  const handleLogout = () => {
-    logout();
-    navigate('/', { replace: true });
-  };
 
   return (
     <div className="admin-shell">
@@ -226,10 +208,6 @@ function AdminLayout({ children }) {
                 </nav>
               </div>
             </div>
-            <button type="button" className="admin-topbar-logout" onClick={handleLogout}>
-              <LogOut size={16} strokeWidth={2} aria-hidden />
-              로그아웃
-            </button>
           </div>
         </div>
       </header>
