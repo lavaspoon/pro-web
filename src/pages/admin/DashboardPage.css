@@ -38,6 +38,23 @@
   height: 0.2rem;
 }
 
+.adm-dashboard-export-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-color: rgba(15, 118, 110, 0.35);
+  background: rgba(240, 253, 250, 0.95);
+  color: #0f766e;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.adm-dashboard-export-btn:hover:not(:disabled) {
+  border-color: rgba(15, 118, 110, 0.55);
+  background: #ecfdf5;
+}
+
 /* 헤더 보조 링크(기본) — cute 버튼이 아닐 때만 */
 .adm-dashboard--yp .adm-header-link:not(.adm-pending-btn--cute) {
   padding: 10px 18px;

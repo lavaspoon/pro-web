@@ -182,8 +182,13 @@ export default function SubmitCaseForm({ className = '', onGoToCaseList, compact
                 2
               </span>
               <div className="submit-section-head-text">
-                <h3 id="submit-section-when-title" className="submit-section-title">
-                  통화 일시 <span className="required">*</span>
+                <h3 id="submit-section-when-title" className="submit-section-title submit-section-title--with-hint">
+                  <span className="submit-section-title-main">
+                    통화 일시 <span className="required">*</span>
+                  </span>
+                  <span className="submit-section-inline-hint" id="submit-section-when-hint">
+                    <span className="submit-section-inline-hint-em">녹취 시간</span>으로 입력
+                  </span>
                 </h3>
               </div>
             </header>

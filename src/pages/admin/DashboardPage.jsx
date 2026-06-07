@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -8,8 +8,10 @@ import {
   ChevronRight,
   X,
   BadgeCheck,
+  Download,
 } from 'lucide-react';
 import {
+  downloadAdminCasesExport,
   fetchAdminDashboard,
   fetchAdminLeafTeams,
   fetchAdminRanking,
@@ -18,7 +20,7 @@ import {
 import { mergeSecondDepthOptions } from '../../utils/adminSecondDepth';
 import { formatCenterDisplayName } from '../../utils/teamHierarchy';
 import useAuthStore from '../../store/authStore';
-import { canAccessPendingCases, isYouProAdmin } from '../../utils/youProRole';
+import { canAccessPendingCases, isYouProAdmin, isYouProCeDirector } from '../../utils/youProRole';
 import AdminMemberDetailCard from './AdminMemberDetailCard';
 import AdminTargetMembersUploadModal from './AdminTargetMembersUploadModal';
 import {
@@ -136,9 +138,12 @@ function SortTh({ label, sortKey, sortConfig, onSort }) {
 
 export default function DashboardPage() {
   const user = useAuthStore((s) => s.user);
-  const showPendingCasesLink = canAccessPendingCases(user);
-  const showAdminTools = isYouProAdmin(user);
+  const showCeDirectorExport = isYouProCeDirector(user);
+  const showPendingCasesLink = canAccessPendingCases(user) && !showCeDirectorExport;
+  const showAdminTools = isYouProAdmin(user) && !showCeDirectorExport;
   const [targetUploadModalOpen, setTargetUploadModalOpen] = useState(false);
+  const [exportPending, setExportPending] = useState(false);
+  const exportYear = new Date().getFullYear();
   const [selectedTeamId, setSelectedTeamId] = useState(null);
   /** null = 미적용, 문자열(빈 문자열 포함) = 해당 값과 일치하는 행만 */
   const [filterCenter, setFilterCenter] = useState(null);
@@ -259,6 +264,18 @@ export default function DashboardPage() {
     enabled: selectedTeamId != null,
   });
 
+  const handleExportExcel = useCallback(async () => {
+    if (!user?.skid) return;
+    setExportPending(true);
+    try {
+      await downloadAdminCasesExport(exportYear, user.skid);
+    } catch (err) {
+      window.alert(err.message || '엑셀 다운로드에 실패했습니다.');
+    } finally {
+      setExportPending(false);
+    }
+  }, [exportYear, user?.skid]);
+
   const handleSort = (key) => {
     setSortConfig((prev) => {
       if (prev.key !== key) {
@@ -364,6 +381,18 @@ export default function DashboardPage() {
                 </span>
                 <ChevronRight className="adm-pending-btn__chev" size={18} strokeWidth={2.25} aria-hidden />
               </Link>
+            )}
+            {showCeDirectorExport && (
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm adm-dashboard-export-btn"
+                onClick={handleExportExcel}
+                disabled={exportPending}
+                title={`${exportYear}년 전체 센터 접수 raw 엑셀 다운로드`}
+              >
+                <Download size={14} aria-hidden />
+                {exportPending ? '다운로드 중…' : '접수현황 엑셀 다운'}
+              </button>
             )}
           </div>
         </div>
@@ -549,9 +578,8 @@ export default function DashboardPage() {
                             <tr key={`r-${rank}-${row.id}`} className="adm-rank-compact__tr">
                               <td className="adm-rank-compact__td adm-rank-compact__td--rank">
                                 <span
-                                  className={`adm-rank-pill ${
-                                    rank <= 3 ? `adm-rank-pill--${rank}` : 'adm-rank-pill--rest'
-                                  }`}
+                                  className={`adm-rank-pill ${rank <= 3 ? `adm-rank-pill--${rank}` : 'adm-rank-pill--rest'
+                                    }`}
                                 >
                                   {rank}
                                 </span>
@@ -712,11 +740,10 @@ export default function DashboardPage() {
                     <td>
                       <button
                         type="button"
-                        className={`adm-dept-filter-btn ${
-                          filterCenter !== null && normFilterKey(team.centerName) === filterCenter
+                        className={`adm-dept-filter-btn ${filterCenter !== null && normFilterKey(team.centerName) === filterCenter
                             ? 'is-active'
                             : ''
-                        }`}
+                          }`}
                         onClick={(e) => handleCenterFilterClick(e, team)}
                         title="이 센터만 보기 (같은 값을 다시 클릭하면 해제)"
                       >
@@ -726,11 +753,10 @@ export default function DashboardPage() {
                     <td>
                       <button
                         type="button"
-                        className={`adm-dept-filter-btn ${
-                          filterGroup !== null && normFilterKey(team.groupName) === filterGroup
+                        className={`adm-dept-filter-btn ${filterGroup !== null && normFilterKey(team.groupName) === filterGroup
                             ? 'is-active'
                             : ''
-                        }`}
+                          }`}
                         onClick={(e) => handleGroupFilterClick(e, team)}
                         title="이 그룹만 보기 (같은 값을 다시 클릭하면 해제)"
                       >
@@ -740,11 +766,10 @@ export default function DashboardPage() {
                     <td>
                       <button
                         type="button"
-                        className={`adm-dept-filter-btn ${
-                          filterSkill !== null && normFilterKey(team.skill) === filterSkill
+                        className={`adm-dept-filter-btn ${filterSkill !== null && normFilterKey(team.skill) === filterSkill
                             ? 'is-active'
                             : ''
-                        }`}
+                          }`}
                         onClick={(e) => handleSkillFilterClick(e, team)}
                         title="이 스킬만 보기 (같은 값을 다시 클릭하면 해제)"
                       >
@@ -845,10 +870,10 @@ export default function DashboardPage() {
                   teamContext={
                     selectedTeam
                       ? {
-                          centerName: selectedTeam.centerName,
-                          groupName: selectedTeam.groupName,
-                          skill: selectedTeam.skill,
-                        }
+                        centerName: selectedTeam.centerName,
+                        groupName: selectedTeam.groupName,
+                        skill: selectedTeam.skill,
+                      }
                       : null
                   }
                 />

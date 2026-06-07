@@ -6,6 +6,7 @@ export const ADMIN_ROUTE_ROLES = ['관리자', '모니터링'];
 
 export const YOUPRO_ADMIN_ROLE = '관리자';
 export const YOUPRO_MONITORING_ROLE = '모니터링';
+export const YOUPRO_CE_DIRECTOR_ROLE = 'CE실장';
 
 export function resolveYouProRole(user) {
   if (!user) return null;
@@ -25,6 +26,10 @@ export function isYouProAdmin(user) {
 
 export function isYouProMonitoring(user) {
   return resolveYouProRole(user) === YOUPRO_MONITORING_ROLE;
+}
+
+export function isYouProCeDirector(user) {
+  return resolveYouProRole(user) === YOUPRO_CE_DIRECTOR_ROLE;
 }
 
 export function isAdminRouteRole(youProRole) {

@@ -91,7 +91,8 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Routes>
-          <Route path="/auth/login" element={<LoginPage />} />
+          {/* /auth/login 은 백엔드 API(GET /auth/login)와 경로 충돌 — 배포 환경에서 SPA 대신 API가 응답함 */}
+          <Route path="/login" element={<LoginPage />} />
           <Route path="/auth" element={<AuthPage />} />
           <Route
             path="/"
