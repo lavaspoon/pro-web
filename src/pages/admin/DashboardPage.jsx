@@ -21,6 +21,7 @@ import { mergeSecondDepthOptions } from '../../utils/adminSecondDepth';
 import { formatCenterDisplayName } from '../../utils/teamHierarchy';
 import useAuthStore from '../../store/authStore';
 import { canAccessPendingCases, isYouProAdmin, isYouProCeDirector } from '../../utils/youProRole';
+import { LatestDataAsOfHint } from '../../utils/adminDataAsOfHint';
 import AdminMemberDetailCard from './AdminMemberDetailCard';
 import AdminTargetMembersUploadModal from './AdminTargetMembersUploadModal';
 import {
@@ -89,18 +90,6 @@ function formatAnnualEvalTargetAvg(v) {
 function formatMemberCount(v) {
   if (v == null || Number.isNaN(Number(v))) return '—';
   return `${Number(v).toLocaleString('ko-KR')}명`;
-}
-
-/** 전체 센터 현황 힌트 — API latestCallDate(yyyy-MM-dd) 기준 */
-function formatLatestDataAsOfHint(latestCallDate) {
-  const s = String(latestCallDate ?? '').trim();
-  if (s.length < 10) return '최신 데이터 없음';
-  const month = Number(s.slice(5, 7));
-  const day = Number(s.slice(8, 10));
-  if (!Number.isFinite(month) || !Number.isFinite(day) || month < 1 || day < 1) {
-    return '최신 데이터 없음';
-  }
-  return `최근 ${month}월 ${day}일 기준의 최신 데이터`;
 }
 
 /** 동차 시 항상 센터 → 그룹 → 실명(팀명) 오름차순 */
@@ -337,7 +326,8 @@ export default function DashboardPage() {
   const overallAnnualCertifiedCount = data?.overallAnnualCertifiedCount ?? 0;
   const overallAnnualEvalTargetAvg = data?.overallAnnualEvalTargetAvg ?? null;
   const overallAnnualCertificationRate = data?.overallAnnualCertificationRate ?? null;
-  const latestCallDate = data?.latestCallDate ?? null;
+  /** judged_at 최댓값(yyyy-MM-dd) — API latestCallDate */
+  const latestJudgedDate = data?.latestCallDate ?? null;
   const overviewLoading = dashboardLoading || !data;
 
   const selectedTeam = teamsFiltered.find((t) => Number(t.id) === Number(selectedTeamId));
@@ -405,7 +395,9 @@ export default function DashboardPage() {
           <div>
             <h2 className="adm-section-heading">전체 센터 현황</h2>
             <p className="adm-section-hint">
-              <strong>{secondDepthLabelHint}</strong> · {formatLatestDataAsOfHint(latestCallDate)}
+              <strong>{secondDepthLabelHint}</strong>
+              {' · '}
+              <LatestDataAsOfHint latestDataDate={latestJudgedDate} />
             </p>
           </div>
         </div>

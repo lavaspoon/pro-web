@@ -31,6 +31,7 @@ import CsSatisfactionModalDayStats from '../../components/cs/CsSatisfactionModal
 import CsSatisfactionModalPeriodToolbar from '../../components/cs/CsSatisfactionModalPeriodToolbar';
 import { formatCaseDateTimeMmDdKorean, problemResolvedNegRateClass, problemResolvedNegRateText } from '../../utils/caseDisplay';
 import { isActiveUseYn, buildDaySatisfactionStatsByDay } from '../../utils/csSatisfactionModalDayStats';
+import { LatestDataAsOfHint } from '../../utils/adminDataAsOfHint';
 import PendingCaseDayPickerModal from './PendingCaseDayPickerModal';
 import { KpiOverviewSkeleton, SummaryTableSkeletonRows } from './adminLoadingSkeletons';
 import './DashboardPage.css';
@@ -153,18 +154,6 @@ function formatMemberDetailPeriodHint(detail) {
     })`;
   }
   return '당월 기준';
-}
-
-/** 전체 센터 현황 힌트 — API statTo(yyyy-MM-dd) 기준 */
-function formatLatestDataAsOfHint(latestDataDate) {
-  const s = String(latestDataDate ?? '').trim();
-  if (s.length < 10) return '최신 데이터 없음';
-  const month = Number(s.slice(5, 7));
-  const day = Number(s.slice(8, 10));
-  if (!Number.isFinite(month) || !Number.isFinite(day) || month < 1 || day < 1) {
-    return '최신 데이터 없음';
-  }
-  return `최근 ${month}월 ${day}일 기준의 최신 데이터`;
 }
 
 /** 목표 대비 달성 — achievementRate 우선, 없으면 actual ≥ target (높을수록 유리 지표) */
@@ -530,7 +519,8 @@ export default function AdminSatisfactionPage() {
       overallProblemAchievement,
     [summaryTotals.probPct, annualMetricTargets.problem, overallProblemAchievement],
   );
-  const latestSatisfactionDataDate = summaryQuery.data?.statTo ?? null;
+  /** 상담일시(eval_date) 최댓값(yyyy-MM-dd) */
+  const latestSatisfactionDataDate = summaryQuery.data?.latestConsultDate ?? null;
   const memberRows = useMemo(
     () => centerMonthDetailQuery.data?.members ?? [],
     [centerMonthDetailQuery.data],
@@ -905,7 +895,7 @@ export default function AdminSatisfactionPage() {
             <p className="adm-section-hint">
               <strong>{secondDepthLabelHint}</strong>
               {' · '}
-              {formatLatestDataAsOfHint(latestSatisfactionDataDate)}
+              <LatestDataAsOfHint latestDataDate={latestSatisfactionDataDate} />
             </p>
           </div>
         </div>

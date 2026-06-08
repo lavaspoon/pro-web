@@ -744,6 +744,11 @@
   font-weight: 400;
 }
 
+.adm-data-as-of-date {
+  font-weight: 700;
+  color: #2563eb;
+}
+
 .adm-section-title-row {
   display: flex;
   align-items: flex-end;
