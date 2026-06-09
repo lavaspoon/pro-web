@@ -2,7 +2,7 @@
 export const PENDING_CASES_ACCESS_ROLES = ['관리자', '모니터링'];
 
 /** TB_YOUPRO_ROLE.role — 관리자 영역(/admin) 라우팅 역할 */
-export const ADMIN_ROUTE_ROLES = ['관리자', '모니터링'];
+export const ADMIN_ROUTE_ROLES = ['관리자', '모니터링', 'CE실장'];
 
 export const YOUPRO_ADMIN_ROLE = '관리자';
 export const YOUPRO_MONITORING_ROLE = '모니터링';
