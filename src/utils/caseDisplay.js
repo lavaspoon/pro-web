@@ -16,6 +16,18 @@ export function formatSubmittedDateMmDd(value) {
   return `${mo}-${day}`;
 }
 
+/** 접수일 — 목록용 yy.mm.dd HH:mm (24시간) */
+export function formatSubmittedDateYyMmDdHm(value) {
+  const d = parseToLocalDate(value);
+  if (!d) return '—';
+  const yy = String(d.getFullYear()).slice(-2);
+  const mo = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const h = String(d.getHours()).padStart(2, '0');
+  const min = String(d.getMinutes()).padStart(2, '0');
+  return `${yy}.${mo}.${day} ${h}:${min}`;
+}
+
 /** 접수 목록 — STT 조회용 스윙 ID (TB_LMS_MEMBER.b_id) */
 export function formatCaseListSwingId(value) {
   const s = String(value ?? '').trim();
@@ -154,6 +166,14 @@ export function formatCaseDateTimeMmDdKorean(value) {
   const hours12 = String(hours24 % 12 || 12).padStart(2, '0');
   const min = String(d.getMinutes()).padStart(2, '0');
   return `${mo}월 ${day}일 ${period} ${hours12}:${min}`;
+}
+
+/** 통화 일시를 분 단위 비교 키 "YYYY-MM-DD HH:mm" 로 정규화 */
+export function toCallDateMinuteKey(value) {
+  if (value == null || String(value).trim() === '') return '';
+  const m = String(value).trim().match(/^(\d{4}-\d{2}-\d{2})[ T](\d{2}):(\d{2})/);
+  if (!m) return '';
+  return `${m[1]} ${m[2]}:${m[3]}`;
 }
 
 /**

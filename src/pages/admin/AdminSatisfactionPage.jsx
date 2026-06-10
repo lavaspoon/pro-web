@@ -120,9 +120,9 @@ function normalizeDatetimeLocalForApi(s) {
   return t;
 }
 
-function pct(v) {
+function pct(v, decimals = 1) {
   if (v == null || Number.isNaN(Number(v))) return '—';
-  return `${Number(v).toFixed(1)}%`;
+  return `${Number(v).toFixed(decimals)}%`;
 }
 
 /**
@@ -169,13 +169,13 @@ function resolveTargetMet({ actualPct, targetPct, achievementRate }) {
   return Number(actualPct) >= t;
 }
 
-function SatPctCell({ value, targetPct, achievementRate }) {
+function SatPctCell({ value, targetPct, achievementRate, decimals = 1 }) {
   const met = resolveTargetMet({ actualPct: value, targetPct, achievementRate });
   const toneClass =
     met == null ? '' : met ? 'adm-sat-pct--ok' : 'adm-sat-pct--no';
   return (
     <span className={toneClass ? `adm-sat-pct ${toneClass}` : undefined}>
-      {pct(value)}
+      {pct(value, decimals)}
     </span>
   );
 }
@@ -234,7 +234,7 @@ function dateKeyFromDateTime(dt) {
   return String(dt).slice(0, 10);
 }
 
-function KpiScopeListCard({ title, icon: Icon, rows = [] }) {
+function KpiScopeListCard({ title, icon: Icon, rows = [], actualDecimals = 1 }) {
   const shortScopeLabel = (name) => {
     const s = String(name ?? '').trim();
     if (!s) return '—';
@@ -277,7 +277,7 @@ function KpiScopeListCard({ title, icon: Icon, rows = [] }) {
         {shortScopeLabel(r.scopeName)}
       </span>
       <span className="adm-sat-kpi-center-pct">{pct(r.targetPercent)}</span>
-      <span className="adm-sat-kpi-center-pct adm-sat-kpi-center-pct--actual">{pct(r.actualRate)}</span>
+      <span className="adm-sat-kpi-center-pct adm-sat-kpi-center-pct--actual">{pct(r.actualRate, actualDecimals)}</span>
       <span
         className={
           r.targetMet == null
@@ -356,7 +356,7 @@ function computeSummaryTotals(list) {
     fiveMajorEligibleSum === 0 ? null : Math.round((1000 * fiveMajorSum) / fiveMajorEligibleSum) / 10;
   const genPct =
     gen5060EligibleSum === 0 ? null : Math.round((1000 * gen5060Sum) / gen5060EligibleSum) / 10;
-  const probPct = evalSum === 0 ? null : Math.round((1000 * problemResolvedSum) / evalSum) / 10;
+  const probPct = evalSum === 0 ? null : Math.round((10000 * problemResolvedSum) / evalSum) / 100;
   return {
     evalTargetMemberSum,
     fiveMajorSum,
@@ -909,7 +909,7 @@ export default function AdminSatisfactionPage() {
               <KpiScopeListCard title="종합 만족도" icon={Building2} rows={kpiData?.centerAchievements ?? []} />
               <KpiScopeListCard title="5대 도시" icon={MapPinned} rows={kpiData?.fiveMajorCities ?? []} />
               <KpiScopeListCard title="5060" icon={UserCircle2} rows={kpiData?.gen5060 ?? []} />
-              <KpiScopeListCard title="문제해결" icon={CheckCircle2} rows={kpiData?.problemResolved ?? []} />
+              <KpiScopeListCard title="문제해결" icon={CheckCircle2} rows={kpiData?.problemResolved ?? []} actualDecimals={2} />
             </div>
           )}
         </div>
@@ -1099,6 +1099,7 @@ export default function AdminSatisfactionPage() {
                         <SatPctCell
                           value={r.problemResolvedPct}
                           achievementRate={r.problemResolvedInverseAchievementPct}
+                          decimals={2}
                         />
                       </td>
                     </tr>
@@ -1138,6 +1139,7 @@ export default function AdminSatisfactionPage() {
                     <SatPctCell
                       value={summaryTotals.probPct}
                       achievementRate={footerProblemAchievement}
+                      decimals={2}
                     />
                   </td>
                 </tr>
@@ -1249,6 +1251,7 @@ export default function AdminSatisfactionPage() {
                                 memberProblemTarget,
                               )
                             }
+                            decimals={2}
                           />
                         </span>
                       </div>

@@ -78,12 +78,16 @@ export function decisionLabel(decision) {
   return decision === 'selected' ? '인증' : '미인증';
 }
 
-export function buildJudgePayload({ form, adminSkid, draft, decision }) {
+export function buildJudgePayload({ form, adminSkid, draft, decision, description }) {
   const body = {
     adminSkid,
     draft: Boolean(draft),
     remarks: form.remarks?.trim() || '',
   };
+  const desc = description != null ? String(description).trim() : '';
+  if (desc) {
+    body.description = desc;
+  }
   if (!draft && decision) {
     body.decision = decision === 'selected' ? 'selected' : 'rejected';
   }

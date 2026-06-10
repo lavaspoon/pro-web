@@ -11,8 +11,6 @@ import {
   ArrowUp,
   ArrowDown,
   ArrowUpDown,
-  Upload,
-  Download,
   Check,
   Calendar,
   CheckCircle2,
@@ -23,8 +21,6 @@ import {
   fetchAdminReviewQueue,
   fetchCaseForReview,
   judgeCase,
-  downloadAdminCasesExport,
-  uploadCaseHistoryMigrationExcel,
 } from '../../api/adminApi';
 import {
   buildJudgePayload,
@@ -46,6 +42,8 @@ import CaseReviewModal from './CaseReviewModal';
 import PendingCaseAssignMonitorModal from './PendingCaseAssignMonitorModal';
 import PendingCaseDayPickerModal from './PendingCaseDayPickerModal';
 import CaseReviewStageBadge from '../../components/common/CaseReviewStageBadge';
+import AdminCasesExportControl from './AdminCasesExportControl';
+import AdminRewardExportControl from './AdminRewardExportControl';
 import {
   formatCaseListCertLabel,
   formatCaseListDateMmDdHm,
@@ -202,7 +200,7 @@ export default function PendingCasesPage() {
   const [monthKey, setMonthKey] = useState(currentMonthKey);
   /** null = 월 전체, yyyy-MM-dd = 해당 일자만 */
   const [dayFilterKey, setDayFilterKey] = useState(null);
-  const [tableSort, setTableSort] = useState({ key: 'totalScore', direction: 'desc' });
+  const [tableSort, setTableSort] = useState({ key: 'submitted', direction: 'desc' });
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [assignSubmitting, setAssignSubmitting] = useState(false);
   const [assignError, setAssignError] = useState('');
@@ -211,18 +209,11 @@ export default function PendingCasesPage() {
   const [stageFilter, setStageFilter] = useState('waiting');
   /** 1차 완료 탭 전용 — all | 80 | 90 */
   const [phase1ScoreFilter, setPhase1ScoreFilter] = useState('all');
-  const migrateFileRef = useRef(null);
   const selectAllCheckRef = useRef(null);
-  const [migratePending, setMigratePending] = useState(false);
-  const [migrateMessage, setMigrateMessage] = useState('');
-  const [exportPending, setExportPending] = useState(false);
   const [bulkPhase2Pending, setBulkPhase2Pending] = useState(false);
   const [bulkPhase2Message, setBulkPhase2Message] = useState('');
 
-  const migrationYear = new Date().getFullYear();
-  const exportYear = migrationYear;
-  const MIGRATION_FROM_MONTH = 1;
-  const MIGRATION_TO_MONTH = 4;
+  const exportYear = new Date().getFullYear();
 
   const { data: queue, isLoading: queueLoading, refetch } = useQuery({
     queryKey: ['admin-review-queue', user?.skid],
@@ -411,9 +402,9 @@ export default function PendingCasesPage() {
     });
   }, [teamRows]);
 
-  /** 팀·기간이 바뀌면 정렬을 접수일 오름차순으로 초기화 */
+  /** 팀·기간이 바뀌면 정렬을 접수일 최신순으로 초기화 */
   useEffect(() => {
-    setTableSort({ key: 'submitted', direction: 'asc' });
+    setTableSort({ key: 'submitted', direction: 'desc' });
   }, [selectedTeamKey, monthKey, dayFilterKey, stageFilter, phase1ScoreFilter]);
 
   /** 목록 스코프가 바뀌면 체크 해제 */
@@ -504,51 +495,9 @@ export default function PendingCasesPage() {
       if (prev.key === key) {
         return { key, direction: prev.direction === 'asc' ? 'desc' : 'asc' };
       }
-      return { key, direction: key === 'totalScore' ? 'desc' : 'asc' };
+      return { key, direction: key === 'totalScore' || key === 'submitted' ? 'desc' : 'asc' };
     });
   }, []);
-
-  const handleMigrationFile = useCallback(
-    async (e) => {
-      const file = e.target.files?.[0];
-      e.target.value = '';
-      if (!file) return;
-      setMigratePending(true);
-      setMigrateMessage('');
-      try {
-        const res = await uploadCaseHistoryMigrationExcel(file, {
-          year: migrationYear,
-          fromMonth: MIGRATION_FROM_MONTH,
-          toMonth: MIGRATION_TO_MONTH,
-        });
-        const skipped = res.skippedRows ?? 0;
-        const warns = Array.isArray(res.warnings) && res.warnings.length > 0
-          ? ` · 경고 ${res.warnings.length}건`
-          : '';
-        setMigrateMessage(
-          `${res.message ?? '마이그레이션 완료'} (사례 ${res.casesCreated ?? 0}건, 인센티브 ${res.reflectsCreated ?? 0}건, 건너뜀 ${skipped}건${warns})`
-        );
-        refetch();
-      } catch (err) {
-        setMigrateMessage(err.message || '업로드에 실패했습니다.');
-      } finally {
-        setMigratePending(false);
-      }
-    },
-    [migrationYear, refetch]
-  );
-
-  const handleExportExcel = useCallback(async () => {
-    if (!user?.skid) return;
-    setExportPending(true);
-    try {
-      await downloadAdminCasesExport(exportYear, user.skid);
-    } catch (err) {
-      window.alert(err.message || '엑셀 다운로드에 실패했습니다.');
-    } finally {
-      setExportPending(false);
-    }
-  }, [exportYear, user?.skid]);
 
   const loadReviewCase = useCallback(async (c) => {
     setLoadingCaseId(c.id);
@@ -794,36 +743,19 @@ export default function PendingCasesPage() {
             </div>
             <div className="pending-header-actions">
               {isAdmin ? (
-                <button
-                  type="button"
-                  className="btn btn-secondary btn-sm pending-export-btn"
-                  onClick={handleExportExcel}
-                  disabled={exportPending}
-                  title={`${exportYear}년 전체 센터 접수 raw 엑셀 다운로드`}
-                >
-                  <Download size={14} aria-hidden />
-                  {exportPending ? '다운로드 중…' : '엑셀 다운로드'}
-                </button>
+                <>
+                  <AdminCasesExportControl
+                    year={exportYear}
+                    adminSkid={user?.skid}
+                    buttonLabel="엑셀 다운로드"
+                    buttonClassName="btn btn-secondary btn-sm pending-export-btn"
+                  />
+                  <AdminRewardExportControl
+                    year={exportYear}
+                    adminSkid={user?.skid}
+                  />
+                </>
               ) : null}
-              <input
-                ref={migrateFileRef}
-                type="file"
-                className="pending-migrate-input"
-                accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                onChange={handleMigrationFile}
-                aria-hidden
-                tabIndex={-1}
-              />
-              <button
-                type="button"
-                className="btn btn-secondary btn-sm pending-migrate-btn"
-                onClick={() => migrateFileRef.current?.click()}
-                disabled={migratePending}
-                title={`${migrationYear}년 1~4월 엑셀 일괄 적재 (사례+인센티브, 재업로드 시 해당 월 기존 마이그레이션 건 삭제)`}
-              >
-                <Upload size={14} aria-hidden />
-                {migratePending ? '업로드 중…' : '1~4월 엑셀 마이그레이션 (임시)'}
-              </button>
               <div className="pending-header-stats" role="group" aria-label="센터별 검토 대기 건수">
                 <div
                   className="pending-header-stat pending-header-stat--card pending-header-stat--total"
@@ -856,11 +788,6 @@ export default function PendingCasesPage() {
                 ))}
               </div>
             </div>
-            {migrateMessage ? (
-              <p className="pending-migrate-msg" role="status">
-                {migrateMessage}
-              </p>
-            ) : null}
             </div>
           </div>
       </header>

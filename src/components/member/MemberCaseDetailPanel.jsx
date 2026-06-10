@@ -5,6 +5,7 @@ import { fetchCaseDetail } from '../../api/memberApi';
 import CaseDetailMetaRow from '../case/CaseDetailMetaRow';
 import { useMemberModalStore } from '../../store/memberModalStore';
 import MemberCaseEvaluationView from './MemberCaseEvaluationView';
+import MemberPendingCaseEdit from './MemberPendingCaseEdit';
 import './MemberSubmitModal.css';
 import './MemberCaseDetailModal.css';
 
@@ -60,7 +61,11 @@ export default function MemberCaseDetailPanel({ embedded = false }) {
               submittedAt={caseData.submittedAt}
               callDate={caseData.callDate}
             />
-            <MemberCaseEvaluationView caseData={caseData} />
+            {caseData.memberEditable ? (
+              <MemberPendingCaseEdit caseData={caseData} />
+            ) : (
+              <MemberCaseEvaluationView caseData={caseData} />
+            )}
           </>
         )}
       </div>

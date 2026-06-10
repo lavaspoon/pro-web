@@ -52,11 +52,11 @@ export const fetchAllPendingCases = async () => {
 };
 
 /**
- * 접수 현황 raw 엑셀 — 관리자 전용, 올해·전체 센터
- * GET /api/admin/cases/export?year=&adminSkid=
+ * 리워드 내역 통계 엑셀 — 관리자 전용, tb_you_incentive_reflect 구성원 기준
+ * GET /api/admin/incentive-reflect/export?year=&adminSkid=
  */
-export const downloadAdminCasesExport = async (year, adminSkid) => {
-  const response = await axiosInstance.get('/api/admin/cases/export', {
+export const downloadAdminRewardExport = async (year, adminSkid) => {
+  const response = await axiosInstance.get('/api/admin/incentive-reflect/export', {
     params: { year, adminSkid },
     responseType: 'blob',
     timeout: 120000,
@@ -68,7 +68,35 @@ export const downloadAdminCasesExport = async (year, adminSkid) => {
   const url = window.URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = `youpro-접수현황-${year}.xlsx`;
+  link.download = `youpro-리워드내역-${year}.xlsx`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
+};
+
+/**
+ * 접수 현황 raw 엑셀 — 관리자 전용, 올해·전체 센터
+ * GET /api/admin/cases/export?year=&month=&adminSkid=
+ * @param {number|null} month 1~12, null이면 전체
+ */
+export const downloadAdminCasesExport = async (year, adminSkid, month = null) => {
+  const params = { year, adminSkid };
+  if (month != null) params.month = month;
+  const response = await axiosInstance.get('/api/admin/cases/export', {
+    params,
+    responseType: 'blob',
+    timeout: 120000,
+  });
+  const blob = new Blob(
+    [response.data],
+    { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' },
+  );
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  const monthSuffix = month != null ? `-${month}월` : '';
+  link.download = `youpro-접수현황-${year}${monthSuffix}.xlsx`;
   document.body.appendChild(link);
   link.click();
   link.remove();
@@ -120,11 +148,20 @@ export const fetchCaseForReview = async (caseId) => {
  * 사례 판정 (선정 / 비선정)
  * POST /api/admin/cases/{caseId}/judge
  */
+export const updateCaseDescription = async ({ caseId, adminSkid, description }) => {
+  const { data } = await axiosInstance.patch(`/api/admin/cases/${caseId}/description`, {
+    adminSkid,
+    description: String(description ?? '').trim(),
+  });
+  return data;
+};
+
 export const judgeCase = async ({
   caseId,
   adminSkid,
   draft = false,
   decision,
+  description,
   kindGreeting,
   needsIdentification,
   empathy,
@@ -146,6 +183,9 @@ export const judgeCase = async ({
     adminSkid,
     draft: Boolean(draft),
     ...(decision && !draft ? { decision } : {}),
+    ...(description != null && String(description).trim() !== ''
+      ? { description: String(description).trim() }
+      : {}),
     kindGreeting,
     needsIdentification,
     empathy,

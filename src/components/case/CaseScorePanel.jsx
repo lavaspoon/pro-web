@@ -4,9 +4,21 @@ import {
   CASE_MAX_TOTAL_SCORE,
   DEFAULT_CERTIFICATION_MIN_TOTAL,
   parseScoreValue,
-  isScoreInputOverMax,
 } from '../../utils/caseEvaluation';
 import './CaseScorePanel.css';
+
+function scoreSelectOptionsForMax(maxScore) {
+  const opts = [0, 5];
+  if (maxScore >= 10) opts.push(10);
+  return opts;
+}
+
+function scoreSelectValue(raw, maxScore) {
+  const n = parseScoreValue(raw, maxScore);
+  const allowed = scoreSelectOptionsForMax(maxScore);
+  if (n != null && allowed.includes(n)) return String(n);
+  return '';
+}
 
 function resolveTotalTone({ status, certTone, totalScore, minTotal }) {
   if (certTone === 'neutral') return 'neutral';
@@ -38,30 +50,21 @@ function ScoreCell({ label, scoreKey, maxScore, raw, readonly, onScoreChange, in
       )}
     </span>
   ) : (
-    <div className={`mce-score-cell-input-wrap${filled ? ' mce-score-cell-input-wrap--filled' : ''}`}>
-      <input
+    <div className={`mce-score-cell-select-wrap${filled ? ' mce-score-cell-select-wrap--filled' : ''}`}>
+      <select
         id={inputId}
-        type="number"
-        min={0}
-        max={maxScore}
-        step={1}
-        inputMode="numeric"
-        className="mce-score-cell-input"
-        value={raw ?? ''}
-        onChange={(e) => {
-          const next = e.target.value;
-          if (isScoreInputOverMax(next, maxScore)) {
-            window.alert(`${label} 항목의 최대점수(${maxScore}점)를 초과할 수 없습니다.`);
-            return;
-          }
-          onScoreChange?.(scoreKey, next);
-        }}
-        placeholder="—"
-        aria-label={`${label} 점수 0~${maxScore}`}
-      />
-      <span className="mce-score-cell-input-suffix" aria-hidden>
-        점
-      </span>
+        className="mce-score-cell-select"
+        value={scoreSelectValue(raw, maxScore)}
+        onChange={(e) => onScoreChange?.(scoreKey, e.target.value)}
+        aria-label={`${label} 점수 선택`}
+      >
+        <option value="">-</option>
+        {scoreSelectOptionsForMax(maxScore).map((v) => (
+          <option key={v} value={String(v)}>
+            {v}점
+          </option>
+        ))}
+      </select>
     </div>
   );
 
@@ -216,7 +219,7 @@ export default function CaseScorePanel({
           <div className="mce-scores-head">
             <p className="mce-group-caption">평가 항목</p>
             {!readonly && !inlineLayout && (
-              <p className="mce-scores-hint">항목별 만점까지 입력 (총 {CASE_MAX_TOTAL_SCORE}점)</p>
+              <p className="mce-scores-hint">항목별 점수 선택 (총 {CASE_MAX_TOTAL_SCORE}점)</p>
             )}
           </div>
           <div className="mce-score-group">

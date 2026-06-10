@@ -42,6 +42,19 @@ export const submitCase = async ({ skid, title, description, callDate }) => {
 };
 
 /**
+ * 대기 중 사례 수정
+ * PUT /api/member/cases/{caseId}
+ */
+export const updateMyCase = async ({ caseId, skid, description, callDate }) => {
+  const { data } = await axiosInstance.put(`/api/member/cases/${caseId}`, {
+    skid,
+    description,
+    callDate,
+  });
+  return data;
+};
+
+/**
  * 구성원 CS 만족도 조회
  * GET /api/member/satisfaction?skid={skid}&year={year}&month={month}
  *

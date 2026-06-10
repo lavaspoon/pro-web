@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CheckCircle, AlertCircle, Send, Info, Lightbulb } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
-import { submitCase } from '../../api/memberApi';
+import { fetchMyCases, submitCase } from '../../api/memberApi';
+import { toCallDateMinuteKey } from '../../utils/caseDisplay';
 import '../../pages/member/SubmitCasePage.css';
 
 /** API 전달용 통화 일시: "YYYY-MM-DD HH:mm:00" */
@@ -26,6 +27,12 @@ export default function SubmitCaseForm({ className = '', onGoToCaseList, compact
   const [submitted, setSubmitted] = useState(false);
   const [clientError, setClientError] = useState('');
   const errorBannerRef = useRef(null);
+
+  const { data: myCases = [] } = useQuery({
+    queryKey: ['my-cases', user?.skid],
+    queryFn: () => fetchMyCases(user.skid),
+    enabled: !!user?.skid,
+  });
 
   const mutation = useMutation({
     mutationFn: (data) => {
@@ -67,8 +74,8 @@ export default function SubmitCaseForm({ className = '', onGoToCaseList, compact
     setClientError('');
     if (mutation.isPending) return;
     const body = form.excellentContent.trim();
-    if (body.length < 30) {
-      setClientError('우수 상담내용을 최소 30자 이상 입력해 주세요.');
+    if (body.length < 20) {
+      setClientError('우수 상담내용을 최소 20자 이상 입력해 주세요.');
       return;
     }
     if (!form.callDatePart || !form.callTimePart) {
@@ -82,6 +89,16 @@ export default function SubmitCaseForm({ className = '', onGoToCaseList, compact
     const callDate = buildCallDateTimeForApi(form.callDatePart, form.callTimePart);
     if (!callDate) {
       setClientError('상담 일시 형식을 확인해 주세요.');
+      return;
+    }
+    const callDateMinuteKey = toCallDateMinuteKey(callDate);
+    const hasDuplicateCallDate = myCases.some(
+      (c) => toCallDateMinuteKey(c.callDate) === callDateMinuteKey,
+    );
+    if (hasDuplicateCallDate) {
+      setClientError(
+        '내가 접수한 사례 중 동일한 날짜·시간(분)으로 접수된 건이 있습니다. 중복 접수는 불가합니다.',
+      );
       return;
     }
     mutation.mutate({
@@ -98,7 +115,7 @@ export default function SubmitCaseForm({ className = '', onGoToCaseList, compact
   };
 
   const canSubmit =
-    form.excellentContent.trim().length >= 30 && form.callDatePart && form.callTimePart;
+    form.excellentContent.trim().length >= 20 && form.callDatePart && form.callTimePart;
 
   if (submitted) {
     return (
@@ -171,7 +188,7 @@ export default function SubmitCaseForm({ className = '', onGoToCaseList, compact
                 rows={compact ? 5 : 6}
               />
               <div className="submit-field-meta">
-                <span className="input-hint">최소 30자 · {form.excellentContent.trim().length}자</span>
+                <span className="input-hint">최소 20자 · {form.excellentContent.trim().length}자</span>
               </div>
             </div>
           </section>

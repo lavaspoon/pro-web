@@ -366,20 +366,15 @@
   font-weight: 800;
 }
 
-.mce-section--inline-scores .mce-score-cell-input-wrap {
-  width: 3.25rem;
+.mce-section--inline-scores .mce-score-cell-select-wrap {
+  width: 4.5rem;
   max-width: none;
   margin: 0 auto;
 }
 
-.mce-section--inline-scores .mce-score-cell-input {
-  font-size: 15px;
-  padding: 5px 2px 5px 4px;
-}
-
-.mce-section--inline-scores .mce-score-cell-input-suffix {
-  padding: 5px 4px 5px 0;
-  font-size: 11px;
+.mce-section--inline-scores .mce-score-cell-select {
+  font-size: 13px;
+  padding: 5px 22px 5px 6px;
 }
 
 .mce-section--inline-scores.mce-section--compact .mce-summary-row {
@@ -556,12 +551,11 @@
   color: #aeaeb2;
 }
 
-/* 관리자 — 점수 입력 */
-.mce-score-cell-input-wrap {
+/* 관리자 — 점수 선택 */
+.mce-score-cell-select-wrap {
   display: inline-flex;
   align-items: center;
-  gap: 0;
-  width: 4.5rem;
+  width: 5.25rem;
   max-width: calc(100% - 12px);
   margin: 7px auto 9px;
   border-radius: 8px;
@@ -571,65 +565,49 @@
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.mce-score-cell-input-wrap:focus-within {
+.mce-score-cell-select-wrap:focus-within {
   border-color: rgba(0, 122, 255, 0.55);
   box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.12);
 }
 
-.mce-score-cell-input-wrap--filled {
+.mce-score-cell-select-wrap--filled {
   border-color: #aeaeb2;
   background: #fafafa;
 }
 
-.mce-score-cell-input {
+.mce-score-cell-select {
   display: block;
   flex: 1;
-  width: 2.5rem;
+  width: 100%;
   min-width: 0;
   box-sizing: border-box;
   margin: 0;
-  padding: 7px 2px 7px 6px;
+  padding: 7px 24px 7px 8px;
   border: none;
   border-radius: 0;
   background: transparent;
-  font-size: 17px;
+  font-family: inherit;
+  font-size: 14px;
   font-weight: 700;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
   color: #1d1d1f;
   line-height: 1.2;
   text-align: center;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%23636366' d='M1 1l4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
 }
 
-.mce-score-cell-input::placeholder {
-  color: #aeaeb2;
-  font-weight: 600;
-  font-size: 13px;
-}
-
-.mce-score-cell-input:focus {
+.mce-score-cell-select:focus {
   outline: none;
 }
 
-.mce-score-cell-input-suffix {
-  flex-shrink: 0;
-  padding: 7px 6px 7px 0;
-  font-size: 12px;
-  font-weight: 700;
-  color: #636366;
-  background: transparent;
-  border-left: none;
-}
-
-.mce-score-cell-input:disabled {
+.mce-score-cell-select:disabled {
   opacity: 0.65;
   cursor: not-allowed;
-}
-
-.mce-score-cell-input::-webkit-outer-spin-button,
-.mce-score-cell-input::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
 }
 
 @media (max-width: 520px) {

@@ -1,0 +1,49 @@
+.member-pending-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.member-pending-edit-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.member-pending-edit-banner--err {
+  background: rgba(255, 59, 48, 0.1);
+  border: 1px solid rgba(255, 59, 48, 0.22);
+  color: #c41e14;
+}
+
+.member-pending-edit-banner--ok {
+  background: rgba(52, 199, 89, 0.12);
+  border: 1px solid rgba(52, 199, 89, 0.28);
+  color: #1a7f34;
+}
+
+.member-pending-edit-textarea {
+  min-height: 8rem;
+}
+
+.member-pending-edit-when {
+  margin: 0;
+}
+
+.member-pending-edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+.member-pending-edit-actions .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}

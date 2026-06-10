@@ -6,6 +6,7 @@ import {
   resolveTargetMet,
   satisfactionAchievementFromTarget,
 } from '../../utils/csSatisfactionModalDayStats';
+import { formatTierRateWon, getTierRateWonByName } from '../../utils/youProRewardTiers';
 import './TeamDetailPage.css';
 
 /**
@@ -41,7 +42,7 @@ export default function AdminMemberDetailCard({ member, teamContext }) {
         achievementRate: satisfactionAchievementFromTarget(monthlySat, monthlyTargetPercent),
       });
   const tierName = member.tierName?.trim() ? member.tierName.trim() : null;
-  const cumulativeRewardWon = Number(member.cumulativeRewardWon ?? 0);
+  const tierRateWon = getTierRateWonByName(tierName);
 
   const displayName = member.name?.trim() || member.id || member.skid || '—';
   const skid = member.id ?? member.skid ?? '';
@@ -66,7 +67,7 @@ export default function AdminMemberDetailCard({ member, teamContext }) {
         : monthlyTargetMet === false
           ? '목표 미달'
           : '목표 없음';
-  const rewardWonDisplay = `${cumulativeRewardWon.toLocaleString('ko-KR')}원`;
+  const rewardWonDisplay = formatTierRateWon(tierRateWon);
 
   return (
     <div className="member-detail-card member-detail-card--metrics">
@@ -107,7 +108,7 @@ export default function AdminMemberDetailCard({ member, teamContext }) {
         <div
           className="adm-member-metrics-grid"
           role="group"
-          aria-label={`${displayName} 실적: 연간 접수 ${totalSubmitted}건 인증 ${annualCertified}건, 당월 접수 ${monthlySubmitted}건 인증 ${monthlyCertified}건, 당월 만족도 ${satDisplay} ${satStatusLabel}, ${tierName ?? '등급 없음'} 누적 ${rewardWonDisplay}`}
+          aria-label={`${displayName} 실적: 연간 접수 ${totalSubmitted}건 인증 ${annualCertified}건, 당월 접수 ${monthlySubmitted}건 인증 ${monthlyCertified}건, 당월 만족도 ${satDisplay} ${satStatusLabel}, ${tierName ?? '등급 없음'} 등급 단가 ${rewardWonDisplay}`}
         >
           <span className="adm-mmg-h adm-mmg-h--corner" aria-hidden />
           <span className="adm-mmg-h adm-mmg-h--annual">연간</span>

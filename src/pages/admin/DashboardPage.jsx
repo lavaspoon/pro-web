@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -8,10 +8,8 @@ import {
   ChevronRight,
   X,
   BadgeCheck,
-  Download,
 } from 'lucide-react';
 import {
-  downloadAdminCasesExport,
   fetchAdminDashboard,
   fetchAdminLeafTeams,
   fetchAdminRanking,
@@ -24,6 +22,7 @@ import { canAccessPendingCases, isYouProAdmin, isYouProCeDirector } from '../../
 import { LatestDataAsOfHint } from '../../utils/adminDataAsOfHint';
 import AdminMemberDetailCard from './AdminMemberDetailCard';
 import AdminTargetMembersUploadModal from './AdminTargetMembersUploadModal';
+import AdminCasesExportControl from './AdminCasesExportControl';
 import {
   DashboardOverviewSkeleton,
   RankingCompactSkeleton,
@@ -92,6 +91,12 @@ function formatMemberCount(v) {
   return `${Number(v).toLocaleString('ko-KR')}명`;
 }
 
+/** 접수·인증 등 건수 표시 */
+function formatCaseCount(v) {
+  if (v == null || Number.isNaN(Number(v))) return '—';
+  return `${Number(v).toLocaleString('ko-KR')}건`;
+}
+
 /** 동차 시 항상 센터 → 그룹 → 실명(팀명) 오름차순 */
 function localeKo(a, b) {
   return String(a ?? '').trim().localeCompare(String(b ?? '').trim(), 'ko');
@@ -131,7 +136,6 @@ export default function DashboardPage() {
   const showPendingCasesLink = canAccessPendingCases(user) && !showCeDirectorExport;
   const showAdminTools = isYouProAdmin(user) && !showCeDirectorExport;
   const [targetUploadModalOpen, setTargetUploadModalOpen] = useState(false);
-  const [exportPending, setExportPending] = useState(false);
   const exportYear = new Date().getFullYear();
   const [selectedTeamId, setSelectedTeamId] = useState(null);
   /** null = 미적용, 문자열(빈 문자열 포함) = 해당 값과 일치하는 행만 */
@@ -223,9 +227,12 @@ export default function DashboardPage() {
     return sortedTeams.reduce(
       (acc, t) => ({
         evalTargetSum: acc.evalTargetSum + Number(t.monthlyEvalTargetCount ?? 0),
+        submittedSum: acc.submittedSum + Number(t.monthlySubmitted ?? 0),
+        certifiedCaseSum:
+          acc.certifiedCaseSum + Number(t.monthlySelected ?? t.monthlyCertifiedCount ?? 0),
         certifiedSum: acc.certifiedSum + Number(t.monthlyCertifiedMemberCount ?? 0),
       }),
-      { evalTargetSum: 0, certifiedSum: 0 }
+      { evalTargetSum: 0, submittedSum: 0, certifiedCaseSum: 0, certifiedSum: 0 }
     );
   }, [sortedTeams]);
 
@@ -252,18 +259,6 @@ export default function DashboardPage() {
     queryFn: () => fetchTeamDetail(selectedTeamId),
     enabled: selectedTeamId != null,
   });
-
-  const handleExportExcel = useCallback(async () => {
-    if (!user?.skid) return;
-    setExportPending(true);
-    try {
-      await downloadAdminCasesExport(exportYear, user.skid);
-    } catch (err) {
-      window.alert(err.message || '엑셀 다운로드에 실패했습니다.');
-    } finally {
-      setExportPending(false);
-    }
-  }, [exportYear, user?.skid]);
 
   const handleSort = (key) => {
     setSortConfig((prev) => {
@@ -373,16 +368,12 @@ export default function DashboardPage() {
               </Link>
             )}
             {showCeDirectorExport && (
-              <button
-                type="button"
-                className="btn btn-secondary btn-sm adm-dashboard-export-btn"
-                onClick={handleExportExcel}
-                disabled={exportPending}
-                title={`${exportYear}년 전체 센터 접수 raw 엑셀 다운로드`}
-              >
-                <Download size={14} aria-hidden />
-                {exportPending ? '다운로드 중…' : '접수현황 엑셀 다운'}
-              </button>
+              <AdminCasesExportControl
+                year={exportYear}
+                adminSkid={user?.skid}
+                buttonLabel="접수현황 엑셀 다운"
+                buttonClassName="btn btn-secondary btn-sm adm-dashboard-export-btn"
+              />
             )}
           </div>
         </div>
@@ -702,6 +693,12 @@ export default function DashboardPage() {
                   onSort={handleSort}
                 />
                 <SortTh
+                  label="당월 접수 / 인증"
+                  sortKey="monthlySubmitted"
+                  sortConfig={sortConfig}
+                  onSort={handleSort}
+                />
+                <SortTh
                   label="실의 만족도 달성률"
                   sortKey="csSatisfactionAchievementRate"
                   sortConfig={sortConfig}
@@ -711,10 +708,10 @@ export default function DashboardPage() {
             </thead>
             <tbody>
               {leafTeamsLoading ? (
-                <SummaryTableSkeletonRows rows={8} cols={8} />
+                <SummaryTableSkeletonRows rows={8} cols={9} />
               ) : sortedTeams.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="adm-table-empty">
+                  <td colSpan={9} className="adm-table-empty">
                     {teamsEnriched.length === 0
                       ? 'leaf 팀이 없습니다. (부서 트리·depth 설정을 확인하세요)'
                       : '조건에 맞는 실이 없습니다. 필터를 해제하거나 다른 값을 선택해 보세요.'}
@@ -779,6 +776,19 @@ export default function DashboardPage() {
                         : '—'}
                     </td>
                     <td>
+                      <span className="adm-team-monthly-cases">
+                        <span className="adm-team-monthly-cases__sub">
+                          {formatCaseCount(team.monthlySubmitted)}
+                        </span>
+                        <span className="adm-team-monthly-cases__sep" aria-hidden>
+                          /
+                        </span>
+                        <span className="adm-team-monthly-cases__cert">
+                          {formatCaseCount(team.monthlySelected ?? team.monthlyCertifiedCount)}
+                        </span>
+                      </span>
+                    </td>
+                    <td>
                       {team.csSatisfactionAchievementRate != null ? (
                         <span
                           className={
@@ -810,6 +820,19 @@ export default function DashboardPage() {
                     {teamTableOverallCertRate != null
                       ? `${Number(teamTableOverallCertRate).toFixed(1)}%`
                       : '—'}
+                  </td>
+                  <td>
+                    <span className="adm-team-monthly-cases">
+                      <span className="adm-team-monthly-cases__sub">
+                        {formatCaseCount(teamTableTotals.submittedSum)}
+                      </span>
+                      <span className="adm-team-monthly-cases__sep" aria-hidden>
+                        /
+                      </span>
+                      <span className="adm-team-monthly-cases__cert">
+                        {formatCaseCount(teamTableTotals.certifiedCaseSum)}
+                      </span>
+                    </span>
                   </td>
                   <td>—</td>
                 </tr>

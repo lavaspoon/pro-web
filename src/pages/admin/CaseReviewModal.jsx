@@ -1,7 +1,12 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { X, AlertTriangle, Loader2, Save, ChevronLeft, ChevronRight, Check, Undo2 } from 'lucide-react';
-import { cancelCaseDraftJudgment, cancelCaseFinalJudgment, judgeCase } from '../../api/adminApi';
+import {
+  cancelCaseDraftJudgment,
+  cancelCaseFinalJudgment,
+  judgeCase,
+  updateCaseDescription,
+} from '../../api/adminApi';
 import useAuthStore from '../../store/authStore';
 import { isYouProMonitoring } from '../../utils/youProRole';
 import CaseScorePanel from '../../components/case/CaseScorePanel';
@@ -35,6 +40,7 @@ export default function CaseReviewModal({
   const { user } = useAuthStore();
   const isMonitoringUser = isYouProMonitoring(user);
   const [scoreForm, setScoreForm] = useState(emptyScoreForm);
+  const [descriptionDraft, setDescriptionDraft] = useState('');
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [saveMode, setSaveMode] = useState(null);
@@ -93,6 +99,7 @@ export default function CaseReviewModal({
 
   useEffect(() => {
     setScoreForm(scoresFromCaseData(liveCase));
+    setDescriptionDraft(liveCase.description ?? '');
     setError('');
     setSaveMode(null);
     decisionTouchedRef.current = false;
@@ -103,7 +110,10 @@ export default function CaseReviewModal({
     } else {
       setManualDecision(decisionFromTotal(sumScores(initial), minTotal));
     }
-  }, [liveCase.id, liveCase.status, liveCase.judgmentDraft, liveCase.totalScore, minTotal]);
+  }, [liveCase.id, liveCase.status, liveCase.judgmentDraft, liveCase.totalScore, liveCase.description, minTotal]);
+
+  const savedDescription = liveCase.description ?? '';
+  const descriptionDirty = descriptionDraft.trim() !== savedDescription.trim();
 
   /** 점수 변경 시 자동 제안 — 사용자가 인증·미인증을 직접 고른 뒤에는 유지 (2차 완료 건은 기존 판정 유지) */
   useEffect(() => {
@@ -180,8 +190,39 @@ export default function CaseReviewModal({
     },
   });
 
+  const descriptionMutation = useMutation({
+    mutationFn: () =>
+      updateCaseDescription({
+        caseId: liveCase.id,
+        adminSkid: user.skid,
+        description: descriptionDraft,
+      }),
+    onSuccess: async (data) => {
+      queryClient.invalidateQueries({ queryKey: ['team-detail'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['pending-cases'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-review-queue'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-member-cases'] });
+      queryClient.invalidateQueries({ queryKey: ['case-detail', String(liveCase.id)] });
+      setError('');
+      setSaveMode(null);
+      setLiveCase(data);
+      setDescriptionDraft(data.description ?? '');
+      setSuccessMessage('접수 내용 저장 완료');
+      await syncCaseFromServer(data);
+    },
+    onError: (err) => {
+      setError(err.message);
+      setSuccessMessage('');
+      setSaveMode(null);
+    },
+  });
+
   const isActionPending =
-    mutation.isPending || cancelFinalMutation.isPending || cancelDraftMutation.isPending;
+    mutation.isPending ||
+    cancelFinalMutation.isPending ||
+    cancelDraftMutation.isPending ||
+    descriptionMutation.isPending;
 
   const handleScoreChange = (key, value) => {
     setError('');
@@ -189,9 +230,35 @@ export default function CaseReviewModal({
     setScoreForm((prev) => ({ ...prev, [key]: value }));
   };
 
+  const handleDescriptionChange = (value) => {
+    setError('');
+    setSuccessMessage('');
+    setDescriptionDraft(value);
+  };
+
+  const saveDescription = () => {
+    if (!user?.skid) {
+      setError('로그인 정보가 없습니다.');
+      return;
+    }
+    if (!descriptionDraft.trim()) {
+      setError('접수 내용을 입력해 주세요.');
+      return;
+    }
+    if (!descriptionDirty) return;
+    setSaveMode('description');
+    setError('');
+    setSuccessMessage('');
+    descriptionMutation.mutate();
+  };
+
   const submitEvaluation = (draft) => {
     if (!user?.skid) {
       setError('로그인 정보가 없습니다.');
+      return;
+    }
+    if (!descriptionDraft.trim()) {
+      setError('접수 내용을 입력해 주세요.');
       return;
     }
     if (!draft) {
@@ -212,6 +279,7 @@ export default function CaseReviewModal({
         adminSkid: user.skid,
         draft,
         decision: draft ? undefined : manualDecision,
+        description: descriptionDraft,
       }),
     );
   };
@@ -239,10 +307,7 @@ export default function CaseReviewModal({
   };
 
   return (
-    <div
-      className={`modal-overlay ${overlayClassName}`.trim()}
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
+    <div className={`modal-overlay ${overlayClassName}`.trim()}>
       <div className="review-modal review-modal--single">
         <div className="review-modal-header review-modal-header--compact">
           {reviewNavigation && reviewNavigation.total > 1 ? (
@@ -306,14 +371,36 @@ export default function CaseReviewModal({
         <div className="review-modal-body review-modal-body--single">
           <div className="mce-root review-case-body">
             <section className="mce-section mce-section--compact" aria-labelledby="review-content-title">
-              <h4 id="review-content-title" className="mce-section-label">
-                접수 내용
-              </h4>
+              <div className="review-content-head">
+                <h4 id="review-content-title" className="mce-section-label">
+                  접수 내용
+                </h4>
+                {descriptionDirty ? (
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-sm review-content-save-btn"
+                    onClick={saveDescription}
+                    disabled={isActionPending}
+                  >
+                    {saveMode === 'description' && descriptionMutation.isPending ? (
+                      <Loader2 size={14} className="review-spin" aria-hidden />
+                    ) : (
+                      <Save size={14} aria-hidden />
+                    )}
+                    저장
+                  </button>
+                ) : null}
+              </div>
               <div className="mce-panel">
                 <div className="mce-panel-block">
-                  <p className="mce-panel-text">
-                    {liveCase.description?.trim() || '내용이 없습니다.'}
-                  </p>
+                  <textarea
+                    className="review-edited-textarea review-edited-textarea--compact review-case-description-input"
+                    value={descriptionDraft}
+                    onChange={(e) => handleDescriptionChange(e.target.value)}
+                    placeholder="접수 내용을 입력해 주세요."
+                    aria-label="접수 내용"
+                    rows={5}
+                  />
                 </div>
               </div>
             </section>

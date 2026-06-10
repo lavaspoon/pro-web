@@ -12,6 +12,7 @@ import useAuthStore from '../../store/authStore';
 import { fetchMyCases } from '../../api/memberApi';
 import StatusBadge from '../common/StatusBadge';
 import { caseDescriptionExcerpt } from '../../utils/caseEvaluation';
+import { formatSubmittedDateYyMmDdHm } from '../../utils/caseDisplay';
 import { useMemberModalStore } from '../../store/memberModalStore';
 import MemberCaseDetailPanel from './MemberCaseDetailPanel';
 import '../../pages/member/CaseListPage.css';
@@ -27,12 +28,6 @@ const STATUS_MAP = {
   선정: 'selected',
   비선정: 'rejected',
 };
-
-function formatDate(dateStr) {
-  if (!dateStr) return '-';
-  const d = new Date(dateStr);
-  return `${d.getFullYear()}. ${d.getMonth() + 1}. ${d.getDate()}`;
-}
 
 function currentMonthKey() {
   const d = new Date();
@@ -278,7 +273,7 @@ export default function MemberCaseListModal() {
                             <StatusBadge status={c.status} size="sm" />
                           </td>
                           <td className="mct-title">{caseDescriptionExcerpt(c.description)}</td>
-                          <td className="mct-date">{formatDate(c.submittedAt)}</td>
+                          <td className="mct-date">{formatSubmittedDateYyMmDdHm(c.submittedAt)}</td>
                           <td className="mct-action" aria-hidden>
                             <ChevronRight size={14} strokeWidth={2} />
                           </td>

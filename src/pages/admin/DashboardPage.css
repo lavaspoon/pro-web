@@ -1395,6 +1395,20 @@
   text-align: center;
 }
 
+.adm-team-monthly-cases {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.adm-team-monthly-cases__sep {
+  color: var(--text-tertiary);
+  font-weight: 500;
+}
+
 .adm-tr {
   cursor: pointer;
   transition: background 0.15s ease;

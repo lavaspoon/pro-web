@@ -16,6 +16,7 @@ import {
   parseTopMembersInsight,
 } from '../../utils/parseTopMembersInsight';
 import StatusBadge from '../../components/common/StatusBadge';
+import { TIERS, getTierIdx } from '../../utils/youProRewardTiers';
 import '../admin/DashboardPage.css';
 import './HomePage.css';
 import './CsSatisfactionPage.css';
@@ -30,29 +31,11 @@ const PAYOUT_POLICY_LINES = [
   <>만족도만 달성하고 선정 건이 없으면 그달 지급은 없고, 누적·등급은 그대로 유지됩니다.</>,
 ];
 
-const TIERS = [
-  { id: 'mangju', name: 'YOU 망주', range: '1건 이상', minCases: 1, rateWon: 30000 },
-  { id: 'player', name: 'YOU 플레이어', range: '10건 이상', minCases: 10, rateWon: 50000 },
-  { id: 'topia', name: 'YOU 토피아', range: '19건 이상', minCases: 19, rateWon: 70000 },
-];
-
 const TIER_ICONS = {
   mangju: Medal,
   player: Zap,
   topia: Trophy,
 };
-
-function getTierIdx(n) {
-  if (n >= 19) return 2;
-  if (n >= 10) return 1;
-  if (n >= 1) return 0;
-  return -1;
-}
-
-function getTierNameByCumulative(count) {
-  const idx = getTierIdx(Number(count) || 0);
-  return idx >= 0 ? TIERS[idx].name : null;
-}
 
 function formatPreviewDate(dateStr) {
   if (!dateStr) return '—';
