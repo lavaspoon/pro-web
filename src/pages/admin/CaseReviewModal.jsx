@@ -1,10 +1,12 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { X, AlertTriangle, Loader2, Save, ChevronLeft, ChevronRight, Check, Undo2 } from 'lucide-react';
+import { X, AlertTriangle, Loader2, Save, ChevronLeft, ChevronRight, Check, Undo2, RotateCcw } from 'lucide-react';
 import {
   cancelCaseDraftJudgment,
   cancelCaseFinalJudgment,
+  cancelCaseReturn,
   judgeCase,
+  returnCase,
   updateCaseDescription,
 } from '../../api/adminApi';
 import useAuthStore from '../../store/authStore';
@@ -26,6 +28,19 @@ import '../../components/member/MemberCaseEvaluationView.css';
 import '../../components/member/MemberCaseDetailModal.css';
 import './CaseReviewModal.css';
 
+const MSG_SCORES_REQUIRED_FINAL = '2차 인증 시 모든 항목 점수가 필요합니다';
+const MSG_SCORES_REQUIRED_EDIT = '수정 시 모든 항목 점수가 필요합니다';
+const FOOTER_NOTICE_MS = 3000;
+
+function isMissingScoresError(message) {
+  return typeof message === 'string' && message.includes('모든 항목 점수가 필요');
+}
+
+function shortenMissingScoresError(message) {
+  if (message.includes('수정 시')) return MSG_SCORES_REQUIRED_EDIT;
+  return MSG_SCORES_REQUIRED_FINAL;
+}
+
 export default function CaseReviewModal({
   caseData,
   memberName,
@@ -44,6 +59,7 @@ export default function CaseReviewModal({
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [saveMode, setSaveMode] = useState(null);
+  const [footerNotice, setFooterNotice] = useState(null);
   const [liveCase, setLiveCase] = useState(caseData);
   /** 최종 저장 시 인증·미인증 — 점수 기준 자동 제안, 수동 변경 가능 */
   const [manualDecision, setManualDecision] = useState('rejected');
@@ -56,11 +72,26 @@ export default function CaseReviewModal({
   useEffect(() => {
     setSuccessMessage('');
     setError('');
+    setFooterNotice(null);
   }, [caseData.id]);
+
+  useEffect(() => {
+    if (!footerNotice) return undefined;
+    const timer = window.setTimeout(() => setFooterNotice(null), FOOTER_NOTICE_MS);
+    return () => window.clearTimeout(timer);
+  }, [footerNotice]);
+
+  const showFooterNotice = (type, text) => {
+    setFooterNotice({ type, text });
+  };
 
   const caseStatus = String(liveCase.status ?? '').toLowerCase();
   const isFinalized = caseStatus === 'selected' || caseStatus === 'rejected';
+  const isReturned = caseStatus === 'returned';
   const isPhase1 = caseStatus === 'pending' && liveCase.judgmentDraft === true;
+  /** 2차 인증·2차 완료 후 점수 수정 — 관리자 전용 */
+  const canPhase2Certify = !isMonitoringUser;
+  const scoresEditable = !isReturned && (!isFinalized || canPhase2Certify);
   const minTotal =
     liveCase.certificationMinTotalScore != null
       ? liveCase.certificationMinTotalScore
@@ -134,7 +165,12 @@ export default function CaseReviewModal({
       setSaveMode(null);
       setLiveCase(data);
       if (variables.draft) {
-        setSuccessMessage('1차 인증 완료');
+        const st = String(data.status ?? '').toLowerCase();
+        if (st === 'selected' || st === 'rejected') {
+          showFooterNotice('success', '수정되었습니다');
+        } else {
+          setSuccessMessage('1차 인증 완료');
+        }
         await syncCaseFromServer(data);
       } else {
         setSuccessMessage('2차 인증 완료');
@@ -142,7 +178,13 @@ export default function CaseReviewModal({
       }
     },
     onError: (err) => {
-      setError(err.message);
+      const msg = err.message || '';
+      if (isMissingScoresError(msg)) {
+        setError('');
+        showFooterNotice('error', shortenMissingScoresError(msg));
+      } else {
+        setError(msg);
+      }
       setSuccessMessage('');
       setSaveMode(null);
     },
@@ -190,6 +232,47 @@ export default function CaseReviewModal({
     },
   });
 
+  const returnCaseMutation = useMutation({
+    mutationFn: (reason) =>
+      returnCase({ caseId: liveCase.id, adminSkid: user.skid, reason }),
+    onSuccess: async (data) => {
+      queryClient.invalidateQueries({ queryKey: ['team-detail'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['pending-cases'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-review-queue'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-member-cases'] });
+      queryClient.invalidateQueries({ queryKey: ['case-detail', String(liveCase.id)] });
+      setError('');
+      setSaveMode(null);
+      showFooterNotice('success', '반려 처리되었습니다');
+      await syncCaseFromServer(data);
+    },
+    onError: (err) => {
+      setError(err.message);
+      setSaveMode(null);
+    },
+  });
+
+  const cancelReturnMutation = useMutation({
+    mutationFn: () => cancelCaseReturn({ caseId: liveCase.id, adminSkid: user.skid }),
+    onSuccess: async (data) => {
+      queryClient.invalidateQueries({ queryKey: ['team-detail'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['pending-cases'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-review-queue'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-member-cases'] });
+      queryClient.invalidateQueries({ queryKey: ['case-detail', String(liveCase.id)] });
+      setError('');
+      setSaveMode(null);
+      showFooterNotice('success', '반려가 취소되었습니다');
+      await syncCaseFromServer(data);
+    },
+    onError: (err) => {
+      setError(err.message);
+      setSaveMode(null);
+    },
+  });
+
   const descriptionMutation = useMutation({
     mutationFn: () =>
       updateCaseDescription({
@@ -222,17 +305,21 @@ export default function CaseReviewModal({
     mutation.isPending ||
     cancelFinalMutation.isPending ||
     cancelDraftMutation.isPending ||
+    returnCaseMutation.isPending ||
+    cancelReturnMutation.isPending ||
     descriptionMutation.isPending;
 
   const handleScoreChange = (key, value) => {
     setError('');
     setSuccessMessage('');
+    setFooterNotice(null);
     setScoreForm((prev) => ({ ...prev, [key]: value }));
   };
 
   const handleDescriptionChange = (value) => {
     setError('');
     setSuccessMessage('');
+    setFooterNotice(null);
     setDescriptionDraft(value);
   };
 
@@ -252,6 +339,36 @@ export default function CaseReviewModal({
     descriptionMutation.mutate();
   };
 
+  const saveFinalizedScores = () => {
+    if (!user?.skid) {
+      setError('로그인 정보가 없습니다.');
+      return;
+    }
+    if (!descriptionDraft.trim()) {
+      setError('접수 내용을 입력해 주세요.');
+      return;
+    }
+    const missing = CASE_SCORE_ITEMS.filter(
+      ({ key, maxScore }) => parseScoreValue(scoreForm[key], maxScore) == null,
+    );
+    if (missing.length > 0) {
+      showFooterNotice('error', MSG_SCORES_REQUIRED_EDIT);
+      return;
+    }
+    setSaveMode('finalizedScores');
+    setError('');
+    setSuccessMessage('');
+    setFooterNotice(null);
+    mutation.mutate(
+      buildJudgePayload({
+        form: scoreForm,
+        adminSkid: user.skid,
+        draft: true,
+        description: descriptionDraft,
+      }),
+    );
+  };
+
   const submitEvaluation = (draft) => {
     if (!user?.skid) {
       setError('로그인 정보가 없습니다.');
@@ -264,15 +381,16 @@ export default function CaseReviewModal({
     if (!draft) {
       const missing = CASE_SCORE_ITEMS.filter(
         ({ key, maxScore }) => parseScoreValue(scoreForm[key], maxScore) == null,
-      ).map((i) => i.label);
+      );
       if (missing.length > 0) {
-        setError(`2차 인증 시 모든 항목 점수가 필요합니다: ${missing.join(', ')}`);
+        showFooterNotice('error', MSG_SCORES_REQUIRED_FINAL);
         return;
       }
     }
     setSaveMode(draft ? 'draft' : 'final');
     setError('');
     setSuccessMessage('');
+    setFooterNotice(null);
     mutation.mutate(
       buildJudgePayload({
         form: scoreForm,
@@ -305,6 +423,51 @@ export default function CaseReviewModal({
     setSuccessMessage('');
     cancelDraftMutation.mutate();
   };
+
+  const handleReturnCase = () => {
+    if (!user?.skid) {
+      setError('로그인 정보가 없습니다.');
+      return;
+    }
+    const ok = window.confirm(
+      '이 사례를 반려하시겠습니까? 구성원 접수 내역에 반려로 표시됩니다.',
+    );
+    if (!ok) return;
+    setSaveMode('return');
+    setError('');
+    setSuccessMessage('');
+    setFooterNotice(null);
+    returnCaseMutation.mutate(scoreForm.remarks?.trim() || '');
+  };
+
+  const handleCancelReturn = () => {
+    if (!user?.skid) {
+      setError('로그인 정보가 없습니다.');
+      return;
+    }
+    setSaveMode('cancelReturn');
+    setError('');
+    setSuccessMessage('');
+    setFooterNotice(null);
+    cancelReturnMutation.mutate();
+  };
+
+  const renderReturnButton = () => (
+    <button
+      type="button"
+      className="btn btn-secondary review-footer-save-btn review-footer-save-btn--return"
+      onClick={handleReturnCase}
+      disabled={isActionPending}
+      title="구성원에게 반려 처리 — 접수 내역에 표시"
+    >
+      {saveMode === 'return' && returnCaseMutation.isPending ? (
+        <Loader2 size={16} className="review-spin" aria-hidden />
+      ) : (
+        <RotateCcw size={16} aria-hidden />
+      )}
+      반려
+    </button>
+  );
 
   return (
     <div className={`modal-overlay ${overlayClassName}`.trim()}>
@@ -411,7 +574,7 @@ export default function CaseReviewModal({
               certTone={scoreCertTone}
               status={liveCase.status}
               minTotal={minTotal}
-              readonly={false}
+              readonly={!scoresEditable}
               onScoreChange={handleScoreChange}
               sectionTitle="평가 결과"
               scoreLayout="inline"
@@ -440,16 +603,19 @@ export default function CaseReviewModal({
           role="group"
           aria-label="인증·미인증 선택 및 저장"
         >
+          {!isReturned ? (
           <div className="review-footer-decisions">
             <button
               type="button"
-              className={`judge-option judge-option--sel review-footer-choice ${manualDecision === 'selected' ? 'is-active' : ''}`}
+              className={`judge-option judge-option--sel review-footer-choice ${manualDecision === 'selected' ? 'is-active' : ''}${isFinalized ? ' is-locked' : ''}`}
               onClick={() => {
+                if (isFinalized) return;
                 setError('');
                 setSuccessMessage('');
                 decisionTouchedRef.current = true;
                 setManualDecision('selected');
               }}
+              disabled={isFinalized || isActionPending}
               aria-pressed={manualDecision === 'selected'}
             >
               <span className="judge-option__mark" aria-hidden>
@@ -463,13 +629,15 @@ export default function CaseReviewModal({
             </button>
             <button
               type="button"
-              className={`judge-option judge-option--rej review-footer-choice ${manualDecision === 'rejected' ? 'is-active' : ''}`}
+              className={`judge-option judge-option--rej review-footer-choice ${manualDecision === 'rejected' ? 'is-active' : ''}${isFinalized ? ' is-locked' : ''}`}
               onClick={() => {
+                if (isFinalized) return;
                 setError('');
                 setSuccessMessage('');
                 decisionTouchedRef.current = true;
                 setManualDecision('rejected');
               }}
+              disabled={isFinalized || isActionPending}
               aria-pressed={manualDecision === 'rejected'}
             >
               <span className="judge-option__mark" aria-hidden>
@@ -482,26 +650,73 @@ export default function CaseReviewModal({
               미인증
             </button>
           </div>
+          ) : null}
           <div className="review-footer-actions">
-            {isFinalized ? (
-              !isMonitoringUser ? (
-                <button
-                  type="button"
-                  className="btn btn-secondary review-footer-save-btn review-footer-save-btn--cancel"
-                  onClick={handleCancelFinal}
-                  disabled={isActionPending}
-                  title="2차 인증 취소 — 1차 인증 상태로 되돌림"
-                >
-                  {saveMode === 'cancel' && cancelFinalMutation.isPending ? (
-                    <Loader2 size={16} className="review-spin" aria-hidden />
-                  ) : (
-                    <Undo2 size={16} aria-hidden />
-                  )}
-                  2차 인증 취소
-                </button>
+            {footerNotice ? (
+              <span
+                className={`review-footer-notice review-footer-notice--${footerNotice.type}`}
+                role={footerNotice.type === 'error' ? 'alert' : 'status'}
+                aria-live="polite"
+              >
+                {footerNotice.type === 'success' ? (
+                  <Check size={14} strokeWidth={2.5} aria-hidden />
+                ) : (
+                  <AlertTriangle size={14} strokeWidth={2.25} aria-hidden />
+                )}
+                {footerNotice.text}
+              </span>
+            ) : null}
+            {isReturned ? (
+              <button
+                type="button"
+                className="btn btn-secondary review-footer-save-btn review-footer-save-btn--cancel"
+                onClick={handleCancelReturn}
+                disabled={isActionPending}
+                title="반려 취소 — 대기중 상태로 복귀"
+              >
+                {saveMode === 'cancelReturn' && cancelReturnMutation.isPending ? (
+                  <Loader2 size={16} className="review-spin" aria-hidden />
+                ) : (
+                  <Undo2 size={16} aria-hidden />
+                )}
+                반려 취소
+              </button>
+            ) : isFinalized ? (
+              canPhase2Certify ? (
+                <>
+                  <button
+                    type="button"
+                    className="btn btn-secondary review-footer-save-btn review-footer-save-btn--cancel"
+                    onClick={handleCancelFinal}
+                    disabled={isActionPending}
+                    title="2차 인증 취소 — 1차 인증 상태로 되돌림"
+                  >
+                    {saveMode === 'cancel' && cancelFinalMutation.isPending ? (
+                      <Loader2 size={16} className="review-spin" aria-hidden />
+                    ) : (
+                      <Undo2 size={16} aria-hidden />
+                    )}
+                    2차 인증 취소
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-primary review-footer-save-btn"
+                    onClick={saveFinalizedScores}
+                    disabled={isActionPending}
+                    title="2차 완료 건의 점수·비고 수정 (인증 여부는 유지)"
+                  >
+                    {saveMode === 'finalizedScores' && mutation.isPending ? (
+                      <Loader2 size={16} className="review-spin" aria-hidden />
+                    ) : (
+                      <Save size={16} aria-hidden />
+                    )}
+                    {saveMode === 'finalizedScores' && mutation.isPending ? '수정 중…' : '수정'}
+                  </button>
+                </>
               ) : null
             ) : isPhase1 ? (
               <>
+                {renderReturnButton()}
                 <button
                   type="button"
                   className="btn btn-secondary review-footer-save-btn review-footer-save-btn--cancel"
@@ -516,7 +731,7 @@ export default function CaseReviewModal({
                   )}
                   1차 인증 취소
                 </button>
-                {!isMonitoringUser ? (
+                {canPhase2Certify ? (
                   <button
                     type="button"
                     className="btn btn-primary review-footer-save-btn"
@@ -530,6 +745,7 @@ export default function CaseReviewModal({
               </>
             ) : (
               <>
+                {renderReturnButton()}
                 <button
                   type="button"
                   className="btn btn-secondary review-footer-save-btn"
@@ -544,7 +760,7 @@ export default function CaseReviewModal({
                   )}
                   1차 인증
                 </button>
-                {!isMonitoringUser ? (
+                {canPhase2Certify ? (
                   <button
                     type="button"
                     className="btn btn-primary review-footer-save-btn"

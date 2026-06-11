@@ -63,12 +63,11 @@ function rowMonthKeyFromDateTime(dt) {
 function formatModalMonthLabel(ym) {
   const [y, m] = ym.split('-').map(Number);
   if (!y || !m) return ym;
-  if (ym === currentMonthKey()) return `이번 달 · ${y}년 ${m}월`;
   return `${y}년 ${m}월`;
 }
 
 function formatDayPickerButtonLabel(dayKey) {
-  if (!dayKey) return '전체';
+  if (!dayKey) return '날짜 선택';
   if (dayKey === currentDayKey()) return '오늘';
   const mo = Number(dayKey.slice(5, 7));
   const d = Number(dayKey.slice(8, 10));

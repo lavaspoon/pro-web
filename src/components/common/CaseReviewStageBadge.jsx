@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckCircle, Clock, Save, XCircle } from 'lucide-react';
+import { CheckCircle, Clock, RotateCcw, Save, XCircle } from 'lucide-react';
 import { getCaseReviewStageBadge } from '../../utils/caseReviewStage';
 import './CaseReviewStageBadge.css';
 
@@ -7,6 +7,7 @@ const ICONS = {
   waiting: Clock,
   phase1: Save,
   phase2: CheckCircle,
+  returned: RotateCcw,
   neutral: Clock,
 };
 

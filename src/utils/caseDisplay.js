@@ -82,6 +82,7 @@ export function formatCaseListCertLabel(caseItem) {
   const st = String(caseItem?.status ?? '').toLowerCase();
   if (st === 'selected') return '인증';
   if (st === 'rejected') return '미인증';
+  if (st === 'returned') return '반려';
   const raw = caseItem?.totalScore;
   if (raw == null || !Number.isFinite(Number(raw))) return '—';
   const min =
@@ -97,6 +98,7 @@ export function resolveCaseListCertBadgeTone(caseItem) {
   const label = formatCaseListCertLabel(caseItem);
   if (label === '인증') return 'cert';
   if (label === '미인증') return 'uncert';
+  if (label === '반려') return 'returned';
   return 'empty';
 }
 

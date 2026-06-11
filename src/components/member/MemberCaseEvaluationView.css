@@ -50,3 +50,12 @@
   flex-shrink: 0;
   color: #ff9500;
 }
+
+.mce-returned-remarks {
+  color: #1d1d1f;
+  white-space: pre-wrap;
+}
+
+.mce-returned-remarks--empty {
+  color: #6e6e73;
+}

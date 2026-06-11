@@ -92,7 +92,7 @@ export default function PendingCaseDayPickerModal({
           onClick={() => onSelectDay(null)}
           aria-pressed={selectedDayKey == null}
         >
-          전체
+          날짜 선택
         </button>
 
         <div className="pending-daypicker-calendar" role="grid" aria-label={`${formatModalTitle(monthKey)} 달력`}>

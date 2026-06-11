@@ -177,6 +177,12 @@
   border-color: rgba(15, 23, 42, 0.1);
 }
 
+.case-item--compact .case-item-status .badge-returned {
+  background: rgba(239, 68, 68, 0.08);
+  color: #b91c1c;
+  border-color: rgba(239, 68, 68, 0.22);
+}
+
 @media (max-width: 480px) {
   .case-item--compact {
     grid-template-columns: 4.25rem minmax(0, 1fr) 20px;

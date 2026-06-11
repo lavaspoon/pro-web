@@ -41,6 +41,13 @@
   border: 1px solid rgba(52, 199, 89, 0.4);
 }
 
+/* 반려 — 빨간색 */
+.case-stage-badge--returned {
+  color: #b91c1c;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
 .case-stage-badge--neutral {
   color: var(--text-secondary);
   background: var(--surface-inset);

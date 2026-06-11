@@ -19,11 +19,12 @@ import '../../pages/member/CaseListPage.css';
 import './MemberSubmitModal.css';
 import './MemberCaseListModal.css';
 
-const STATUS_FILTER = ['전체', '대기중', '인증', '미인증'];
+const STATUS_FILTER = ['전체', '대기중', '인증', '미인증', '반려'];
 const STATUS_MAP = {
   대기중: 'pending',
   인증: 'selected',
   미인증: 'rejected',
+  반려: 'returned',
   /** 이전 필터 키 호환 */
   선정: 'selected',
   비선정: 'rejected',
@@ -102,7 +103,13 @@ export default function MemberCaseListModal() {
   useEffect(() => {
     if (!open) return;
     const normalized =
-      initialFilter === '선정' ? '인증' : initialFilter === '비선정' ? '미인증' : initialFilter;
+      initialFilter === '선정'
+        ? '인증'
+        : initialFilter === '비선정'
+          ? '미인증'
+          : initialFilter === '청취 예정중'
+            ? '대기중'
+            : initialFilter;
     setActiveFilter(STATUS_FILTER.includes(normalized) ? normalized : '전체');
   }, [open, initialFilter]);
 

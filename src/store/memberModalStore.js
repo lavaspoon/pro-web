@@ -6,7 +6,7 @@ import { create } from 'zustand';
 export const useMemberModalStore = create((set) => ({
   submitOpen: false,
   caseListOpen: false,
-  /** 목록 모달 진입 시 적용할 초기 상태 필터 ('전체' | '대기중' | '인증' | '미인증') */
+  /** 목록 모달 진입 시 적용할 초기 상태 필터 ('전체' | '대기중' | '인증' | '미인증' | '반려') */
   caseListInitialFilter: '전체',
   /** 목록 모달 진입 시 적용할 초기 월 (YYYY-MM). null이면 이번 달 */
   caseListInitialMonth: null,

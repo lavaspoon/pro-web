@@ -233,13 +233,6 @@
   color: #065f46;
 }
 
-.pending-refresh-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  white-space: nowrap;
-}
-
 .pending-refresh-spin {
   animation: pending-spin 0.85s linear infinite;
 }
@@ -617,16 +610,17 @@
 
 .pending-panel-head-text {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 0.65rem;
   min-width: 0;
+  flex: 1;
 }
 
 .pending-panel-title-bar {
   width: 3px;
   height: 1.15rem;
-  margin-top: 0.2rem;
   flex-shrink: 0;
+  align-self: center;
   background: linear-gradient(180deg, var(--accent), #0ea5e9);
   border-radius: 2px;
 }
@@ -641,6 +635,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  min-width: 0;
 }
 
 .pending-panel-head-right {
@@ -653,7 +648,106 @@
 }
 
 .pending-panel-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-left: auto;
+  flex-shrink: 0;
+  padding: 7px 13px 7px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(10, 126, 164, 0.32);
+  background: linear-gradient(
+    165deg,
+    rgba(255, 255, 255, 0.98) 0%,
+    rgba(236, 248, 252, 0.92) 55%,
+    rgba(224, 242, 254, 0.88) 100%
+  );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    0 1px 3px rgba(10, 126, 164, 0.1),
+    0 4px 12px rgba(10, 126, 164, 0.08);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #0a7ea4;
+  cursor: pointer;
   white-space: nowrap;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.12s ease;
+}
+
+.pending-panel-refresh__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(10, 126, 164, 0.12);
+  color: #0a7ea4;
+  flex-shrink: 0;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.pending-panel-refresh__label {
+  line-height: 1;
+}
+
+.pending-panel-refresh:hover:not(:disabled) {
+  border-color: rgba(10, 126, 164, 0.48);
+  color: #086788;
+  background: linear-gradient(
+    165deg,
+    rgba(255, 255, 255, 1) 0%,
+    rgba(224, 242, 254, 0.96) 100%
+  );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    0 2px 6px rgba(10, 126, 164, 0.14),
+    0 6px 16px rgba(10, 126, 164, 0.12);
+  transform: translateY(-1px);
+}
+
+.pending-panel-refresh:hover:not(:disabled) .pending-panel-refresh__icon {
+  background: rgba(10, 126, 164, 0.18);
+  color: #086788;
+}
+
+.pending-panel-refresh:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow:
+    inset 0 1px 2px rgba(10, 126, 164, 0.12),
+    0 1px 3px rgba(10, 126, 164, 0.08);
+}
+
+.pending-panel-refresh:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 3px rgba(10, 126, 164, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    0 4px 12px rgba(10, 126, 164, 0.1);
+}
+
+.pending-panel-refresh:disabled {
+  opacity: 0.62;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.pending-panel-refresh.is-refreshing {
+  border-color: rgba(10, 126, 164, 0.42);
+  background: rgba(236, 248, 252, 0.96);
+  color: #086788;
+}
+
+.pending-panel-refresh.is-refreshing .pending-panel-refresh__icon {
+  background: rgba(10, 126, 164, 0.2);
 }
 
 .pending-panel-empty {
@@ -698,11 +792,10 @@
 
 /* 테이블 영역 — 패널 너비에 맞춤 (가운데 좁게 모이지 않게) */
 .pending-table-toolbar {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: flex-start;
-  gap: 12px 18px;
+  gap: 10px 14px;
   margin-bottom: 12px;
   padding: 11px 14px;
   border-radius: 14px;
@@ -717,46 +810,79 @@
     0 1px 3px rgba(15, 23, 42, 0.04);
 }
 
-.pending-table-toolbar-period {
+.pending-table-toolbar-period,
+.csx-modal-period-toolbar {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  margin-left: auto;
+  gap: 6px;
+  margin-left: 0;
+  flex-shrink: 0;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+.pending-table-toolbar-period {
+  justify-self: end;
 }
 
 .pending-day-picker-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   min-height: 38px;
-  padding: 6px 12px;
+  padding: 6px 11px;
   border-radius: 999px;
-  border: 1px solid rgba(15, 23, 42, 0.1);
-  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(10, 126, 164, 0.38);
+  background: linear-gradient(
+    180deg,
+    rgba(10, 126, 164, 0.14) 0%,
+    rgba(10, 126, 164, 0.08) 100%
+  );
   font-size: 0.8125rem;
   font-weight: 700;
   letter-spacing: -0.02em;
-  color: var(--text-secondary);
+  color: #0a7ea4;
   white-space: nowrap;
+  flex-shrink: 0;
+  box-shadow:
+    0 1px 2px rgba(10, 126, 164, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.65);
   transition:
     border-color 0.12s ease,
     background 0.12s ease,
-    color 0.12s ease;
+    color 0.12s ease,
+    box-shadow 0.12s ease;
+}
+
+.pending-day-picker-btn svg {
+  color: #0a7ea4;
 }
 
 .pending-day-picker-btn:hover {
-  border-color: rgba(10, 126, 164, 0.28);
-  color: var(--accent);
+  border-color: rgba(10, 126, 164, 0.52);
+  background: linear-gradient(
+    180deg,
+    rgba(10, 126, 164, 0.2) 0%,
+    rgba(10, 126, 164, 0.12) 100%
+  );
+  color: #086f91;
+  box-shadow:
+    0 2px 6px rgba(10, 126, 164, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 
 .pending-day-picker-btn.is-active {
-  border-color: rgba(10, 126, 164, 0.35);
-  background: rgba(10, 126, 164, 0.1);
-  color: var(--accent);
+  border-color: rgba(10, 126, 164, 0.55);
+  background: rgba(10, 126, 164, 0.18);
+  color: #065a75;
+  box-shadow:
+    inset 0 0 0 1px rgba(10, 126, 164, 0.14),
+    0 1px 3px rgba(10, 126, 164, 0.14);
 }
 
 .pending-day-picker-btn__chev {
-  opacity: 0.55;
+  opacity: 0.72;
+  color: inherit;
 }
 
 .pending-stage-filters {
@@ -811,8 +937,48 @@
   background: rgba(15, 23, 42, 0.06);
 }
 
+.pending-stage-filter--waiting .pending-stage-filter__count {
+  background: rgba(124, 58, 237, 0.14);
+  color: #6d28d9;
+}
+
+.pending-stage-filter--phase1 .pending-stage-filter__count {
+  background: rgba(245, 158, 11, 0.18);
+  color: #b45309;
+}
+
+.pending-stage-filter--phase2 .pending-stage-filter__count {
+  background: rgba(34, 197, 94, 0.16);
+  color: #15803d;
+}
+
+.pending-stage-filter--returned .pending-stage-filter__count {
+  background: rgba(239, 68, 68, 0.14);
+  color: #b91c1c;
+}
+
 .pending-stage-filter.is-active .pending-stage-filter__count {
   background: rgba(10, 126, 164, 0.14);
+}
+
+.pending-stage-filter--waiting.is-active .pending-stage-filter__count {
+  background: rgba(124, 58, 237, 0.22);
+  color: #5b21b6;
+}
+
+.pending-stage-filter--phase1.is-active .pending-stage-filter__count {
+  background: rgba(245, 158, 11, 0.28);
+  color: #92400e;
+}
+
+.pending-stage-filter--phase2.is-active .pending-stage-filter__count {
+  background: rgba(34, 197, 94, 0.24);
+  color: #166534;
+}
+
+.pending-stage-filter--returned.is-active .pending-stage-filter__count {
+  background: rgba(239, 68, 68, 0.22);
+  color: #991b1b;
 }
 
 .pending-score-filters {
@@ -878,10 +1044,11 @@
   display: inline-flex;
   align-items: center;
   gap: 2px;
-  padding: 3px 6px 3px 4px;
+  padding: 3px 4px 3px 2px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.75);
   border: 1px solid rgba(15, 23, 42, 0.06);
+  flex-shrink: 0;
 }
 
 .pending-month-nav-btn {
@@ -916,13 +1083,26 @@
 }
 
 .pending-month-nav-label {
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--text-primary);
-  min-width: 7.5rem;
+  min-width: 0;
+  padding: 0 4px;
   text-align: center;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+  .pending-table-toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .pending-table-toolbar-period {
+    justify-self: stretch;
+    justify-content: flex-end;
+  }
 }
 
 .pending-table-wrap {
@@ -1404,6 +1584,13 @@
   background: rgba(15, 23, 42, 0.04);
   border-color: rgba(15, 23, 42, 0.07);
   font-weight: 500;
+}
+
+.pending-table--cases .pending-td-cert-val--returned {
+  color: #b91c1c;
+  background: rgba(254, 226, 226, 0.85);
+  border-color: rgba(239, 68, 68, 0.32);
+  font-weight: 700;
 }
 
 .pending-table--cases.pending-table--with-team .pending-th--team {

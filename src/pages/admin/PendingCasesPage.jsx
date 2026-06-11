@@ -14,6 +14,7 @@ import {
   Check,
   Calendar,
   CheckCircle2,
+  RefreshCw,
 } from 'lucide-react';
 import {
   assignCaseMonitor,
@@ -126,7 +127,6 @@ function addMonths(ym, delta) {
 function formatMonthBarLabel(ym) {
   const [y, m] = ym.split('-').map(Number);
   if (!y || !m) return ym;
-  if (ym === currentMonthKey()) return `이번 달 · ${y}년 ${m}월`;
   return `${y}년 ${m}월`;
 }
 
@@ -141,7 +141,7 @@ function formatDayBarLabel(dayKey) {
 }
 
 function formatDayPickerButtonLabel(dayKey) {
-  if (!dayKey) return '전체';
+  if (!dayKey) return '날짜 선택';
   if (dayKey === currentDayKey()) return '오늘';
   const m = Number(dayKey.slice(5, 7));
   const d = Number(dayKey.slice(8, 10));
@@ -215,7 +215,12 @@ export default function PendingCasesPage() {
 
   const exportYear = new Date().getFullYear();
 
-  const { data: queue, isLoading: queueLoading, refetch } = useQuery({
+  const {
+    data: queue,
+    isLoading: queueLoading,
+    isFetching: queueFetching,
+    refetch,
+  } = useQuery({
     queryKey: ['admin-review-queue', user?.skid],
     queryFn: () => fetchAdminReviewQueue(user?.skid),
   });
@@ -229,11 +234,23 @@ export default function PendingCasesPage() {
   );
 
   /** 선택한 2depth에 맞는 leaf 팀 목록 (사이드바) — review-queue와 병렬 로드 */
-  const { data: leafPayload, isLoading: leafTeamsLoading } = useQuery({
+  const {
+    data: leafPayload,
+    isLoading: leafTeamsLoading,
+    isFetching: leafTeamsFetching,
+    refetch: refetchLeafTeams,
+  } = useQuery({
     queryKey: ['admin-leaf-teams', secondDepthKey],
     queryFn: () =>
       fetchAdminLeafTeams(secondDepthKey === 'all' ? null : Number(secondDepthKey)),
   });
+
+  const listRefreshing = queueFetching || leafTeamsFetching;
+
+  const handleRefreshList = useCallback(async () => {
+    if (listRefreshing) return;
+    await Promise.all([refetch(), refetchLeafTeams()]);
+  }, [listRefreshing, refetch, refetchLeafTeams]);
 
   /** 상단 카드 — API가 센터별 대기 건수를 한 번에 반환 (leaf-teams N회 호출 제거) */
   const pendingByCenter = useMemo(() => {
@@ -433,7 +450,8 @@ export default function PendingCasesPage() {
       if (stage === 'phase2') {
         return String(x.status || '').toLowerCase() === 'selected' ? 2 : 3;
       }
-      return 4;
+      if (stage === 'returned') return 4;
+      return 5;
     };
     list.sort((a, b) => {
       if (key === 'status') {
@@ -898,6 +916,24 @@ export default function PendingCasesPage() {
                       <h2 className="pending-panel-title">
                         {isAllTeamsView ? '사례 목록' : selectedTeam.hierarchyPath}
                       </h2>
+                      <button
+                        type="button"
+                        className={`pending-panel-refresh${listRefreshing ? ' is-refreshing' : ''}`}
+                        onClick={handleRefreshList}
+                        disabled={listRefreshing || loadingCaseId != null || bulkPhase2Pending}
+                        aria-label="사례 목록 새로고침"
+                        aria-busy={listRefreshing}
+                        title="사례 목록 새로고침"
+                      >
+                        <span className="pending-panel-refresh__icon" aria-hidden>
+                          <RefreshCw
+                            size={14}
+                            strokeWidth={2.5}
+                            className={listRefreshing ? 'pending-refresh-spin' : undefined}
+                          />
+                        </span>
+                        <span className="pending-panel-refresh__label">새로고침</span>
+                      </button>
                     </div>
                     <div className="pending-panel-head-right">
                       {isAdmin && stageFilter === 'phase1' && checkedPhase1Count >= 1 ? (
@@ -952,7 +988,7 @@ export default function PendingCasesPage() {
                             type="button"
                             role="tab"
                             aria-selected={active}
-                            className={`pending-stage-filter${active ? ' is-active' : ''}`}
+                            className={`pending-stage-filter pending-stage-filter--${key}${active ? ' is-active' : ''}`}
                             onClick={() => setStageFilter(key)}
                           >
                             {label}

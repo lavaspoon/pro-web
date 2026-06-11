@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckCircle, Clock, XCircle } from 'lucide-react';
+import { CheckCircle, Clock, RotateCcw, XCircle } from 'lucide-react';
 import './StatusBadge.css';
 
 const STATUS_CONFIG = {
@@ -17,6 +17,11 @@ const STATUS_CONFIG = {
     label: '미인증',
     icon: XCircle,
     className: 'badge-rejected',
+  },
+  returned: {
+    label: '반려',
+    icon: RotateCcw,
+    className: 'badge-returned',
   },
 };
 

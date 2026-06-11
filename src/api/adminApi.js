@@ -234,6 +234,29 @@ export const cancelCaseDraftJudgment = async ({ caseId, adminSkid }) => {
 };
 
 /**
+ * 사례 반려 — 1·2차 평가 중(최종 인증 전)
+ * POST /api/admin/cases/{caseId}/return
+ */
+export const returnCase = async ({ caseId, adminSkid, reason }) => {
+  const { data } = await axiosInstance.post(`/api/admin/cases/${caseId}/return`, {
+    adminSkid,
+    reason: reason ?? '',
+  });
+  return data;
+};
+
+/**
+ * 반려 취소 — 대기중으로 복귀
+ * POST /api/admin/cases/{caseId}/cancel-return
+ */
+export const cancelCaseReturn = async ({ caseId, adminSkid }) => {
+  const { data } = await axiosInstance.post(`/api/admin/cases/${caseId}/cancel-return`, {
+    adminSkid,
+  });
+  return data;
+};
+
+/**
  * CS 만족도 — 실(2depth)별 요약
  * GET /api/admin/cs-satisfaction/summary?year=&month=&secondDepthDeptId=&rollingThroughYesterday=
  */

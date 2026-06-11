@@ -18,11 +18,12 @@ import '../../pages/member/CaseListPage.css';
 import '../../components/member/MemberCaseListModal.css';
 import '../../components/member/MemberCaseDetailModal.css';
 
-const STATUS_FILTER = ['전체', '대기중', '인증', '미인증'];
+const STATUS_FILTER = ['전체', '대기중', '인증', '미인증', '반려'];
 const STATUS_MAP = {
   대기중: 'pending',
   인증: 'selected',
   미인증: 'rejected',
+  반려: 'returned',
   선정: 'selected',
   비선정: 'rejected',
 };
