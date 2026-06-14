@@ -278,6 +278,34 @@ export const fetchCsSatisfactionSummary = async ({
 };
 
 /**
+ * CS 만족도 — 일별 평가모수 (평가시간=Y · cs_yn=Y)
+ * GET /api/admin/cs-satisfaction/eval-count-daily?year=&month=&rollingThroughYesterday=
+ */
+export const fetchCsSatisfactionEvalCountDaily = async ({
+  year,
+  month,
+  rollingThroughYesterday,
+} = {}) => {
+  const params = {};
+  if (year != null) params.year = year;
+  if (month != null && month !== '') params.month = month;
+  if (rollingThroughYesterday) params.rollingThroughYesterday = true;
+  const { data } = await axiosInstance.get('/api/admin/cs-satisfaction/eval-count-daily', { params });
+  return data;
+};
+
+/**
+ * CS 만족도 — 특정 일자 평가모수 상세 (구성원별 · raw)
+ * GET /api/admin/cs-satisfaction/eval-count-day-detail?date=
+ */
+export const fetchCsSatisfactionEvalCountDayDetail = async (date) => {
+  const { data } = await axiosInstance.get('/api/admin/cs-satisfaction/eval-count-day-detail', {
+    params: { date },
+  });
+  return data;
+};
+
+/**
  * CS 만족도 — 월별 평가·만족 건수 (실 1개 선택 시)
  * GET /api/admin/cs-satisfaction/monthly-trend?year=&secondDepthDeptId=
  */

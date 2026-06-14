@@ -1,0 +1,606 @@
+.adm-cs-evalcount-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(15, 23, 42, 0.56);
+  backdrop-filter: blur(6px);
+}
+
+/* 3단계 공통 고정 크기 */
+.adm-cs-evalcount-modal {
+  width: 1120px;
+  height: 720px;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 48px);
+  display: flex;
+  flex-direction: column;
+  padding: 20px 24px 24px;
+  overflow: hidden;
+  background: #fff;
+  border-radius: 18px;
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  box-shadow:
+    0 28px 72px rgba(15, 23, 42, 0.32),
+    0 8px 24px rgba(15, 23, 42, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+}
+
+.adm-cs-evalcount-head {
+  flex-shrink: 0;
+  margin-bottom: 12px;
+  padding: 0 0 12px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.adm-cs-evalcount-head-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+}
+
+.adm-cs-evalcount-head h3 {
+  margin: 0;
+}
+
+.adm-cs-evalcount-head-sub {
+  margin: 4px 0 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.adm-cs-evalcount-back-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  margin-top: 1px;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: #fff;
+  color: #475569;
+  cursor: pointer;
+}
+
+.adm-cs-evalcount-back-btn:hover {
+  background: rgba(15, 23, 42, 0.06);
+  color: #0f172a;
+}
+
+.adm-cs-evalcount-body {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.adm-cs-evalcount-step-fill {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.adm-cs-evalcount-step--calendar {
+  overflow: hidden;
+}
+
+.adm-cs-evalcount-step--table {
+  overflow: hidden;
+}
+
+.adm-cs-evalcount-toolbar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin: 0 0 12px;
+}
+
+.adm-cs-evalcount-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: #fff;
+  color: #475569;
+  cursor: pointer;
+}
+
+.adm-cs-evalcount-nav-btn:hover:not(:disabled) {
+  background: rgba(15, 23, 42, 0.06);
+  color: #0f172a;
+}
+
+.adm-cs-evalcount-nav-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.adm-cs-evalcount-month-label {
+  min-width: 8rem;
+  text-align: center;
+  font-size: 1.0625rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+}
+
+.adm-cs-evalcount-loading,
+.adm-cs-evalcount-detail-loading {
+  flex: 1;
+  min-height: 0;
+}
+
+.adm-cs-evalcount-total,
+.adm-cs-evalcount-step-desc {
+  flex-shrink: 0;
+  margin: 0 0 12px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: rgba(15, 23, 42, 0.72);
+  line-height: 1.5;
+}
+
+.adm-cs-evalcount-total-hint {
+  font-weight: 500;
+  color: #64748b;
+}
+
+.adm-cs-evalcount-member-toolbar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin: 0 0 12px;
+}
+
+.adm-cs-evalcount-skid-search {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.adm-cs-evalcount-skid-search-label {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #475569;
+  white-space: nowrap;
+}
+
+.adm-cs-evalcount-skid-search-input {
+  width: 180px;
+  min-height: 38px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: #fff;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.adm-cs-evalcount-skid-search-input::placeholder {
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.adm-cs-evalcount-skid-search-input:focus {
+  outline: none;
+  border-color: rgba(10, 126, 164, 0.45);
+  box-shadow: 0 0 0 3px rgba(10, 126, 164, 0.12);
+}
+
+.adm-cs-evalcount-skid-search-clear {
+  min-height: 38px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: #fff;
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #64748b;
+  cursor: pointer;
+}
+
+.adm-cs-evalcount-skid-search-clear:hover {
+  border-color: rgba(10, 126, 164, 0.35);
+  background: rgba(10, 126, 164, 0.08);
+  color: #0a5f80;
+}
+
+.adm-cs-evalcount-calendar-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.adm-cs-evalcount-calendar {
+  margin-bottom: 0;
+}
+
+.adm-cs-evalcount-cell {
+  cursor: pointer;
+  text-align: left;
+}
+
+.adm-cs-evalcount-cell:disabled {
+  cursor: not-allowed;
+}
+
+.adm-cs-evalcount-cell--future {
+  opacity: 0.32;
+  background: rgba(248, 250, 252, 0.85);
+}
+
+.adm-cs-evalcount-cell .pending-daypicker-cell-badges .pending-daypicker-badge {
+  font-size: 0.6875rem;
+  padding: 4px 6px;
+}
+
+.adm-cs-evalcount-cell.pending-daypicker-cell--rich {
+  min-height: 72px;
+}
+
+/* 테이블 패널 — 10행 + 헤더 + 페이징 고정 영역 */
+.adm-cs-evalcount-table-panel {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 14px;
+  background: linear-gradient(180deg, #f8fafc 0%, #fff 28%);
+  overflow: hidden;
+}
+
+.adm-cs-evalcount-table-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.adm-cs-evalcount-data-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+}
+
+.adm-cs-evalcount-data-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 0;
+  background: #eef2f7;
+  border-bottom: 2px solid rgba(15, 23, 42, 0.1);
+  white-space: nowrap;
+}
+
+.adm-cs-evalcount-sort-btn {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 14px;
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: #334155;
+  text-align: left;
+  cursor: pointer;
+}
+
+.adm-cs-evalcount-sort-btn:hover {
+  background: rgba(10, 126, 164, 0.08);
+  color: #0a5f80;
+}
+
+.adm-cs-evalcount-sort-btn.is-active {
+  color: #0a7ea4;
+  background: rgba(10, 126, 164, 0.1);
+}
+
+.adm-cs-evalcount-col-num .adm-cs-evalcount-sort-btn {
+  justify-content: flex-end;
+}
+
+.adm-cs-evalcount-sort-icon {
+  font-size: 0.6875rem;
+  opacity: 0.72;
+  line-height: 1;
+}
+
+.adm-cs-evalcount-data-table tbody td {
+  padding: 14px 14px;
+  font-size: 0.875rem;
+  color: #0f172a;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.07);
+  vertical-align: middle;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.adm-cs-evalcount-data-table tbody tr:nth-child(even) {
+  background: rgba(248, 250, 252, 0.85);
+}
+
+.adm-cs-evalcount-data-table tbody tr:hover {
+  background: rgba(10, 126, 164, 0.06);
+}
+
+.adm-cs-evalcount-click-row {
+  cursor: pointer;
+}
+
+.adm-cs-evalcount-click-row:focus-visible {
+  outline: 2px solid rgba(10, 126, 164, 0.45);
+  outline-offset: -2px;
+}
+
+.adm-cs-evalcount-member-table th:nth-child(1),
+.adm-cs-evalcount-member-table td:nth-child(1) {
+  width: 20%;
+}
+
+.adm-cs-evalcount-member-table th:nth-child(2),
+.adm-cs-evalcount-member-table td:nth-child(2) {
+  width: 14%;
+}
+
+.adm-cs-evalcount-member-table th:nth-child(3),
+.adm-cs-evalcount-member-table td:nth-child(3) {
+  width: 14%;
+}
+
+.adm-cs-evalcount-member-table th:nth-child(4),
+.adm-cs-evalcount-member-table td:nth-child(4) {
+  width: 12%;
+}
+
+.adm-cs-evalcount-member-table th:nth-child(5),
+.adm-cs-evalcount-member-table td:nth-child(5) {
+  width: 12%;
+}
+
+.adm-cs-evalcount-member-table th:nth-child(6),
+.adm-cs-evalcount-member-table td:nth-child(6) {
+  width: 10%;
+}
+
+.adm-cs-evalcount-col-dept {
+  max-width: 0;
+}
+
+.adm-cs-evalcount-raw-table th:nth-child(1),
+.adm-cs-evalcount-raw-table td:nth-child(1) {
+  width: 8%;
+}
+
+.adm-cs-evalcount-raw-table th:nth-child(2),
+.adm-cs-evalcount-raw-table td:nth-child(2) {
+  width: 16%;
+}
+
+.adm-cs-evalcount-raw-table th:nth-child(3),
+.adm-cs-evalcount-raw-table td:nth-child(3) {
+  width: 12%;
+}
+
+.adm-cs-evalcount-raw-table th:nth-child(4),
+.adm-cs-evalcount-raw-table td:nth-child(4) {
+  width: 12%;
+}
+
+.adm-cs-evalcount-raw-table th:nth-child(5),
+.adm-cs-evalcount-raw-table td:nth-child(5) {
+  width: 11%;
+}
+
+.adm-cs-evalcount-raw-table th:nth-child(6),
+.adm-cs-evalcount-raw-table td:nth-child(6) {
+  width: 11%;
+}
+
+.adm-cs-evalcount-raw-table th:nth-child(7),
+.adm-cs-evalcount-raw-table td:nth-child(7) {
+  width: 10%;
+}
+
+.adm-cs-evalcount-raw-table th:nth-child(8),
+.adm-cs-evalcount-raw-table td:nth-child(8) {
+  width: 10%;
+}
+
+.adm-cs-evalcount-col-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.adm-cs-evalcount-col-id,
+.adm-cs-evalcount-col-dt {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.adm-cs-evalcount-yn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  background: rgba(148, 163, 184, 0.16);
+  color: #475569;
+}
+
+.adm-cs-evalcount-yn--Y {
+  background: rgba(16, 185, 129, 0.14);
+  color: #047857;
+}
+
+.adm-cs-evalcount-yn--N {
+  background: rgba(244, 63, 94, 0.12);
+  color: #be123c;
+}
+
+.adm-cs-evalcount-empty {
+  padding: 48px 18px !important;
+  text-align: center;
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+.adm-cs-evalcount-pagination {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+  background: #fff;
+}
+
+.adm-cs-evalcount-pagination-info {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #64748b;
+  font-variant-numeric: tabular-nums;
+}
+
+.adm-cs-evalcount-pagination-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.adm-cs-evalcount-page-btn {
+  min-width: 72px;
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: #fff;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #334155;
+  cursor: pointer;
+}
+
+.adm-cs-evalcount-page-btn:hover:not(:disabled) {
+  border-color: rgba(10, 126, 164, 0.35);
+  background: rgba(10, 126, 164, 0.08);
+  color: #0a5f80;
+}
+
+.adm-cs-evalcount-page-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.adm-data-as-of-btn {
+  appearance: none;
+  border: none;
+  background: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 0.2em;
+}
+
+.adm-data-as-of-btn:hover,
+.adm-data-as-of-btn:focus-visible {
+  color: var(--primary, #2563eb);
+}
+
+.adm-data-as-of-btn:focus-visible {
+  outline: 2px solid var(--primary, #2563eb);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+@media (max-width: 1160px) {
+  .adm-cs-evalcount-modal {
+    width: calc(100vw - 24px);
+    height: min(720px, calc(100vh - 32px));
+  }
+}
+
+@media (max-width: 640px) {
+  .adm-cs-evalcount-backdrop {
+    padding: 12px;
+    align-items: flex-end;
+  }
+
+  .adm-cs-evalcount-modal {
+    width: 100%;
+    height: min(720px, 94vh);
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    padding: 16px 16px 20px;
+  }
+
+  .adm-cs-evalcount-sort-btn {
+    padding: 10px 12px;
+    min-height: 44px;
+  }
+
+  .adm-cs-evalcount-data-table tbody td {
+    padding: 12px 12px;
+  }
+
+  .adm-cs-evalcount-pagination {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .adm-cs-evalcount-pagination-actions {
+    justify-content: flex-end;
+  }
+
+  .adm-cs-evalcount-cell.pending-daypicker-cell--rich {
+    min-height: 76px;
+    padding: 5px 4px 6px;
+  }
+
+  .adm-cs-evalcount-cell .pending-daypicker-cell-badges .pending-daypicker-badge {
+    font-size: 0.5625rem;
+    padding: 3px 4px;
+  }
+}

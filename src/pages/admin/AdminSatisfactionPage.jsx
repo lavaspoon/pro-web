@@ -12,11 +12,13 @@ import {
 } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
 import { isYouProAdmin } from '../../utils/youProRole';
+import AdminCsEvalCountDailyModal from './AdminCsEvalCountDailyModal';
 import AdminSatisfactionSetupModal from './AdminSatisfactionSetupModal';
 import AdminTargetMembersUploadModal from './AdminTargetMembersUploadModal';
 import {
   fetchCsSatisfactionCenterMonthDetail,
   fetchCsSatisfactionDashboardKpis,
+  fetchCsSatisfactionEvalCountDaily,
   fetchCsSatisfactionMemberMonthlyRows,
   fetchCsSatisfactionScopeDaySummary,
   fetchCsSatisfactionSummary,
@@ -31,11 +33,12 @@ import CsSatisfactionModalDayStats from '../../components/cs/CsSatisfactionModal
 import CsSatisfactionModalPeriodToolbar from '../../components/cs/CsSatisfactionModalPeriodToolbar';
 import { formatCaseDateTimeMmDdKorean, problemResolvedNegRateClass, problemResolvedNegRateText } from '../../utils/caseDisplay';
 import { isActiveUseYn, buildDaySatisfactionStatsByDay } from '../../utils/csSatisfactionModalDayStats';
-import { LatestDataAsOfHint } from '../../utils/adminDataAsOfHint';
+import { parseDataAsOfDateParts } from '../../utils/adminDataAsOfHint';
 import PendingCaseDayPickerModal from './PendingCaseDayPickerModal';
 import { KpiOverviewSkeleton, SummaryTableSkeletonRows } from './adminLoadingSkeletons';
 import './DashboardPage.css';
 import './TeamDetailPage.css';
+import './AdminCsEvalCountDailyModal.css';
 import './AdminSatisfactionPage.css';
 import './PendingCasesPage.css';
 import './PendingCaseDayPickerModal.css';
@@ -388,6 +391,7 @@ export default function AdminSatisfactionPage() {
   const [setupModalOpen, setSetupModalOpen] = useState(false);
   const [targetUploadModalOpen, setTargetUploadModalOpen] = useState(false);
   const [excludeModalOpen, setExcludeModalOpen] = useState(false);
+  const [evalCountModalOpen, setEvalCountModalOpen] = useState(false);
   const [excludeSkill, setExcludeSkill] = useState(SAT_EXCLUDE_SKILLS[0]);
   const [excludeStartLocal, setExcludeStartLocal] = useState('');
   const [excludeEndLocal, setExcludeEndLocal] = useState('');
@@ -405,6 +409,11 @@ export default function AdminSatisfactionPage() {
   const summaryQuery = useQuery({
     queryKey: ['cs-satisfaction-summary', 'rolling-mtd'],
     queryFn: () => fetchCsSatisfactionSummary({ rollingThroughYesterday: true }),
+  });
+
+  const evalCountDailyQuery = useQuery({
+    queryKey: ['cs-satisfaction-eval-count-daily', 'rolling-mtd'],
+    queryFn: () => fetchCsSatisfactionEvalCountDaily({ rollingThroughYesterday: true }),
   });
 
   const dashboardKpisQuery = useQuery({
@@ -520,6 +529,15 @@ export default function AdminSatisfactionPage() {
   );
   /** 상담일시(eval_date) 최댓값(yyyy-MM-dd) */
   const latestSatisfactionDataDate = summaryQuery.data?.latestConsultDate ?? null;
+  const latestDataDateParts = parseDataAsOfDateParts(latestSatisfactionDataDate);
+  const evalCountInitialMonthKey = latestSatisfactionDataDate?.slice(0, 7) || currentMonthKey();
+  const latestDayEvalCount = useMemo(() => {
+    if (!latestSatisfactionDataDate) return null;
+    const row = (evalCountDailyQuery.data?.days ?? []).find(
+      (d) => d?.date === latestSatisfactionDataDate,
+    );
+    return row != null ? Number(row.evalCount) || 0 : 0;
+  }, [latestSatisfactionDataDate, evalCountDailyQuery.data]);
   const memberRows = useMemo(
     () => centerMonthDetailQuery.data?.members ?? [],
     [centerMonthDetailQuery.data],
@@ -628,6 +646,8 @@ export default function AdminSatisfactionPage() {
       centerMonthDetailQuery.refetch();
       dashboardKpisQuery.refetch();
       queryClient.invalidateQueries({ queryKey: ['cs-satisfaction-summary'] });
+      queryClient.invalidateQueries({ queryKey: ['cs-satisfaction-eval-count-daily'] });
+      queryClient.invalidateQueries({ queryKey: ['cs-satisfaction-eval-count-day-detail'] });
       queryClient.invalidateQueries({ queryKey: ['cs-satisfaction-exclude-log'] });
     },
     onError: (e) => {
@@ -649,6 +669,8 @@ export default function AdminSatisfactionPage() {
       centerMonthDetailQuery.refetch();
       dashboardKpisQuery.refetch();
       queryClient.invalidateQueries({ queryKey: ['cs-satisfaction-summary'] });
+      queryClient.invalidateQueries({ queryKey: ['cs-satisfaction-eval-count-daily'] });
+      queryClient.invalidateQueries({ queryKey: ['cs-satisfaction-eval-count-day-detail'] });
       queryClient.invalidateQueries({ queryKey: ['cs-satisfaction-exclude-log'] });
     },
     onError: (e) => {
@@ -824,10 +846,6 @@ export default function AdminSatisfactionPage() {
           <div className="adm-header-text">
             <p className="adm-identity-kicker">YOU PRO · 관리</p>
             <h1 className="adm-title">CS 만족도 대시보드</h1>
-            <p className="adm-sub">
-              상단 KPI는 <strong>{monthLabel}</strong>, 실별·구성원 표는{' '}
-              <strong>전일 기준</strong> 누적 구간입니다.
-            </p>
           </div>
           <div className="adm-sat-header-actions">
             <div className="adm-sat-month-nav" aria-label="조회 월 이동">
@@ -894,7 +912,33 @@ export default function AdminSatisfactionPage() {
             <p className="adm-section-hint">
               <strong>{secondDepthLabelHint}</strong>
               {' · '}
-              <LatestDataAsOfHint latestDataDate={latestSatisfactionDataDate} />
+              {latestDataDateParts ? (
+                <button
+                  type="button"
+                  className="adm-data-as-of-btn"
+                  onClick={() => setEvalCountModalOpen(true)}
+                  aria-haspopup="dialog"
+                >
+                  최근{' '}
+                  <strong className="adm-data-as-of-date">
+                    {latestDataDateParts.month}월 {latestDataDateParts.day}일
+                  </strong>{' '}
+                  기준 데이터 · 평가모수{' '}
+                  <strong className="adm-data-as-of-date">
+                    {evalCountDailyQuery.isLoading ? '…' : num(latestDayEvalCount)}
+                  </strong>
+                  건
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="adm-data-as-of-btn"
+                  onClick={() => setEvalCountModalOpen(true)}
+                  aria-haspopup="dialog"
+                >
+                  데이터 없음
+                </button>
+              )}
             </p>
           </div>
         </div>
@@ -1551,6 +1595,12 @@ export default function AdminSatisfactionPage() {
           variant="cs"
         />
       )}
+
+      <AdminCsEvalCountDailyModal
+        open={evalCountModalOpen}
+        onClose={() => setEvalCountModalOpen(false)}
+        initialMonthKey={evalCountInitialMonthKey}
+      />
     </div>
   );
 }
