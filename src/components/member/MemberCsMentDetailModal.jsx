@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { X } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
+import useViewAsStore from '../../store/viewAsStore';
 import { fetchMemberSatisfaction } from '../../api/memberApi';
 import { fetchCsSatisfactionMemberMonthlyRows } from '../../api/adminApi';
 import CsSatisfactionModalDayStats from '../cs/CsSatisfactionModalDayStats';
@@ -93,19 +94,21 @@ export default function MemberCsMentDetailModal({
   month,
 }) {
   const { user } = useAuthStore();
+  const { viewAsSkid } = useViewAsStore();
+  const effectiveSkid = viewAsSkid || user?.skid;
   const [page, setPage] = useState(1);
 
   const satQuery = useQuery({
-    queryKey: ['member-satisfaction', user?.skid, year, month],
-    queryFn: () => fetchMemberSatisfaction({ skid: user.skid, year, month }),
-    enabled: open && !!user?.skid,
+    queryKey: ['member-satisfaction', effectiveSkid, year, month],
+    queryFn: () => fetchMemberSatisfaction({ skid: effectiveSkid, year, month }),
+    enabled: open && !!effectiveSkid,
     staleTime: 60_000,
   });
 
   const memberRowsQuery = useQuery({
-    queryKey: ['member-sat-rows', user?.skid, year],
-    queryFn: () => fetchCsSatisfactionMemberMonthlyRows(user.skid, year),
-    enabled: open && !!user?.skid && !!satQuery.data && !satQuery.isError,
+    queryKey: ['member-sat-rows', effectiveSkid, year],
+    queryFn: () => fetchCsSatisfactionMemberMonthlyRows(effectiveSkid, year),
+    enabled: open && !!effectiveSkid && !!satQuery.data && !satQuery.isError,
     staleTime: 60_000,
   });
 

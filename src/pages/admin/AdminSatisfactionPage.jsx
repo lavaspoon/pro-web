@@ -9,6 +9,7 @@ import {
   UserCircle2,
   CheckCircle2,
   Building2,
+  Download,
 } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
 import { isYouProAdmin } from '../../utils/youProRole';
@@ -25,8 +26,10 @@ import {
   fetchCsSatisfactionExcludeLog,
   excludeCsSatisfactionEvalRange,
   cancelCsSatisfactionExcludeLog,
+  downloadCsSatisfactionRawExport,
 } from '../../api/adminApi';
 import AdminExcludeLogHistory from './AdminExcludeLogHistory';
+import AdminContestModal from './AdminContestModal';
 import { formatExcludeRangeSpan } from '../../utils/excludeLogDateTime';
 import { mergeSecondDepthOptions } from '../../utils/adminSecondDepth';
 import CsSatisfactionModalDayStats from '../../components/cs/CsSatisfactionModalDayStats';
@@ -42,6 +45,7 @@ import './AdminCsEvalCountDailyModal.css';
 import './AdminSatisfactionPage.css';
 import './PendingCasesPage.css';
 import './PendingCaseDayPickerModal.css';
+import './AdminContestModal.css';
 
 const MEMBER_ROWS_PAGE_SIZE = 7;
 
@@ -390,6 +394,20 @@ export default function AdminSatisfactionPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [setupModalOpen, setSetupModalOpen] = useState(false);
   const [targetUploadModalOpen, setTargetUploadModalOpen] = useState(false);
+  const [rawExportLoading, setRawExportLoading] = useState(false);
+  const [contestModalOpen, setContestModalOpen] = useState(false);
+
+  const handleRawExport = useCallback(async () => {
+    if (rawExportLoading) return;
+    setRawExportLoading(true);
+    try {
+      await downloadCsSatisfactionRawExport(year, month, adminSkid);
+    } catch (e) {
+      alert(e?.response?.data ? '다운로드 중 오류가 발생했습니다.' : (e?.message ?? '다운로드 중 오류가 발생했습니다.'));
+    } finally {
+      setRawExportLoading(false);
+    }
+  }, [rawExportLoading, year, month, adminSkid]);
   const [excludeModalOpen, setExcludeModalOpen] = useState(false);
   const [evalCountModalOpen, setEvalCountModalOpen] = useState(false);
   const [excludeSkill, setExcludeSkill] = useState(SAT_EXCLUDE_SKILLS[0]);
@@ -892,6 +910,30 @@ export default function AdminSatisfactionPage() {
                 onClick={() => setSetupModalOpen(true)}
               >
                 목표 설정
+              </button>
+            )}
+            {showAdminTools && (
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm adm-sat-upload-entry"
+                onClick={handleRawExport}
+                disabled={rawExportLoading}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+              >
+                {rawExportLoading ? '다운로드 중…' : '당월 만족도 RAW'}
+                {!rawExportLoading && (
+                  <Download size={16} aria-hidden style={{ flexShrink: 0 }} />
+                )}
+              </button>
+            )}
+            {showAdminTools && (
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm adm-sat-upload-entry"
+                onClick={() => setContestModalOpen(true)}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+              >
+                콘테스트
               </button>
             )}
           </div>
@@ -1601,6 +1643,13 @@ export default function AdminSatisfactionPage() {
         onClose={() => setEvalCountModalOpen(false)}
         initialMonthKey={evalCountInitialMonthKey}
       />
+
+      {showAdminTools && (
+        <AdminContestModal
+          open={contestModalOpen}
+          onClose={() => setContestModalOpen(false)}
+        />
+      )}
     </div>
   );
 }

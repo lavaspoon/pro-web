@@ -8,9 +8,7 @@ import {
 import './CaseScorePanel.css';
 
 function scoreSelectOptionsForMax(maxScore) {
-  const opts = [0, 5];
-  if (maxScore >= 10) opts.push(10);
-  return opts;
+  return [0, maxScore];
 }
 
 function scoreSelectValue(raw, maxScore) {

@@ -9,6 +9,7 @@ import {
   Filter,
 } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
+import useViewAsStore from '../../store/viewAsStore';
 import { fetchMyCases } from '../../api/memberApi';
 import StatusBadge from '../common/StatusBadge';
 import { caseDescriptionExcerpt } from '../../utils/caseEvaluation';
@@ -56,6 +57,8 @@ function formatMonthBarLabel(ym) {
 
 export default function MemberCaseListModal() {
   const { user } = useAuthStore();
+  const { viewAsSkid } = useViewAsStore();
+  const effectiveSkid = viewAsSkid || user?.skid;
   const open = useMemberModalStore((s) => s.caseListOpen);
   const initialFilter = useMemberModalStore((s) => s.caseListInitialFilter);
   const initialMonth = useMemberModalStore((s) => s.caseListInitialMonth);
@@ -68,9 +71,9 @@ export default function MemberCaseListModal() {
   const [monthKey, setMonthKey] = useState(currentMonthKey);
 
   const { data: cases = [], isLoading } = useQuery({
-    queryKey: ['my-cases', user?.skid],
-    queryFn: () => fetchMyCases(user.skid),
-    enabled: !!user?.skid && open,
+    queryKey: ['my-cases', effectiveSkid],
+    queryFn: () => fetchMyCases(effectiveSkid),
+    enabled: !!effectiveSkid && open,
   });
 
   useEffect(() => {

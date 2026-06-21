@@ -34,6 +34,19 @@ export const fetchAdminRanking = async (year, topN = 15) => {
 };
 
 /**
+ * 팀(실) 일별 접수·인증 건수 조회
+ * GET /api/admin/teams/{deptIdx}/daily-stats?year=&month=
+ * 응답: { dailyStats: [{ date: 'yyyy-MM-dd', submitted: N, certified: N }] }
+ */
+export const fetchTeamDailyStats = async (deptIdx, year, month) => {
+  const params = {};
+  if (year != null) params.year = year;
+  if (month != null) params.month = month;
+  const { data } = await axiosInstance.get(`/api/admin/teams/${deptIdx}/daily-stats`, { params });
+  return data;
+};
+
+/**
  * 팀(실) 상세 구성원 현황 조회
  * GET /api/admin/teams/{deptIdx}
  */
@@ -69,6 +82,30 @@ export const downloadAdminRewardExport = async (year, adminSkid) => {
   const link = document.createElement('a');
   link.href = url;
   link.download = `youpro-리워드내역-${year}.xlsx`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
+};
+
+/**
+ * CS 만족도 당월 RAW 엑셀 — 관리자 전용, 평가대상자(cs_yn=Y) 기준
+ * GET /api/admin/cs-satisfaction/raw-export?year=&month=&adminSkid=
+ */
+export const downloadCsSatisfactionRawExport = async (year, month, adminSkid) => {
+  const response = await axiosInstance.get('/api/admin/cs-satisfaction/raw-export', {
+    params: { year, month, adminSkid },
+    responseType: 'blob',
+    timeout: 120000,
+  });
+  const blob = new Blob(
+    [response.data],
+    { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' },
+  );
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `cs-만족도-RAW-${year}-${String(month).padStart(2, '0')}월.xlsx`;
   document.body.appendChild(link);
   link.click();
   link.remove();
@@ -539,3 +576,79 @@ export const uploadCaseHistoryMigrationExcel = async (file, { year, fromMonth = 
 
 /** @deprecated uploadYouProTargetMembersExcel 사용 */
 export const uploadTargetMembersExcel = uploadYouProTargetMembersExcel;
+
+/* ──────────────────────────────────────────────────────────────
+ * 콘테스트(프로모션 이벤트) — 관리자 전용
+ * ────────────────────────────────────────────────────────────── */
+
+/**
+ * 콘테스트 목록 조회
+ * GET /api/admin/contests
+ */
+export const fetchAdminContests = async () => {
+  const { data } = await axiosInstance.get('/api/admin/contests');
+  return data;
+};
+
+/**
+ * 콘테스트 단건 조회
+ * GET /api/admin/contests/{id}
+ */
+export const fetchAdminContest = async (id) => {
+  const { data } = await axiosInstance.get(`/api/admin/contests/${id}`);
+  return data;
+};
+
+/**
+ * 콘테스트 등록
+ * POST /api/admin/contests
+ * body: { title, content, startDate, endDate }
+ */
+export const createAdminContest = async ({ title, content, startDate, endDate }) => {
+  const { data } = await axiosInstance.post('/api/admin/contests', {
+    title,
+    content,
+    startDate,
+    endDate,
+  });
+  return data;
+};
+
+/**
+ * 콘테스트 수정
+ * PUT /api/admin/contests/{id}
+ * body: { title, content, startDate, endDate }
+ */
+export const updateAdminContest = async (id, { title, content, startDate, endDate }) => {
+  const { data } = await axiosInstance.put(`/api/admin/contests/${id}`, {
+    title,
+    content,
+    startDate,
+    endDate,
+  });
+  return data;
+};
+
+/**
+ * 콘테스트 접수 내역 엑셀 다운로드
+ * GET /api/admin/contests/{id}/entries/export
+ * 컬럼: 센터, 그룹, 실, 사번, 이름, 접수날짜, 접수내용, 상담날짜, 녹취시간
+ */
+export const downloadContestEntriesExport = async (contestId, contestTitle) => {
+  const response = await axiosInstance.get(`/api/admin/contests/${contestId}/entries/export`, {
+    responseType: 'blob',
+    timeout: 120000,
+  });
+  const blob = new Blob(
+    [response.data],
+    { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' },
+  );
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `콘테스트-접수내역-${contestTitle ?? contestId}.xlsx`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
+};

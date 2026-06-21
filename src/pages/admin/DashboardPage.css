@@ -316,10 +316,7 @@
 .adm-dashboard--yp .adm-kpi-card--annual-by-center .adm-sat-kpi-center-head,
 .adm-dashboard--yp .adm-kpi-card--annual-by-center .adm-sat-kpi-center-row {
   grid-template-columns:
-    minmax(2.6rem, 1fr)
-    minmax(3.4rem, 1fr)
-    minmax(2.75rem, 0.85fr)
-    minmax(2.9rem, 0.9fr);
+    minmax(2.6rem, 1fr) minmax(3.4rem, 1fr) minmax(2.75rem, 0.85fr) minmax(2.9rem, 0.9fr);
 }
 
 .adm-dashboard--yp .adm-kpi-card--center-metrics-2 .adm-sat-kpi-center-head,
@@ -1404,9 +1401,27 @@
   font-variant-numeric: tabular-nums;
 }
 
+.adm-team-monthly-cases--btn {
+  cursor: pointer;
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: inherit;
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+  transition: color 0.1s ease;
+}
+
+.adm-team-monthly-cases--btn:hover {
+  color: #0f766e;
+}
+
 .adm-team-monthly-cases__sep {
-  color: var(--text-tertiary);
+  color: var(--accent);
   font-weight: 500;
+  opacity: 0.5;
 }
 
 .adm-tr {

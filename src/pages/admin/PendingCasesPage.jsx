@@ -488,6 +488,17 @@ export default function PendingCasesPage() {
         if (d !== 0) return d * mul;
         return (a.id ?? 0) - (b.id ?? 0);
       }
+      if (key === 'cert') {
+        const certOrder = (x) => {
+          const st = String(x.status || '').toLowerCase();
+          if (st === 'selected') return 0;
+          if (st === 'rejected') return 1;
+          return 2;
+        };
+        const d = certOrder(a) - certOrder(b);
+        if (d !== 0) return d * mul;
+        return (a.id ?? 0) - (b.id ?? 0);
+      }
       if (key === 'submitted') {
         const ta = a.submittedAt ? new Date(a.submittedAt).getTime() : 0;
         const tb = b.submittedAt ? new Date(b.submittedAt).getTime() : 0;
@@ -1139,8 +1150,26 @@ export default function PendingCasesPage() {
                             </button>
                           </th>
                           {showCertColumn ? (
-                            <th scope="col" className="pending-th pending-th--cert">
-                              <span className="pending-th-label">인증여부</span>
+                            <th
+                              scope="col"
+                              className="pending-th pending-th--cert"
+                              aria-sort={
+                                tableSort.key === 'cert'
+                                  ? tableSort.direction === 'asc'
+                                    ? 'ascending'
+                                    : 'descending'
+                                  : 'none'
+                              }
+                            >
+                              <button
+                                type="button"
+                                className="pending-th-btn"
+                                onClick={() => toggleSort('cert')}
+                                aria-label="인증여부 기준 정렬"
+                              >
+                                <span>인증여부</span>
+                                <SortGlyph active={tableSort.key === 'cert'} direction={tableSort.direction} />
+                              </button>
                             </th>
                           ) : null}
                           <th

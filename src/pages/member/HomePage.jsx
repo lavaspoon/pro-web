@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useMemberModalStore } from '../../store/memberModalStore';
@@ -6,7 +6,9 @@ import {
   Plus, ChevronRight, Medal, Zap, Trophy, Check, X, BadgeCheck, Sparkles,
 } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
-import { fetchMemberHome, fetchMyCases } from '../../api/memberApi';
+import useViewAsStore from '../../store/viewAsStore';
+import { fetchMemberHome, fetchMyCases, fetchActiveContest } from '../../api/memberApi';
+import MemberContestModal from './MemberContestModal';
 import { fetchRecentSubmissionTrendInsight } from '../../api/lmStudioClient';
 import Skeleton from '../../components/common/Skeleton';
 import { analyzeMyWeakScoreInsight, analyzeTopScoreTrendInsight } from '../../utils/caseEvaluation';
@@ -20,6 +22,7 @@ import { TIERS, getTierIdx } from '../../utils/youProRewardTiers';
 import '../admin/DashboardPage.css';
 import './HomePage.css';
 import './CsSatisfactionPage.css';
+import './MemberContestModal.css';
 
 const now = new Date();
 const currentMonthNum = now.getMonth() + 1;
@@ -350,8 +353,9 @@ function TopMembersSpotlightPanel({ items }) {
 
 
 
-function HomeIntro({ userName, onSubmit, loading = false }) {
+function HomeIntro({ userName, onSubmit, onContestClick, activeContest = null, loading = false }) {
   const displayName = userName?.trim() ? userName.trim() : '구성원';
+  const hasActiveContest = !!activeContest;
 
   return (
     <header className={`hp-intro${loading ? ' hp-intro--loading' : ''}`}>
@@ -488,22 +492,41 @@ function HomeIntro({ userName, onSubmit, loading = false }) {
           </p>
         </div>
         {loading ? (
-          <Skeleton width={140} height={56} radius={16} />
+          <div className="hp-intro-cta-group">
+            <Skeleton width={140} height={56} radius={16} />
+          </div>
         ) : (
-          <button
-            type="button"
-            className="hp-intro-cta hp-intro-cta--keycap"
-            onClick={onSubmit}
-            aria-label="사례 접수하기"
-          >
-            <span className="hp-intro-cta-keytop">
-              <span className="hp-intro-cta-icon" aria-hidden>
-                <Plus size={18} strokeWidth={2.75} />
+          <div className="hp-intro-cta-group">
+            <button
+              type="button"
+              className="hp-intro-cta hp-intro-cta--keycap"
+              onClick={onSubmit}
+              aria-label="사례 접수하기"
+            >
+              <span className="hp-intro-cta-keytop">
+                <span className="hp-intro-cta-icon" aria-hidden>
+                  <Plus size={18} strokeWidth={2.75} />
+                </span>
+                <span className="hp-intro-cta-label">접수하기</span>
+                <span className="hp-intro-cta-kbd" aria-hidden>↵</span>
               </span>
-              <span className="hp-intro-cta-label">접수하기</span>
-              <span className="hp-intro-cta-kbd" aria-hidden>↵</span>
-            </span>
-          </button>
+            </button>
+            {hasActiveContest && !loading && (
+              <button
+                type="button"
+                className="hp-intro-cta hp-intro-cta--keycap hp-intro-cta--contest"
+                onClick={onContestClick}
+                aria-label="콘테스트 참여"
+              >
+                <span className="hp-intro-cta-keytop">
+                  <span className="hp-intro-cta-icon" aria-hidden>
+                    <Trophy size={16} strokeWidth={2.5} />
+                  </span>
+                  <span className="hp-intro-cta-label">콘테스트 참여</span>
+                </span>
+              </button>
+            )}
+          </div>
         )}
       </div>
     </header>
@@ -632,21 +655,33 @@ function HomeSkeleton({ userName }) {
 
 export default function HomePage() {
   const { user } = useAuthStore();
+  const { viewAsSkid } = useViewAsStore();
+  const effectiveSkid = viewAsSkid || user?.skid;
+  const isViewAsMode = !!viewAsSkid;
   const openSubmit = useMemberModalStore((s) => s.openSubmit);
   const openCaseList = useMemberModalStore((s) => s.openCaseList);
+  const [contestModalOpen, setContestModalOpen] = useState(false);
+
+  const activeContestQuery = useQuery({
+    queryKey: ['active-contest', effectiveSkid],
+    queryFn: () => fetchActiveContest(effectiveSkid),
+    enabled: !!effectiveSkid,
+    staleTime: 5 * 60 * 1000,
+  });
+  const activeContest = activeContestQuery.data?.contest ?? activeContestQuery.data ?? null;
 
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ['member-home', user?.skid],
-    queryFn: () => fetchMemberHome(user.skid),
-    enabled: !!user?.skid,
+    queryKey: ['member-home', effectiveSkid],
+    queryFn: () => fetchMemberHome(effectiveSkid),
+    enabled: !!effectiveSkid,
     refetchInterval: BOARD_REFETCH_MS,
     refetchIntervalInBackground: true,
   });
 
   const { data: cases = [] } = useQuery({
-    queryKey: ['my-cases', user?.skid],
-    queryFn: () => fetchMyCases(user.skid),
-    enabled: !!user?.skid,
+    queryKey: ['my-cases', effectiveSkid],
+    queryFn: () => fetchMyCases(effectiveSkid),
+    enabled: !!effectiveSkid,
   });
 
   const { monthStats, monthPreviewCases } = useMemo(() => {
@@ -712,7 +747,12 @@ export default function HomePage() {
   return (
     <div className="page-container adm-dashboard adm-dashboard--yp fade-in yp-home hp-home">
 
-      <HomeIntro userName={user?.name} onSubmit={openSubmit} />
+      <HomeIntro
+        userName={user?.name}
+        onSubmit={isViewAsMode ? undefined : openSubmit}
+        onContestClick={isViewAsMode ? undefined : () => setContestModalOpen(true)}
+        activeContest={isViewAsMode ? null : activeContest}
+      />
 
       <section
         className={`hp-hero hp-hero--month-unified${(certificationBoard?.items?.length ?? 0) === 0 ? ' hp-hero--month-unified-solo' : ''}`}
@@ -882,6 +922,12 @@ export default function HomePage() {
         </div>
       </section>
 
+      <MemberContestModal
+        open={contestModalOpen && !!activeContest}
+        onClose={() => setContestModalOpen(false)}
+        contest={activeContest}
+        skid={effectiveSkid}
+      />
     </div>
   );
 }

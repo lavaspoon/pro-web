@@ -112,3 +112,44 @@ export const fetchMemberUnsatisfiedDetails = async ({ skid, year, month, dissati
   });
   return data;
 };
+
+/* ──────────────────────────────────────────────────────────────
+ * 콘테스트(프로모션 이벤트) — 구성원 전용
+ * ────────────────────────────────────────────────────────────── */
+
+/**
+ * 현재 진행 중인 콘테스트 조회 (이벤트 기간 내 최신 1건)
+ * GET /api/member/contests/active?skid=
+ */
+export const fetchActiveContest = async (skid) => {
+  const { data } = await axiosInstance.get('/api/member/contests/active', {
+    params: { skid },
+  });
+  return data;
+};
+
+/**
+ * 콘테스트 참여 접수
+ * POST /api/member/contests/{contestId}/entries
+ * body: { skid, consultDate, recordingTime, content }
+ */
+export const submitContestEntry = async (contestId, { skid, consultDate, recordingTime, content }) => {
+  const { data } = await axiosInstance.post(`/api/member/contests/${contestId}/entries`, {
+    skid,
+    consultDate,
+    recordingTime,
+    content,
+  });
+  return data;
+};
+
+/**
+ * 내 콘테스트 참여 이력 조회
+ * GET /api/member/contests/my-entries?skid=
+ */
+export const fetchMyContestEntries = async (skid) => {
+  const { data } = await axiosInstance.get('/api/member/contests/my-entries', {
+    params: { skid },
+  });
+  return data;
+};

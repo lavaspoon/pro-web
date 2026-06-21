@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -23,6 +23,7 @@ import { LatestDataAsOfHint } from '../../utils/adminDataAsOfHint';
 import AdminMemberDetailCard from './AdminMemberDetailCard';
 import AdminTargetMembersUploadModal from './AdminTargetMembersUploadModal';
 import AdminCasesExportControl from './AdminCasesExportControl';
+import TeamDailyStatsModal from './TeamDailyStatsModal';
 import {
   DashboardOverviewSkeleton,
   RankingCompactSkeleton,
@@ -138,6 +139,22 @@ export default function DashboardPage() {
   const [targetUploadModalOpen, setTargetUploadModalOpen] = useState(false);
   const exportYear = new Date().getFullYear();
   const [selectedTeamId, setSelectedTeamId] = useState(null);
+  /** 일별 접수·인증 모달 */
+  const [teamDailyModal, setTeamDailyModal] = useState({ team: null, monthKey: null });
+
+  const openTeamDailyModal = useCallback((e, team, monthKey) => {
+    e.stopPropagation();
+    setTeamDailyModal({ team, monthKey });
+  }, []);
+
+  const closeTeamDailyModal = useCallback(() => {
+    setTeamDailyModal({ team: null, monthKey: null });
+  }, []);
+
+  const handleTeamDailyMonthChange = useCallback((newMonthKey) => {
+    setTeamDailyModal((prev) => ({ ...prev, monthKey: newMonthKey }));
+  }, []);
+
   /** null = 미적용, 문자열(빈 문자열 포함) = 해당 값과 일치하는 행만 */
   const [filterCenter, setFilterCenter] = useState(null);
   const [filterGroup, setFilterGroup] = useState(null);
@@ -730,8 +747,8 @@ export default function DashboardPage() {
                       <button
                         type="button"
                         className={`adm-dept-filter-btn ${filterCenter !== null && normFilterKey(team.centerName) === filterCenter
-                            ? 'is-active'
-                            : ''
+                          ? 'is-active'
+                          : ''
                           }`}
                         onClick={(e) => handleCenterFilterClick(e, team)}
                         title="이 센터만 보기 (같은 값을 다시 클릭하면 해제)"
@@ -743,8 +760,8 @@ export default function DashboardPage() {
                       <button
                         type="button"
                         className={`adm-dept-filter-btn ${filterGroup !== null && normFilterKey(team.groupName) === filterGroup
-                            ? 'is-active'
-                            : ''
+                          ? 'is-active'
+                          : ''
                           }`}
                         onClick={(e) => handleGroupFilterClick(e, team)}
                         title="이 그룹만 보기 (같은 값을 다시 클릭하면 해제)"
@@ -756,8 +773,8 @@ export default function DashboardPage() {
                       <button
                         type="button"
                         className={`adm-dept-filter-btn ${filterSkill !== null && normFilterKey(team.skill) === filterSkill
-                            ? 'is-active'
-                            : ''
+                          ? 'is-active'
+                          : ''
                           }`}
                         onClick={(e) => handleSkillFilterClick(e, team)}
                         title="이 스킬만 보기 (같은 값을 다시 클릭하면 해제)"
@@ -776,7 +793,15 @@ export default function DashboardPage() {
                         : '—'}
                     </td>
                     <td>
-                      <span className="adm-team-monthly-cases">
+                      <button
+                        type="button"
+                        className="adm-team-monthly-cases adm-team-monthly-cases--btn"
+                        onClick={(e) => {
+                          const mk = `${year}-${String(currentMonth).padStart(2, '0')}`;
+                          openTeamDailyModal(e, team, mk);
+                        }}
+                        title="일별 접수·인증 건수 보기"
+                      >
                         <span className="adm-team-monthly-cases__sub">
                           {formatCaseCount(team.monthlySubmitted)}
                         </span>
@@ -786,7 +811,7 @@ export default function DashboardPage() {
                         <span className="adm-team-monthly-cases__cert">
                           {formatCaseCount(team.monthlySelected ?? team.monthlyCertifiedCount)}
                         </span>
-                      </span>
+                      </button>
                     </td>
                     <td>
                       {team.csSatisfactionAchievementRate != null ? (
@@ -907,6 +932,14 @@ export default function DashboardPage() {
           variant="you"
         />
       )}
+
+      <TeamDailyStatsModal
+        open={teamDailyModal.team != null}
+        team={teamDailyModal.team}
+        monthKey={teamDailyModal.monthKey}
+        onClose={closeTeamDailyModal}
+        onMonthChange={handleTeamDailyMonthChange}
+      />
     </div>
   );
 }

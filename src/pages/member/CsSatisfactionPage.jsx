@@ -12,6 +12,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
+import useViewAsStore from '../../store/viewAsStore';
 import { fetchMemberSatisfaction, fetchCsSatisfactionTeamDaySummary } from '../../api/memberApi';
 import { fetchCsSatisfactionMemberMonthlyRows } from '../../api/adminApi';
 import CsSatisfactionModalDayStats from '../../components/cs/CsSatisfactionModalDayStats';
@@ -2358,6 +2359,8 @@ function HeroPanel({
    ════════════════════════════════════════════════════════════ */
 export default function CsSatisfactionPage() {
   const { user } = useAuthStore();
+  const { viewAsSkid } = useViewAsStore();
+  const effectiveSkid = viewAsSkid || user?.skid;
   const [year] = useState(currentYear);
   const [month] = useState(currentMonth);
 
@@ -2380,9 +2383,9 @@ export default function CsSatisfactionPage() {
   }, [year, month]);
 
   const satQuery = useQuery({
-    queryKey: ['member-satisfaction', user?.skid, year, month],
-    queryFn: () => fetchMemberSatisfaction({ skid: user.skid, year, month }),
-    enabled: !!user?.skid,
+    queryKey: ['member-satisfaction', effectiveSkid, year, month],
+    queryFn: () => fetchMemberSatisfaction({ skid: effectiveSkid, year, month }),
+    enabled: !!effectiveSkid,
     retry: false,
   });
 
@@ -2394,9 +2397,9 @@ export default function CsSatisfactionPage() {
   );
 
   const memberRowsQuery = useQuery({
-    queryKey: ['member-sat-rows', user?.skid, year],
-    queryFn: () => fetchCsSatisfactionMemberMonthlyRows(user.skid, year),
-    enabled: !!user?.skid && !!satData && !satQuery.isError,
+    queryKey: ['member-sat-rows', effectiveSkid, year],
+    queryFn: () => fetchCsSatisfactionMemberMonthlyRows(effectiveSkid, year),
+    enabled: !!effectiveSkid && !!satData && !satQuery.isError,
     staleTime: 60_000,
   });
 
@@ -2477,9 +2480,9 @@ export default function CsSatisfactionPage() {
   }, [modalRowsInView, modalYnFilters]);
 
   const teamDaySummaryQuery = useQuery({
-    queryKey: ['cs-satisfaction-team-day-summary', user?.skid, modalDayFilterKey],
-    queryFn: () => fetchCsSatisfactionTeamDaySummary(user.skid, modalDayFilterKey),
-    enabled: showModal && !!user?.skid && modalDayFilterKey != null && modalDayFilterKey !== '',
+    queryKey: ['cs-satisfaction-team-day-summary', effectiveSkid, modalDayFilterKey],
+    queryFn: () => fetchCsSatisfactionTeamDaySummary(effectiveSkid, modalDayFilterKey),
+    enabled: showModal && !!effectiveSkid && modalDayFilterKey != null && modalDayFilterKey !== '',
     staleTime: 30_000,
   });
 
@@ -2530,7 +2533,9 @@ export default function CsSatisfactionPage() {
 
   const isLoading = satQuery.isPending;
   const isError = satQuery.isError;
-  const headerName = user?.name ?? user?.skid ?? '구성원';
+  const headerName = viewAsSkid
+    ? (satData?.memberName ?? viewAsSkid)
+    : (user?.name ?? user?.skid ?? '구성원');
   const headerSkill = (satData?.skill ?? satQuery.data?.skill ?? user?.skill ?? '').toString().trim();
 
   return (
@@ -2593,7 +2598,7 @@ export default function CsSatisfactionPage() {
             <header className="adm-sat-row-modal-head csx-modal-head">
               <div className="csx-modal-head-text">
                 <h3 className="adm-sat-row-modal-title">
-                  {user?.name ?? user?.skid} 접수 상세
+                  {headerName} 접수 상세
                 </h3>
                 {modalFilterHint ? (
                   <p className="adm-sat-row-modal-sub">{modalFilterHint}</p>

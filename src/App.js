@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import useAuthStore from './store/authStore';
+import useViewAsStore from './store/viewAsStore';
 import { canAccessPendingCases } from './utils/youProRole';
 import Layout from './components/common/Layout';
 import AuthPage from './pages/AuthPage';
@@ -29,7 +30,12 @@ const queryClient = new QueryClient({
 
 function ProtectedRoute({ children, requiredRole }) {
   const { isAuthenticated, user } = useAuthStore();
+  const { viewAsSkid } = useViewAsStore();
   if (!isAuthenticated) return <Navigate to="/auth" replace />;
+  // 관리자·CE실장이 대리 보기 모드일 때 /member/* 접근 허용
+  if (requiredRole === 'member' && user?.role === 'admin' && viewAsSkid) {
+    return children;
+  }
   if (requiredRole && user?.role !== requiredRole) {
     return <Navigate to={user?.role === 'admin' ? '/admin' : '/member'} replace />;
   }

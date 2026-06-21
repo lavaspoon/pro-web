@@ -1,8 +1,10 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { BarChart3, Sparkles } from 'lucide-react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { BarChart3, Sparkles, Eye, ArrowLeft } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import useAuthStore from '../../store/authStore';
+import useViewAsStore from '../../store/viewAsStore';
+import { isYouProAdmin, isYouProCeDirector } from '../../utils/youProRole';
 import { fetchMemberCsInsightPromptMents } from '../../api/memberApi';
 import MemberSubmitModal from '../member/MemberSubmitModal';
 import MemberCaseListModal from '../member/MemberCaseListModal';
@@ -104,13 +106,37 @@ function MemberTopbarMentBubble({ skid, onMentClick }) {
 
 function MemberLayout({ children }) {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
+  const { viewAsSkid, clearViewAs } = useViewAsStore();
   const [mentModal, setMentModal] = useState(null);
 
   const isCsSatisfaction = pathname.startsWith('/member/cs-satisfaction');
+  const effectiveSkid = viewAsSkid || user?.skid;
+
+  const handleReturnToAdmin = () => {
+    clearViewAs();
+    navigate('/admin');
+  };
 
   return (
     <div className="member-shell">
+      {viewAsSkid && (
+        <div className="view-as-banner" role="status" aria-live="polite">
+          <Eye className="view-as-banner__icon" size={15} strokeWidth={2.25} aria-hidden />
+          <span className="view-as-banner__text">
+            <strong>{viewAsSkid}</strong> 구성원 화면 대리 보기 중
+          </span>
+          <button
+            type="button"
+            className="view-as-banner__return-btn"
+            onClick={handleReturnToAdmin}
+          >
+            <ArrowLeft size={14} strokeWidth={2.25} aria-hidden />
+            내 화면으로 돌아가기
+          </button>
+        </div>
+      )}
       <header className="admin-topbar admin-topbar--member" role="banner">
         <div className="member-topbar-wrap">
           <div className="member-topbar-row">
@@ -137,7 +163,7 @@ function MemberLayout({ children }) {
               </div>
             </div>
             <div className="member-topbar-center">
-              <MemberTopbarMentBubble skid={user?.skid} onMentClick={setMentModal} />
+              <MemberTopbarMentBubble skid={effectiveSkid} onMentClick={setMentModal} />
             </div>
           </div>
         </div>
@@ -177,6 +203,20 @@ const ADMIN_TABS = [
 
 function AdminLayout({ children }) {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
+  const user = useAuthStore((s) => s.user);
+  const { setViewAs } = useViewAsStore();
+  const [skidInput, setSkidInput] = useState('');
+  const skidInputRef = useRef(null);
+
+  const canViewAs = isYouProAdmin(user) || isYouProCeDirector(user);
+
+  const handleViewAs = (targetPath) => {
+    const trimmed = skidInput.trim();
+    if (!trimmed) return;
+    setViewAs(trimmed);
+    navigate(targetPath);
+  };
 
   return (
     <div className="admin-shell">
@@ -208,6 +248,51 @@ function AdminLayout({ children }) {
                 </nav>
               </div>
             </div>
+            {canViewAs && (
+              <div
+                className="admin-view-as-form"
+                aria-label="구성원 화면 대리 보기"
+                style={{ marginLeft: 'auto' }}
+              >
+                <label className="admin-view-as-label" htmlFor="admin-view-as-skid">
+                  <Eye size={14} strokeWidth={2.25} aria-hidden />
+                  구성원 보기
+                </label>
+                <input
+                  id="admin-view-as-skid"
+                  ref={skidInputRef}
+                  type="text"
+                  className="admin-view-as-input"
+                  placeholder="사번 입력"
+                  value={skidInput}
+                  onChange={(e) => setSkidInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') handleViewAs('/member'); }}
+                  autoComplete="off"
+                  maxLength={20}
+                  aria-label="구성원 사번"
+                />
+                <button
+                  type="button"
+                  className="admin-view-as-btn"
+                  disabled={!skidInput.trim()}
+                  onClick={() => handleViewAs('/member')}
+                  aria-label="YOU PRO 화면 보기"
+                >
+                  <Sparkles size={13} strokeWidth={2.25} aria-hidden />
+                  YOU PRO
+                </button>
+                <button
+                  type="button"
+                  className="admin-view-as-btn admin-view-as-btn--cs"
+                  disabled={!skidInput.trim()}
+                  onClick={() => handleViewAs('/member/cs-satisfaction')}
+                  aria-label="CS 만족도 화면 보기"
+                >
+                  <BarChart3 size={13} strokeWidth={2.25} aria-hidden />
+                  CS 만족도
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </header>
