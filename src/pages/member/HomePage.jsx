@@ -116,6 +116,18 @@ function getReflectState(row) {
   return row.csTargetMet === true ? 'met' : 'no';
 }
 
+/** 콘테스트 종료일 → (~MM.dd) 버튼 라벨 */
+function formatContestEndLabel(endDate) {
+  if (!endDate) return '';
+  const dt = Array.isArray(endDate)
+    ? new Date(endDate[0], endDate[1] - 1, endDate[2])
+    : new Date(String(endDate).replace(' ', 'T'));
+  if (!dt || isNaN(dt.getTime())) return '';
+  const mo = String(dt.getMonth() + 1).padStart(2, '0');
+  const dd = String(dt.getDate()).padStart(2, '0');
+  return `(~${mo}.${dd})`;
+}
+
 const HOME_SLOGAN = '오늘의 사례가 내일의 인증이 됩니다';
 const BOARD_REFETCH_MS = 30000;
 
@@ -516,13 +528,20 @@ function HomeIntro({ userName, onSubmit, onContestClick, activeContest = null, l
                 type="button"
                 className="hp-intro-cta hp-intro-cta--keycap hp-intro-cta--contest"
                 onClick={onContestClick}
-                aria-label="콘테스트 참여"
+                aria-label={`콘테스트 참여 ${formatContestEndLabel(activeContest?.endDate)}`}
               >
                 <span className="hp-intro-cta-keytop">
                   <span className="hp-intro-cta-icon" aria-hidden>
                     <Trophy size={16} strokeWidth={2.5} />
                   </span>
-                  <span className="hp-intro-cta-label">콘테스트 참여</span>
+                  <span className="hp-intro-cta-label">
+                    콘테스트 참여
+                    {activeContest?.endDate && (
+                      <span className="hp-intro-cta-contest-date">
+                        {' '}{formatContestEndLabel(activeContest.endDate)}
+                      </span>
+                    )}
+                  </span>
                 </span>
               </button>
             )}
@@ -707,7 +726,7 @@ export default function HomePage() {
     };
   }, [cases]);
 
-  if (isLoading || !data) return <HomeSkeleton userName={user?.name} />;
+  if (isLoading || !data) return <HomeSkeleton userName={viewAsSkid || user?.name} />;
   if (isError) return <div className="hp-error">오류: {error?.message}</div>;
 
   const {
@@ -748,7 +767,7 @@ export default function HomePage() {
     <div className="page-container adm-dashboard adm-dashboard--yp fade-in yp-home hp-home">
 
       <HomeIntro
-        userName={user?.name}
+        userName={data?.memberName ?? (viewAsSkid ? viewAsSkid : user?.name)}
         onSubmit={isViewAsMode ? undefined : openSubmit}
         onContestClick={isViewAsMode ? undefined : () => setContestModalOpen(true)}
         activeContest={isViewAsMode ? null : activeContest}

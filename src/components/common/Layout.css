@@ -576,6 +576,34 @@
   background: #0d6460;
 }
 
+.admin-view-as-btn--return {
+  background: transparent;
+  border: 1px solid var(--border-strong, rgba(15, 23, 42, 0.18));
+  color: var(--text-secondary);
+  gap: 5px;
+}
+
+.admin-view-as-btn--return:hover:not(:disabled) {
+  background: var(--bg, #f8fafc);
+  border-color: var(--primary, #0a7ea4);
+  color: var(--primary, #0a7ea4);
+}
+
+/* 관리자 이름 표시 */
+.admin-topbar-brand-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.admin-topbar-user-name {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
 /* ══════════════════════════════════════════════════════════════
    관리자 대리 보기 — 구성원 화면 상단 배너
    ══════════════════════════════════════════════════════════════ */

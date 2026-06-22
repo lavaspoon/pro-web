@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import {
   Users,
-  Trophy,
   Clock,
   ChevronRight,
   X,
@@ -940,6 +939,7 @@ export default function DashboardPage() {
         onClose={closeTeamDailyModal}
         onMonthChange={handleTeamDailyMonthChange}
       />
+
     </div>
   );
 }

@@ -10,10 +10,12 @@ import {
   ChevronRight,
   X,
   ArrowRight,
+  Trophy,
 } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
 import useViewAsStore from '../../store/viewAsStore';
-import { fetchMemberSatisfaction, fetchCsSatisfactionTeamDaySummary } from '../../api/memberApi';
+import { fetchMemberSatisfaction, fetchCsSatisfactionTeamDaySummary, fetchActiveContest } from '../../api/memberApi';
+import MemberContestModal from './MemberContestModal';
 import { fetchCsSatisfactionMemberMonthlyRows } from '../../api/adminApi';
 import CsSatisfactionModalDayStats from '../../components/cs/CsSatisfactionModalDayStats';
 import CsSatisfactionModalPeriodToolbar from '../../components/cs/CsSatisfactionModalPeriodToolbar';
@@ -29,10 +31,23 @@ import '../admin/PendingCasesPage.css';
 import '../admin/PendingCaseDayPickerModal.css';
 import './HomePage.css';
 import './CsSatisfactionPage.css';
+import './MemberContestModal.css';
 
 const now = new Date();
 const currentYear = now.getFullYear();
 const currentMonth = now.getMonth() + 1;
+
+/** 콘테스트 종료일 → (~MM.dd) 버튼 라벨 */
+function formatContestEndLabel(endDate) {
+  if (!endDate) return '';
+  const dt = Array.isArray(endDate)
+    ? new Date(endDate[0], endDate[1] - 1, endDate[2])
+    : new Date(String(endDate).replace(' ', 'T'));
+  if (!dt || isNaN(dt.getTime())) return '';
+  const mo = String(dt.getMonth() + 1).padStart(2, '0');
+  const dd = String(dt.getDate()).padStart(2, '0');
+  return `(~${mo}.${dd})`;
+}
 
 const CS_SAT_SLOGAN = '고객의 한마디가 내일의 만족도를 만듭니다';
 
@@ -1399,8 +1414,9 @@ function CsSatisfactionSmileMark() {
   );
 }
 
-function CsPageIntro({ skill, name, loading = false }) {
+function CsPageIntro({ skill, name, loading = false, onContestClick, activeContest = null }) {
   const displayName = name?.trim() ? name.trim() : '구성원';
+  const hasActiveContest = !!activeContest;
 
   return (
     <header className={`hp-intro${loading ? ' hp-intro--loading' : ''}`}>
@@ -1428,6 +1444,30 @@ function CsPageIntro({ skill, name, loading = false }) {
             </p>
           )}
         </div>
+        {hasActiveContest && !loading && (
+          <div className="hp-intro-cta-group">
+            <button
+              type="button"
+              className="hp-intro-cta hp-intro-cta--keycap hp-intro-cta--contest"
+              onClick={onContestClick}
+              aria-label={`콘테스트 참여 ${formatContestEndLabel(activeContest?.endDate)}`}
+            >
+              <span className="hp-intro-cta-keytop">
+                <span className="hp-intro-cta-icon" aria-hidden>
+                  <Trophy size={16} strokeWidth={2.5} />
+                </span>
+                <span className="hp-intro-cta-label">
+                  콘테스트 참여
+                  {activeContest?.endDate && (
+                    <span className="hp-intro-cta-contest-date">
+                      {' '}{formatContestEndLabel(activeContest.endDate)}
+                    </span>
+                  )}
+                </span>
+              </span>
+            </button>
+          </div>
+        )}
       </div>
     </header>
   );
@@ -2361,8 +2401,18 @@ export default function CsSatisfactionPage() {
   const { user } = useAuthStore();
   const { viewAsSkid } = useViewAsStore();
   const effectiveSkid = viewAsSkid || user?.skid;
+  const isViewAsMode = !!viewAsSkid;
   const [year] = useState(currentYear);
   const [month] = useState(currentMonth);
+  const [contestModalOpen, setContestModalOpen] = useState(false);
+
+  const activeContestQuery = useQuery({
+    queryKey: ['active-contest', effectiveSkid],
+    queryFn: () => fetchActiveContest(effectiveSkid),
+    enabled: !!effectiveSkid,
+    staleTime: 5 * 60 * 1000,
+  });
+  const activeContest = activeContestQuery.data?.contest ?? activeContestQuery.data ?? null;
 
   /* ── 모달 상태 ── */
   const [showModal, setShowModal] = useState(false);
@@ -2533,14 +2583,19 @@ export default function CsSatisfactionPage() {
 
   const isLoading = satQuery.isPending;
   const isError = satQuery.isError;
-  const headerName = viewAsSkid
-    ? (satData?.memberName ?? viewAsSkid)
-    : (user?.name ?? user?.skid ?? '구성원');
+  const headerName = satData?.memberName
+    ?? (viewAsSkid ? viewAsSkid : (user?.name ?? user?.skid ?? '구성원'));
   const headerSkill = (satData?.skill ?? satQuery.data?.skill ?? user?.skill ?? '').toString().trim();
 
   return (
     <div className="page-container adm-dashboard adm-dashboard--yp cs-sat-page yp-home hp-home fade-in csx-page">
-      <CsPageIntro skill={headerSkill} name={headerName} loading={isLoading} />
+      <CsPageIntro
+        skill={headerSkill}
+        name={headerName}
+        loading={isLoading}
+        onContestClick={isViewAsMode ? undefined : () => setContestModalOpen(true)}
+        activeContest={isViewAsMode ? null : activeContest}
+      />
 
       {isLoading ? (
         <HeroSkeleton />
@@ -2740,6 +2795,13 @@ export default function CsSatisfactionPage() {
         dayStatsByDay={modalDayStatsByDay}
         onClose={() => setModalDayPickerOpen(false)}
         onSelectDay={handleSelectModalDayFilter}
+      />
+
+      <MemberContestModal
+        open={contestModalOpen && !!activeContest}
+        onClose={() => setContestModalOpen(false)}
+        contest={activeContest}
+        skid={effectiveSkid}
       />
     </div>
   );

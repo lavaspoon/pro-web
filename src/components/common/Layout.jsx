@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import useAuthStore from '../../store/authStore';
 import useViewAsStore from '../../store/viewAsStore';
 import { isYouProAdmin, isYouProCeDirector } from '../../utils/youProRole';
-import { fetchMemberCsInsightPromptMents } from '../../api/memberApi';
+import { fetchMemberCsInsightPromptMents, fetchMemberEligibility } from '../../api/memberApi';
 import MemberSubmitModal from '../member/MemberSubmitModal';
 import MemberCaseListModal from '../member/MemberCaseListModal';
 import MemberCaseDetailModal from '../member/MemberCaseDetailModal';
@@ -197,25 +197,75 @@ function isAdminYouProActive(pathname) {
 }
 
 const ADMIN_TABS = [
-  { to: '/admin', label: 'YOU PRO', Icon: Sparkles, isActive: isAdminYouProActive },
-  { to: '/admin/satisfaction', label: '만족도 관리', Icon: BarChart3, exact: false },
+  {
+    adminTo: '/admin',
+    memberTo: '/member',
+    label: 'YOU PRO',
+    Icon: Sparkles,
+    isAdminActive: isAdminYouProActive,
+    isMemberActive: (p) => p === '/member' || (p.startsWith('/member/') && !p.startsWith('/member/cs-satisfaction')),
+  },
+  {
+    adminTo: '/admin/satisfaction',
+    memberTo: '/member/cs-satisfaction',
+    label: '만족도 관리',
+    Icon: BarChart3,
+    isAdminActive: (p) => p.startsWith('/admin/satisfaction'),
+    isMemberActive: (p) => p.startsWith('/member/cs-satisfaction'),
+  },
 ];
 
 function AdminLayout({ children }) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
-  const { setViewAs } = useViewAsStore();
+  const { viewAsSkid, setViewAs, clearViewAs } = useViewAsStore();
   const [skidInput, setSkidInput] = useState('');
   const skidInputRef = useRef(null);
 
   const canViewAs = isYouProAdmin(user) || isYouProCeDirector(user);
+  const isViewAsMode = !!viewAsSkid;
+  const [isCheckingEligibility, setIsCheckingEligibility] = useState(false);
 
-  const handleViewAs = (targetPath) => {
+  /** 평가대상자 확인 후 구성원 페이지로 이동 */
+  const navigateAsViewAs = async (skid, memberTo) => {
+    if (isCheckingEligibility) return;
+    setIsCheckingEligibility(true);
+    try {
+      const result = await fetchMemberEligibility(skid);
+      if (!result.found) {
+        alert('해당 사번의 구성원을 찾을 수 없습니다.');
+        return;
+      }
+      if (!result.eligible) {
+        alert('해당 구성원은 평가대상자가 아닙니다.');
+        return;
+      }
+      setViewAs(skid);
+      setSkidInput('');
+      navigate(memberTo);
+    } catch {
+      alert('구성원 정보를 조회할 수 없습니다. 잠시 후 다시 시도해 주세요.');
+    } finally {
+      setIsCheckingEligibility(false);
+    }
+  };
+
+  const handleTabClick = (adminTo, memberTo) => {
     const trimmed = skidInput.trim();
-    if (!trimmed) return;
-    setViewAs(trimmed);
-    navigate(targetPath);
+    if (trimmed && !isViewAsMode) {
+      navigateAsViewAs(trimmed, memberTo);
+    } else if (isViewAsMode) {
+      navigate(memberTo);
+    } else {
+      navigate(adminTo);
+    }
+  };
+
+  const handleReturnToAdmin = () => {
+    clearViewAs();
+    setSkidInput('');
+    navigate('/admin');
   };
 
   return (
@@ -225,24 +275,23 @@ function AdminLayout({ children }) {
           <div className="member-topbar-row">
             <div className="admin-topbar-left">
               <div className="admin-topbar-catblock">
-                <span className="admin-topbar-catblock-label">YOU PRO 관리자</span>
                 <nav className="member-topbar-cats admin-topbar-cats" aria-label="관리자 메뉴">
-                  {ADMIN_TABS.map(({ to, label, Icon, exact, isActive }) => {
-                    const active = isActive
-                      ? isActive(pathname)
-                      : exact
-                        ? pathname === to
-                        : pathname.startsWith(to);
+                  {ADMIN_TABS.map(({ adminTo, memberTo, label, Icon, isAdminActive, isMemberActive }) => {
+                    const active = isViewAsMode
+                      ? isMemberActive(pathname)
+                      : isAdminActive(pathname);
                     return (
-                      <Link
-                        key={to}
-                        to={to}
+                      <button
+                        key={adminTo}
+                        type="button"
                         className={`member-topbar-cat ${active ? 'is-active' : ''}`}
                         aria-current={active ? 'page' : undefined}
+                        disabled={isCheckingEligibility && !isViewAsMode}
+                        onClick={() => handleTabClick(adminTo, memberTo)}
                       >
                         <Icon className="member-topbar-cat-ico" size={16} strokeWidth={2.25} aria-hidden />
                         <span className="member-topbar-cat-text">{label}</span>
-                      </Link>
+                      </button>
                     );
                   })}
                 </nav>
@@ -254,43 +303,44 @@ function AdminLayout({ children }) {
                 aria-label="구성원 화면 대리 보기"
                 style={{ marginLeft: 'auto' }}
               >
-                <label className="admin-view-as-label" htmlFor="admin-view-as-skid">
+                <label
+                  className="admin-view-as-label"
+                  htmlFor={isViewAsMode ? undefined : 'admin-view-as-skid'}
+                >
                   <Eye size={14} strokeWidth={2.25} aria-hidden />
                   구성원 보기
                 </label>
-                <input
-                  id="admin-view-as-skid"
-                  ref={skidInputRef}
-                  type="text"
-                  className="admin-view-as-input"
-                  placeholder="사번 입력"
-                  value={skidInput}
-                  onChange={(e) => setSkidInput(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') handleViewAs('/member'); }}
-                  autoComplete="off"
-                  maxLength={20}
-                  aria-label="구성원 사번"
-                />
-                <button
-                  type="button"
-                  className="admin-view-as-btn"
-                  disabled={!skidInput.trim()}
-                  onClick={() => handleViewAs('/member')}
-                  aria-label="YOU PRO 화면 보기"
-                >
-                  <Sparkles size={13} strokeWidth={2.25} aria-hidden />
-                  YOU PRO
-                </button>
-                <button
-                  type="button"
-                  className="admin-view-as-btn admin-view-as-btn--cs"
-                  disabled={!skidInput.trim()}
-                  onClick={() => handleViewAs('/member/cs-satisfaction')}
-                  aria-label="CS 만족도 화면 보기"
-                >
-                  <BarChart3 size={13} strokeWidth={2.25} aria-hidden />
-                  CS 만족도
-                </button>
+                {isViewAsMode ? (
+                  <button
+                    type="button"
+                    className="admin-view-as-btn admin-view-as-btn--return"
+                    onClick={handleReturnToAdmin}
+                    aria-label="내 페이지로 돌아가기"
+                  >
+                    <ArrowLeft size={13} strokeWidth={2.25} aria-hidden />
+                    내 페이지로 돌아가기
+                  </button>
+                ) : (
+                  <input
+                    id="admin-view-as-skid"
+                    ref={skidInputRef}
+                    type="text"
+                    className="admin-view-as-input"
+                    placeholder={isCheckingEligibility ? '확인 중…' : '사번 입력 후 탭 클릭'}
+                    value={skidInput}
+                    onChange={(e) => setSkidInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        const trimmed = skidInput.trim();
+                        if (trimmed) navigateAsViewAs(trimmed, '/member');
+                      }
+                    }}
+                    disabled={isCheckingEligibility}
+                    autoComplete="off"
+                    maxLength={20}
+                    aria-label="구성원 사번"
+                  />
+                )}
               </div>
             )}
           </div>

@@ -1734,3 +1734,24 @@ button.member-mini-card:focus-visible {
     font-size: 1rem;
   }
 }
+/* ─── 콘테스트 참여 버튼 (어드민 헤더) ─ */
+.adm-contest-entry-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.38rem;
+  color: #0f766e;
+  border-color: #99f6e4;
+  background: #f0fdf9;
+}
+
+.adm-contest-entry-btn:hover {
+  background: #ccfbf1;
+  border-color: #5eead4;
+  color: #0f766e;
+}
+
+.adm-contest-entry-btn__date {
+  color: #0d9488;
+  font-size: 0.78em;
+  font-weight: 600;
+}

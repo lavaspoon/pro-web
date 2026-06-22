@@ -1,6 +1,16 @@
 import axiosInstance from './axiosInstance';
 
 /**
+ * 구성원 평가대상자 여부 확인 (youYn='Y' OR csYn='Y')
+ * GET /api/member/check-eligibility?skid={skid}
+ * 응답: { found: boolean, eligible: boolean, memberName: string | null }
+ */
+export const fetchMemberEligibility = async (skid) => {
+  const { data } = await axiosInstance.get('/api/member/check-eligibility', { params: { skid } });
+  return data;
+};
+
+/**
  * 구성원 홈 화면 데이터 조회
  * GET /api/member/home?skid={skid}
  */

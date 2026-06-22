@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { X, Plus, Pencil, Download, Trophy } from 'lucide-react';
+import { X, Plus, Pencil, Download, ChevronLeft, ChevronRight } from 'lucide-react';
 import {
   fetchAdminContests,
   createAdminContest,
@@ -16,7 +16,6 @@ import './AdminContestModal.css';
 function parseDt(dt) {
   if (!dt) return null;
   if (Array.isArray(dt)) {
-    // [year, month, day, hour, minute, second?, nano?]
     const [y, mo, d, h = 0, mi = 0] = dt;
     return new Date(y, mo - 1, d, h, mi);
   }
@@ -43,9 +42,33 @@ function toDatetimeLocal(dt) {
 function toApiDatetime(val) {
   if (!val) return '';
   const s = String(val).trim();
-  if (s.length === 16) return `${s}:00`;   // "yyyy-MM-ddTHH:mm" → 초 보충
-  if (s.length >= 19) return s.slice(0, 19); // 초 이상 이미 있으면 자름
+  if (s.length === 16) return `${s}:00`;
+  if (s.length >= 19) return s.slice(0, 19);
   return s;
+}
+
+/** datetime-local 연도 4자리 초과 방지 — 값 보정 */
+function sanitizeDatetimeLocal(val) {
+  if (!val) return val;
+  const [datePart = '', timePart = ''] = val.split('T');
+  const segments = datePart.split('-');
+  if (segments[0] && segments[0].length > 4) {
+    segments[0] = segments[0].slice(0, 4);
+  }
+  return segments.join('-') + (timePart ? `T${timePart}` : '');
+}
+
+/**
+ * datetime-local onInput 핸들러 — 매 입력마다 DOM 값을 직접 보정.
+ * selectionStart가 null을 반환하는 datetime-local 특성상 onKeyDown으로는
+ * 연도 영역을 구분할 수 없으므로 onInput에서 교정한다.
+ */
+function handleDatetimeLocalInput(e) {
+  const input = e.currentTarget;
+  const sanitized = sanitizeDatetimeLocal(input.value);
+  if (sanitized !== input.value) {
+    input.value = sanitized;
+  }
 }
 
 function isContestActive(contest) {
@@ -63,6 +86,7 @@ function isContestUpcoming(contest) {
 }
 
 const EMPTY_FORM = { title: '', content: '', startDate: '', endDate: '' };
+const PAGE_SIZE = 5;
 
 export default function AdminContestModal({ open, onClose }) {
   const queryClient = useQueryClient();
@@ -71,6 +95,7 @@ export default function AdminContestModal({ open, onClose }) {
   const [form, setForm] = useState(EMPTY_FORM);
   const [formErr, setFormErr] = useState('');
   const [downloadingId, setDownloadingId] = useState(null);
+  const [page, setPage] = useState(1);
 
   const contestsQuery = useQuery({
     queryKey: ['admin-contests'],
@@ -79,6 +104,8 @@ export default function AdminContestModal({ open, onClose }) {
   });
 
   const contests = contestsQuery.data?.contests ?? contestsQuery.data ?? [];
+  const totalPages = Math.max(1, Math.ceil(contests.length / PAGE_SIZE));
+  const pagedContests = contests.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const createMutation = useMutation({
     mutationFn: createAdminContest,
@@ -174,34 +201,40 @@ export default function AdminContestModal({ open, onClose }) {
       setEditingContest(null);
       setForm(EMPTY_FORM);
       setFormErr('');
+      setPage(1);
     }
   }, [open]);
 
+  /* 목록이 바뀌면 페이지 범위 보정 */
+  useEffect(() => {
+    setPage((p) => Math.min(p, Math.max(1, Math.ceil(contests.length / PAGE_SIZE))));
+  }, [contests.length]);
+
   useEffect(() => {
     if (!open) return undefined;
-    const onKeyDown = (e) => { if (e.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [open, onClose]);
+    const onKeyDown = (e) => { if (e.key === 'Escape') e.stopPropagation(); };
+    window.addEventListener('keydown', onKeyDown, true);
+    return () => window.removeEventListener('keydown', onKeyDown, true);
+  }, [open]);
 
   if (!open) return null;
 
   const isMutating = createMutation.isPending || updateMutation.isPending;
 
   return (
-    <div className="contest-modal-backdrop" onClick={onClose} role="presentation">
+    <div className="contest-modal-backdrop" role="presentation">
       <section
         className="contest-modal"
         role="dialog"
         aria-modal="true"
-        aria-label="콘테스트 관리"
+        aria-label="콘테스트 등록/수정"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* 헤더 */}
         <header className="contest-modal-head">
           <div className="contest-modal-head-left">
-            <Trophy size={16} strokeWidth={2.25} className="contest-modal-head-icon" aria-hidden />
             <h3 className="contest-modal-title">
-              {view === 'list' ? '콘테스트 이벤트 관리' : (editingContest ? '이벤트 수정' : '이벤트 등록')}
+              {view === 'list' ? '콘테스트 등록/수정' : (editingContest ? '콘테스트 수정' : '콘테스트 등록')}
             </h3>
           </div>
           <button
@@ -214,6 +247,7 @@ export default function AdminContestModal({ open, onClose }) {
           </button>
         </header>
 
+        {/* 바디 */}
         <div className="contest-modal-body">
           {view === 'list' ? (
             <>
@@ -224,7 +258,7 @@ export default function AdminContestModal({ open, onClose }) {
                   onClick={handleOpenCreate}
                 >
                   <Plus size={14} aria-hidden />
-                  이벤트 등록
+                  콘테스트 등록
                 </button>
               </div>
 
@@ -237,90 +271,123 @@ export default function AdminContestModal({ open, onClose }) {
                 <p className="contest-err">{contestsQuery.error?.message ?? '불러오지 못했습니다.'}</p>
               ) : contests.length === 0 ? (
                 <div className="contest-empty">
-                  <Trophy size={32} strokeWidth={1.4} className="contest-empty-icon" />
                   <p>등록된 이벤트가 없습니다.</p>
                   <p className="contest-empty-sub">이벤트 등록 버튼을 눌러 첫 콘테스트를 만들어 보세요.</p>
                 </div>
               ) : (
-                <div className="contest-table-wrap">
-                  <table className="contest-table">
-                    <thead>
-                      <tr>
-                        <th className="contest-th contest-th--status">상태</th>
-                        <th className="contest-th contest-th--title">프로모션 주제</th>
-                        <th className="contest-th contest-th--start">시작일</th>
-                        <th className="contest-th contest-th--end">종료일</th>
-                        <th className="contest-th contest-th--count">참여</th>
-                        <th className="contest-th contest-th--actions">관리</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {contests.map((c) => {
-                        const active = isContestActive(c);
-                        const upcoming = isContestUpcoming(c);
-                        return (
-                          <tr key={c.id} className={`contest-tr${active ? ' contest-tr--active' : ''}`}>
-                            <td className="contest-td contest-td--status">
-                              {active ? (
-                                <span className="contest-status-chip contest-status-chip--active">진행 중</span>
-                              ) : upcoming ? (
-                                <span className="contest-status-chip contest-status-chip--upcoming">대기</span>
-                              ) : (
-                                <span className="contest-status-chip contest-status-chip--ended">완료</span>
-                              )}
-                            </td>
-                            <td className="contest-td contest-td--title">
-                              <span className="contest-td-title-text" title={c.title}>{c.title}</span>
-                            </td>
-                            <td className="contest-td contest-td--period">
-                              {(() => {
-                                const s = formatDatetime(c.startDate).split(' ');
-                                return <>
-                                  <span className="contest-td-period-date">{s[0] ?? '—'}</span>
-                                  <span className="contest-td-period-time">{s[1] ?? ''}</span>
-                                </>;
-                              })()}
-                            </td>
-                            <td className="contest-td contest-td--period">
-                              {(() => {
-                                const s = formatDatetime(c.endDate).split(' ');
-                                return <>
-                                  <span className="contest-td-period-date">{s[0] ?? '—'}</span>
-                                  <span className="contest-td-period-time">{s[1] ?? ''}</span>
-                                </>;
-                              })()}
-                            </td>
-                            <td className="contest-td contest-td--count">
-                              <strong className="contest-td-count-num">{Number(c.entryCount ?? 0)}</strong>
-                              <span className="contest-td-count-unit">건</span>
-                            </td>
-                            <td className="contest-td contest-td--actions">
-                              <button
-                                type="button"
-                                className="contest-icon-btn"
-                                onClick={() => handleOpenEdit(c)}
-                                title="수정"
-                                aria-label="수정"
-                              >
-                                <Pencil size={13} strokeWidth={2} aria-hidden />
-                              </button>
-                              <button
-                                type="button"
-                                className="contest-icon-btn contest-icon-btn--dl"
-                                onClick={() => handleDownload(c)}
-                                disabled={downloadingId === c.id}
-                                title="접수 내역 엑셀 다운로드"
-                                aria-label="엑셀 다운로드"
-                              >
-                                <Download size={13} strokeWidth={2} aria-hidden />
-                              </button>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+                <>
+                  <div className="contest-table-wrap">
+                    <table className="contest-table">
+                      <thead>
+                        <tr>
+                          <th className="contest-th contest-th--status">상태</th>
+                          <th className="contest-th contest-th--title">프로모션 주제</th>
+                          <th className="contest-th contest-th--start">시작일</th>
+                          <th className="contest-th contest-th--end">종료일</th>
+                          <th className="contest-th contest-th--count">참여</th>
+                          <th className="contest-th contest-th--excel">RAW 엑셀</th>
+                          <th className="contest-th contest-th--edit">수정</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {pagedContests.map((c) => {
+                          const active = isContestActive(c);
+                          const upcoming = isContestUpcoming(c);
+                          return (
+                            <tr key={c.id} className={`contest-tr${active ? ' contest-tr--active' : ''}`}>
+                              <td className="contest-td contest-td--status">
+                                {active ? (
+                                  <span className="contest-status-chip contest-status-chip--active">진행 중</span>
+                                ) : upcoming ? (
+                                  <span className="contest-status-chip contest-status-chip--upcoming">대기</span>
+                                ) : (
+                                  <span className="contest-status-chip contest-status-chip--ended">완료</span>
+                                )}
+                              </td>
+                              <td className="contest-td contest-td--title">
+                                <span className="contest-td-title-text" title={c.title}>{c.title}</span>
+                              </td>
+                              <td className="contest-td contest-td--period">
+                                {(() => {
+                                  const s = formatDatetime(c.startDate).split(' ');
+                                  return (
+                                    <>
+                                      <span className="contest-td-period-date">{s[0] ?? '—'}</span>
+                                      <span className="contest-td-period-time">{s[1] ?? ''}</span>
+                                    </>
+                                  );
+                                })()}
+                              </td>
+                              <td className="contest-td contest-td--period">
+                                {(() => {
+                                  const s = formatDatetime(c.endDate).split(' ');
+                                  return (
+                                    <>
+                                      <span className="contest-td-period-date">{s[0] ?? '—'}</span>
+                                      <span className="contest-td-period-time">{s[1] ?? ''}</span>
+                                    </>
+                                  );
+                                })()}
+                              </td>
+                              <td className="contest-td contest-td--count">
+                                <strong className="contest-td-count-num">{Number(c.entryCount ?? 0)}</strong>
+                                <span className="contest-td-count-unit">건</span>
+                              </td>
+                              <td className="contest-td contest-td--excel">
+                                <button
+                                  type="button"
+                                  className="contest-action-btn contest-action-btn--excel"
+                                  onClick={() => handleDownload(c)}
+                                  disabled={downloadingId === c.id}
+                                  aria-label="RAW 엑셀 다운로드"
+                                >
+                                  <Download size={12} strokeWidth={2} aria-hidden />
+                                  {downloadingId === c.id ? '처리 중…' : 'RAW 엑셀'}
+                                </button>
+                              </td>
+                              <td className="contest-td contest-td--edit">
+                                <button
+                                  type="button"
+                                  className="contest-action-btn contest-action-btn--edit"
+                                  onClick={() => handleOpenEdit(c)}
+                                  aria-label="수정"
+                                >
+                                  <Pencil size={12} strokeWidth={2} aria-hidden />
+                                  수정
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* 페이징 */}
+                  {totalPages > 1 && (
+                    <div className="contest-pagination">
+                      <button
+                        type="button"
+                        className="contest-page-btn"
+                        onClick={() => setPage((p) => Math.max(1, p - 1))}
+                        disabled={page <= 1}
+                        aria-label="이전 페이지"
+                      >
+                        <ChevronLeft size={14} strokeWidth={2.4} aria-hidden />
+                      </button>
+                      <span className="contest-page-label">{page} / {totalPages}</span>
+                      <button
+                        type="button"
+                        className="contest-page-btn"
+                        onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                        disabled={page >= totalPages}
+                        aria-label="다음 페이지"
+                      >
+                        <ChevronRight size={14} strokeWidth={2.4} aria-hidden />
+                      </button>
+                    </div>
+                  )}
+                </>
               )}
             </>
           ) : (
@@ -351,7 +418,9 @@ export default function AdminContestModal({ open, onClose }) {
                       type="datetime-local"
                       className="contest-form-input contest-form-input--datetime"
                       value={form.startDate}
-                      onChange={(e) => handleFormChange('startDate', e.target.value)}
+                      max="9999-12-31T23:59"
+                      onChange={(e) => handleFormChange('startDate', sanitizeDatetimeLocal(e.target.value))}
+                      onInput={handleDatetimeLocalInput}
                       aria-label="시작일시"
                     />
                   </div>
@@ -361,7 +430,9 @@ export default function AdminContestModal({ open, onClose }) {
                       type="datetime-local"
                       className="contest-form-input contest-form-input--datetime"
                       value={form.endDate}
-                      onChange={(e) => handleFormChange('endDate', e.target.value)}
+                      max="9999-12-31T23:59"
+                      onChange={(e) => handleFormChange('endDate', sanitizeDatetimeLocal(e.target.value))}
+                      onInput={handleDatetimeLocalInput}
                       aria-label="종료일시"
                     />
                   </div>
@@ -401,7 +472,7 @@ export default function AdminContestModal({ open, onClose }) {
                   onClick={handleSubmit}
                   disabled={isMutating}
                 >
-                  {isMutating ? '처리 중…' : (editingContest ? '수정 완료' : '등록')}
+                  {isMutating ? '처리 중…' : (editingContest ? '수정 완료' : '콘테스트 등록')}
                 </button>
               </div>
             </div>
