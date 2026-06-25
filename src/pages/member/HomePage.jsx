@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useMemberModalStore } from '../../store/memberModalStore';
@@ -7,8 +7,7 @@ import {
 } from 'lucide-react';
 import useAuthStore from '../../store/authStore';
 import useViewAsStore from '../../store/viewAsStore';
-import { fetchMemberHome, fetchMyCases, fetchActiveContest } from '../../api/memberApi';
-import MemberContestModal from './MemberContestModal';
+import { fetchMemberHome, fetchMyCases } from '../../api/memberApi';
 import { fetchRecentSubmissionTrendInsight } from '../../api/lmStudioClient';
 import Skeleton from '../../components/common/Skeleton';
 import { analyzeMyWeakScoreInsight, analyzeTopScoreTrendInsight } from '../../utils/caseEvaluation';
@@ -22,7 +21,6 @@ import { TIERS, getTierIdx } from '../../utils/youProRewardTiers';
 import '../admin/DashboardPage.css';
 import './HomePage.css';
 import './CsSatisfactionPage.css';
-import './MemberContestModal.css';
 
 const now = new Date();
 const currentMonthNum = now.getMonth() + 1;
@@ -114,18 +112,6 @@ function reflectPickTitle(raw) {
 function getReflectState(row) {
   if (row.csTargetMet == null) return 'na';
   return row.csTargetMet === true ? 'met' : 'no';
-}
-
-/** 콘테스트 종료일 → (~MM.dd) 버튼 라벨 */
-function formatContestEndLabel(endDate) {
-  if (!endDate) return '';
-  const dt = Array.isArray(endDate)
-    ? new Date(endDate[0], endDate[1] - 1, endDate[2])
-    : new Date(String(endDate).replace(' ', 'T'));
-  if (!dt || isNaN(dt.getTime())) return '';
-  const mo = String(dt.getMonth() + 1).padStart(2, '0');
-  const dd = String(dt.getDate()).padStart(2, '0');
-  return `(~${mo}.${dd})`;
 }
 
 const HOME_SLOGAN = '오늘의 사례가 내일의 인증이 됩니다';
@@ -365,9 +351,8 @@ function TopMembersSpotlightPanel({ items }) {
 
 
 
-function HomeIntro({ userName, onSubmit, onContestClick, activeContest = null, loading = false }) {
+function HomeIntro({ userName, onSubmit, loading = false }) {
   const displayName = userName?.trim() ? userName.trim() : '구성원';
-  const hasActiveContest = !!activeContest;
 
   return (
     <header className={`hp-intro${loading ? ' hp-intro--loading' : ''}`}>
@@ -523,28 +508,6 @@ function HomeIntro({ userName, onSubmit, onContestClick, activeContest = null, l
                 <span className="hp-intro-cta-kbd" aria-hidden>↵</span>
               </span>
             </button>
-            {hasActiveContest && !loading && (
-              <button
-                type="button"
-                className="hp-intro-cta hp-intro-cta--keycap hp-intro-cta--contest"
-                onClick={onContestClick}
-                aria-label={`콘테스트 참여 ${formatContestEndLabel(activeContest?.endDate)}`}
-              >
-                <span className="hp-intro-cta-keytop">
-                  <span className="hp-intro-cta-icon" aria-hidden>
-                    <Trophy size={16} strokeWidth={2.5} />
-                  </span>
-                  <span className="hp-intro-cta-label">
-                    콘테스트 참여
-                    {activeContest?.endDate && (
-                      <span className="hp-intro-cta-contest-date">
-                        {' '}{formatContestEndLabel(activeContest.endDate)}
-                      </span>
-                    )}
-                  </span>
-                </span>
-              </button>
-            )}
           </div>
         )}
       </div>
@@ -679,15 +642,6 @@ export default function HomePage() {
   const isViewAsMode = !!viewAsSkid;
   const openSubmit = useMemberModalStore((s) => s.openSubmit);
   const openCaseList = useMemberModalStore((s) => s.openCaseList);
-  const [contestModalOpen, setContestModalOpen] = useState(false);
-
-  const activeContestQuery = useQuery({
-    queryKey: ['active-contest', effectiveSkid],
-    queryFn: () => fetchActiveContest(effectiveSkid),
-    enabled: !!effectiveSkid,
-    staleTime: 5 * 60 * 1000,
-  });
-  const activeContest = activeContestQuery.data?.contest ?? activeContestQuery.data ?? null;
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['member-home', effectiveSkid],
@@ -769,8 +723,6 @@ export default function HomePage() {
       <HomeIntro
         userName={data?.memberName ?? (viewAsSkid ? viewAsSkid : user?.name)}
         onSubmit={isViewAsMode ? undefined : openSubmit}
-        onContestClick={isViewAsMode ? undefined : () => setContestModalOpen(true)}
-        activeContest={isViewAsMode ? null : activeContest}
       />
 
       <section
@@ -940,13 +892,6 @@ export default function HomePage() {
           </aside>
         </div>
       </section>
-
-      <MemberContestModal
-        open={contestModalOpen && !!activeContest}
-        onClose={() => setContestModalOpen(false)}
-        contest={activeContest}
-        skid={effectiveSkid}
-      />
     </div>
   );
 }

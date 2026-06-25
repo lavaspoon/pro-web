@@ -2412,7 +2412,7 @@ export default function CsSatisfactionPage() {
     enabled: !!effectiveSkid,
     staleTime: 5 * 60 * 1000,
   });
-  const activeContest = activeContestQuery.data?.contest ?? activeContestQuery.data ?? null;
+  const activeContest = activeContestQuery.data?.contest ?? null;
 
   /* ── 모달 상태 ── */
   const [showModal, setShowModal] = useState(false);
